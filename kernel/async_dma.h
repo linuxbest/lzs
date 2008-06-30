@@ -14,8 +14,8 @@ enum ops_enum {
 typedef int (*async_cb_t)(void *priv, int err, int osize);
 
 typedef struct {
-        struct scatterlist *sg;
-        int    sg_cnt;
+        char   *buffer;
+        int    use_sg;
         int    bufflen;
 } sgbuf_t;
 

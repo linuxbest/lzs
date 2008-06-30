@@ -60,6 +60,8 @@ typedef struct {
 } job_desc_t;
 
 typedef struct {
+#define LZF_MAX_SG_ELEM_LEN 0xffff
+#define LZF_SG_LAST         BIT_20
         uint32_t desc;      /* 0 [15:00] total size 
                                  [20]    LAST */
         uint32_t desc_adr0; /* 1 [31:03] */
