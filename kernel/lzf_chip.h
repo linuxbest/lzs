@@ -39,9 +39,10 @@ enum {
         OFS_CCR = 0x0,
 #define CCR_RESUME BIT_0
 #define CCR_ENABLE BIT_1
+#define CCR_C_INTP BIT_2 /* clear interrupt pending */
         OFS_CSR = 0x1,
-#define CSR_INTP   BIT_0
-#define CSR_BUSY   BIT_1
+#define CSR_INTP   BIT_0 /* interrupt pending */
+#define CSR_BUSY   BIT_1 /* busy */
         OFS_DAR = 0x2,
         OFS_NDAR= 0x3,
 };
@@ -59,11 +60,40 @@ typedef struct {
 } job_desc_t;
 
 typedef struct {
-        uint32_t desc;      /* 0 [11:00] total size 
+        uint32_t desc;      /* 0 [15:00] total size 
                                  [20]    LAST */
         uint32_t desc_adr0; /* 1 [31:03] */
         uint32_t desc_adr1; /* 2 [31:03] */
         uint32_t desc_next; /* 3 [31:03] */
+
+        /* software driver using u[4] */
+        uint32_t u[4];      /* u[3] len 
+                               u[4] next address */
 } buf_desc_t;
+
+typedef struct {
+        uint32_t ocnt;      /* 0 */
+        uint32_t u0;        /* 1 */
+        uint32_t err;       /* 2 */
+        uint32_t u1;        /* 3 */
+        uint32_t cycle;     /* 4 */
+        uint32_t u2;        /* 5 */
+        uint32_t dc_fc;     /* 6 */
+        uint32_t u3;        /* 7 */
+} res_desc_t;
+
+enum ec_ops {
+        DC_NULL       = (1<<0),
+        DC_READ       = (1<<1),
+        DC_WRITE      = (1<<2),
+        DC_FILL       = (1<<3)|DC_WRITE,
+        DC_MEMCPY     = (1<<4)|DC_READ|DC_WRITE,
+        DC_COMPRESS   = (1<<5)|DC_READ|DC_WRITE,
+        DC_UNCOMPRESS = (1<<6)|DC_READ|DC_WRITE,
+        DC_CTRL       = (1<<7),
+
+        DC_CONT       = (1<<14),
+        DC_INTR_EN    = (1<<15), /* Enable Interrupt */
+};
 
 #endif
