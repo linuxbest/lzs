@@ -19,10 +19,10 @@ typedef struct {
         int    bufflen;
 } sgbuf_t;
 
-int async_submit(sgbuf_t *src,
-                sgbuf_t *dst,
-                async_cb_t cb,
-                int ops,
-                void *priv);
+int async_submit(sgbuf_t *src, /* source data buffer */
+                sgbuf_t *dst,  /* dest data buffer */
+                async_cb_t cb, /* callback function */
+                int ops,       /* ops */
+                void *priv);   /* private for callback */
 
 #endif
