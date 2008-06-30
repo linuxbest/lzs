@@ -100,15 +100,12 @@ static job_entry_t *new_job_entry(struct lzf_device *ioc)
                 return NULL;
         memset(p, 0, sizeof(*p));
 
-        p->desc = pci_alloc_consistent(ioc->dev, sizeof(job_desc_t), 
-                        &p->addr);
+        p->desc = pci_alloc_consistent(ioc->dev, PAGE_SIZE, &p->addr);
         if (p->desc == NULL)
                 return NULL;
 
-        p->res = pci_alloc_consistent(ioc->dev, sizeof(res_desc_t), 
-                        &p->desc->ctl_addr);
-        if (p->res == NULL)
-                return NULL;
+        p->res = (void *)((char *)p->desc + 2048);
+        p->desc->ctl_addr = p->addr + 2048;
 
         return p;
 }
