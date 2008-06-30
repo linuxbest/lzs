@@ -21,7 +21,7 @@ uninstall:
 	rm -f $(INSTALL_DIR)/scst_*.ko
 endif
 
-EXTRA_CFLAGS += -I$(SUBDIRS) -I$(SCST_INC_DIR) -Wextra -Wno-unused-parameter
+EXTRA_CFLAGS += -I$(SUBDIRS)
 EXTRA_CFLAGS += -I$(SUBDIRS)/../
 EXTRA_CFLAGS += -DEXTRACHECKS
 #EXTRA_CFLAGS += -DTRACING
