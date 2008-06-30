@@ -96,10 +96,14 @@ static job_entry_t *new_job_entry(struct lzf_device *ioc)
                 return NULL;
         memset(p, 0, sizeof(*p));
 
-        p->desc = kmem_cache_alloc(_cache, GFP_KERNEL);
+        p->desc = pci_alloc_consistent(ioc->dev, sizeof(job_desc_t), &p->addr);
         if (p->desc == NULL)
                 return NULL;
-        memset(p->desc, 0, sizeof(*p->desc));
+
+        p->res = pci_alloc_consistent(ioc->dev, sizeof(res_desc_t), 
+                        &p->res_addr);
+        if (p->res == NULL)
+                return NULL;
 
         return p;
 }
@@ -120,13 +124,54 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
         spin_unlock_bh(&ioc->desc_lock);
         atomic_inc(&ioc->queue);
 
+        memset(p->desc, 0, sizeof(job_desc_t));
+        memset(p->res, 0, sizeof(res_desc_t));
+
         return p;
 }
+
+static int map_bufs(struct lzf_device *ioc, sgbuf_t *src, buf_desc_t *map)
+{
+        int res = 0;
+        /* TODO */
+        return res;
+}
+
+static int dc_ay[] = {
+        [OP_FILL]       = DC_FILL,
+        [OP_MEMCPY]     = DC_MEMCPY,
+        [OP_COMPRESS]   = DC_COMPRESS,
+        [DC_UNCOMPRESS] = OP_UNCOMPRESS, 
+};
 
 int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
 {
         int res = 0;
-        /* TODO */
+        job_entry_t *d, *prev;
+        LIST_HEAD(new_chain);
+        struct lzf_device *ioc = NULL; /* TODO */
+
+        d = get_job_entry(ioc);
+        d->src = src;
+        d->dst = dst;
+
+        /* fill the hw desc */
+        d->desc->next_desc = 0;
+        d->desc->dc_fc     = dc_ay[ops];
+        sg_map(ioc, &d->desc->src_addr, src);
+        sg_map(ioc, &d->desc->dst_addr, dst);
+
+        spin_lock_bh(&ioc->desc_lock);
+        prev = container_of(ioc->used_head.prev, job_entry_t, entry);
+        prev->desc->next_desc = d->addr;
+        prev->desc->dc_fc    |= DC_CONT;
+
+        list_add(&d->entry, &new_chain);
+        __list_splice(&new_chain, ioc->used_head.prev);
+
+        writel(CCR_RESUME|CCR_ENABLE, ioc->R.CCR.address);
+        spin_unlock_bh(&ioc->desc_lock);
+
         return res;
 }
 EXPORT_SYMBOL(async_submit);
@@ -161,8 +206,6 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
         int res = 0;
 
         /* unmap result data */
-        pci_unmap_single(ioc->dev, d->res_addr, sizeof(res_desc_t), 
-                        PCI_DMA_FROMDEVICE);
         unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE);
         unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE);
 
@@ -355,6 +398,9 @@ static int __init lzf_init(void)
         job_cache = kmem_cache_create("job_cache",
                         sizeof(job_entry_t),
                         0, 0, NULL, NULL);
+        BUG_ON(sizeof(job_desc_t) != 64);
+        BUG_ON(sizeof(res_desc_t) != 64);
+        BUG_ON(sizeof(buf_desc_t) != 64);
         return pci_module_init(&lzf_driver);
 }
 
