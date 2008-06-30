@@ -17,6 +17,7 @@ typedef struct {
         char   *buffer;
         int    use_sg;
         int    bufflen;
+        dma_addr_t addr;
 } sgbuf_t;
 
 int async_submit(sgbuf_t *src, /* source data buffer */
