@@ -234,7 +234,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
         d->desc->next_desc = 0;
         d->desc->dc_fc  = dc_ay[ops];
         d->desc->src_desc = d->src->u[2];
-        d->desc->dst_desc = d->src->u[2];
+        d->desc->dst_desc = d->dst->u[2];
 
         spin_lock_bh(&ioc->desc_lock);
         prev = container_of(ioc->used_head.prev, job_entry_t, entry);
