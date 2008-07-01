@@ -389,7 +389,6 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         ioc->base_size = pci_resource_len(pdev, 1);
         ioc->dev = pdev;
         ioc->irq = pdev->irq;
-        dprintk("ioc %p\n", ioc);
 
         /* enable mmio and master */
         pci_read_config_dword(pdev, PCI_COMMAND, &val);
@@ -407,7 +406,6 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         /* intr enable */
         pci_write_config_dword(pdev, 0x1ec, 0x1);
 
-        dprintk("ioc %p, request mem region\n", ioc);
         r = request_mem_region(ioc->bases, ioc->base_size, MYNAM);
         if (!r) {
                 printk(KERN_ERR MYNAM ": ERROR - reserved base 1 failed\n");
@@ -420,7 +418,6 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         ioc->R.DAR.address  = ioc->mmr_base + OFS_DAR;
         ioc->R.NDAR.address = ioc->mmr_base + OFS_NDAR;
 
-        dprintk("ioc %p, request irq %d\n", ioc, pdev->irq);
         res = request_irq(pdev->irq, lzf_intr_handler, SA_SHIRQ, MYNAM, ioc);
         if (res) {
                 printk(KERN_ERR MYNAM ": ERROR - reserved irq %d failed\n",
@@ -431,7 +428,6 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         pci_set_drvdata(pdev, ioc);
         INIT_LIST_HEAD(&ioc->free_head);
         INIT_LIST_HEAD(&ioc->used_head);
-        dprintk("ioc %p, new job entry\n", ioc);
 
         for (i = 0; i < MAX_QUEUE; i++) {
                 job_entry_t *j;
@@ -441,7 +437,6 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         init_waitqueue_head(&ioc->wait);
         atomic_set(&ioc->queue, 0);
 
-        dprintk("ioc %p, start null desc\n", ioc);
         start_null_desc(ioc);
 
         return res;
@@ -449,7 +444,30 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
 
 static void __devexit lzf_remove(struct pci_dev *pdev)
 {
-        /* TODO */
+        struct lzf_device *ioc = pci_get_drvdata(pdev);
+        job_entry_t *j, *t;
+        LIST_HEAD(head);
+
+        list_for_each_entry_safe(j, t, &ioc->free_head, entry) {
+                list_del(&j->entry);
+                list_add_tail(&j->entry, &head);
+        }
+        list_for_each_entry_safe(j, t, &ioc->used_head, entry) {
+                list_del(&j->entry);
+                list_add_tail(&j->entry, &head);
+        }
+        list_for_each_entry_safe(j, t, &head, entry) {
+                list_del(&j->entry);
+                pci_free_consistent(ioc->dev, PAGE_SIZE, j->desc, j->addr);
+                kmem_cache_free(job_cache, j);
+        }
+
+        free_irq(ioc->irq, ioc);
+        iounmap(ioc->mmr_base);
+        release_mem_region(ioc->bases, ioc->base_size);
+
+        kfree(ioc);
+        pci_set_drvdata(pdev, NULL);
 }
 
 static void lzf_shutdown(struct device *dev)
@@ -495,9 +513,9 @@ static int __init lzf_init(void)
 
 static void __exit lzf_exit(void)
 {
+        pci_unregister_driver(&lzf_driver);
         kmem_cache_destroy(_cache);
         kmem_cache_destroy(job_cache);
-        pci_unregister_driver(&lzf_driver);
 }
 
 module_init(lzf_init);

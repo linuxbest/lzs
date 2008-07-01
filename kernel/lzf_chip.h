@@ -40,11 +40,11 @@ enum {
 #define CCR_RESUME BIT_0
 #define CCR_ENABLE BIT_1
 #define CCR_C_INTP BIT_2 /* clear interrupt pending */
-        OFS_CSR = 0x1,
+        OFS_CSR = 0x4,
 #define CSR_INTP   BIT_0 /* interrupt pending */
 #define CSR_BUSY   BIT_1 /* busy */
-        OFS_DAR = 0x2,
-        OFS_NDAR= 0x3,
+        OFS_DAR = 0x8,
+        OFS_NDAR= 0xC,
 };
 
 typedef struct {
