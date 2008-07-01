@@ -72,6 +72,7 @@ struct lzf_device {
         atomic_t queue;
 
 };
+static struct lzf_device *first_ioc; /* XXX */
 
 typedef struct {
         job_desc_t *desc;
@@ -123,6 +124,15 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
         }
         spin_unlock_bh(&ioc->desc_lock);
         atomic_inc(&ioc->queue);
+
+        p->src = NULL;
+        p->dst = NULL;
+        p->src_buf = NULL;
+        p->dst_buf = NULL;
+        p->desc->next_desc = 0;
+        p->desc->dc_fc = 0;
+        p->desc->src_desc = 0;
+        p->desc->dst_desc = 0;
 
         return p;
 }
@@ -240,19 +250,27 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
         int res = 0;
         job_entry_t *d, *prev;
         LIST_HEAD(new_chain);
-        struct lzf_device *ioc = NULL; /* TODO */
+        struct lzf_device *ioc = first_ioc; /* TODO */
 
         d = get_job_entry(ioc);
-        d->src_buf = src;
-        d->dst_buf = dst;
-        d->src = map_bufs(ioc, src, PCI_DMA_TODEVICE);
-        d->dst = map_bufs(ioc, dst, PCI_DMA_FROMDEVICE);
+        if (src) {
+                d->src_buf = src;
+                d->src = map_bufs(ioc, src, PCI_DMA_TODEVICE);
+        }
+        if (dst) {
+                d->dst_buf = dst;
+                d->dst = map_bufs(ioc, dst, PCI_DMA_FROMDEVICE);
+        }
 
         /* fill the hw desc */
         d->desc->next_desc = 0;
-        d->desc->dc_fc  = dc_ay[ops];
+        d->desc->dc_fc  = dc_ay[ops] | DC_INTR_EN;
         d->desc->src_desc = d->src->u[2];
         d->desc->dst_desc = d->dst->u[2];
+
+        /* callback function */
+        d->cb = cb;
+        d->priv = p;
 
         spin_lock_bh(&ioc->desc_lock);
         prev = container_of(ioc->used_head.prev, job_entry_t, entry);
@@ -280,11 +298,13 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
         int res = 0;
 
         /* unmap result data */
-        unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE, d->src_buf);
-        unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf);
+        if (d->src)
+                unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE, d->src_buf);
+        if (d->dst)
+                unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf);
 
-        dprintk("cb %p, err %x, ocnt %x\n",
-                        d->priv, d->res->err, d->res->ocnt);
+        dprintk("cb %p,%p, err %x, ocnt %x\n", d->cb, d->priv, d->res->err, 
+                        d->res->ocnt);
 
         d->cb(d->priv, d->res->err, d->res->ocnt);
 
@@ -311,7 +331,7 @@ static int do_jobs(struct lzf_device *ioc)
                         list_add_tail(&d->entry, &head);
                 if (d->addr != phys_complete) {
                         list_del(&d->entry);
-                        list_add_tail(&d->entry, &head);
+                        list_add_tail(&d->entry, &ioc->free_head);
                 } else {
                         d->cookie = 0;
                         break;
@@ -438,6 +458,7 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         atomic_set(&ioc->queue, 0);
 
         start_null_desc(ioc);
+        first_ioc = ioc;
 
         return res;
 }

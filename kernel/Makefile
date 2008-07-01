@@ -1,7 +1,7 @@
 ifneq ($(KERNELRELEASE),)
 #SCST_INC_DIR := /p/prod/d/scst/scst/include
 
-obj-m = lzf_dma.o
+obj-m = lzf_dma.o dma_ioctl.o
 
 else
 ifeq ($(KDIR),)
