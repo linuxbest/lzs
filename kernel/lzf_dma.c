@@ -141,7 +141,7 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                 dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
                                 d, d->desc_next, d->desc, d->desc_adr,
                                 addr);
-                pci_free_consistent(ioc->dev, 64, d, addr);
+                pci_free_consistent(ioc->dev, 32, d, addr);
                 d = n;
         }
         /* unmap data buffer */
@@ -168,7 +168,7 @@ static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
                         pci_map_single(ioc->dev, s->buffer, s->bufflen, dir);
                 if (bytes_to_go <= LZF_MAX_SG_ELEM_LEN) {
                         dma_addr_t hw_addr;
-                        b = pci_alloc_consistent(ioc->dev, 64, &hw_addr);
+                        b = pci_alloc_consistent(ioc->dev, 32, &hw_addr);
                         b->desc_next = 0;
                         b->desc = bytes_to_go;
                         b->desc|= LZF_SG_LAST;
@@ -197,7 +197,7 @@ static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
                                         this_mapping_len);
                         dprintk("this_len %x\n", this_len);
 
-                        b = pci_alloc_consistent(ioc->dev, 64, &hw_addr);
+                        b = pci_alloc_consistent(ioc->dev, 32, &hw_addr);
                         b->desc_next = 0; /* will fix later */
                         b->desc = this_len;
                         b->desc_adr = (sgl?sg_dma_address(sgl):addr) + offset;
@@ -477,9 +477,13 @@ static int __init lzf_init(void)
         job_cache = kmem_cache_create("job_cache",
                         sizeof(job_entry_t),
                         0, 0, NULL, NULL);
-        BUG_ON(sizeof(job_desc_t) != 64);
-        BUG_ON(sizeof(res_desc_t) != 64);
-        BUG_ON(sizeof(buf_desc_t) != 64);
+        dprintk("%d, %d, %d\n", 
+                        sizeof(job_desc_t),
+                        sizeof(res_desc_t),
+                        sizeof(buf_desc_t));
+        BUG_ON(sizeof(job_desc_t) != 32);
+        BUG_ON(sizeof(res_desc_t) != 32);
+        BUG_ON(sizeof(buf_desc_t) != 32);
         return pci_module_init(&lzf_driver);
 }
 
