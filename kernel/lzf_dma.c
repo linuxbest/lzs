@@ -374,7 +374,7 @@ static void start_null_desc(struct lzf_device *ioc)
         writel(2, ioc->R.CCR.address);
 }
 
-static int __devinit lzf_probe(struct pci_dev  *pdev, 
+static int __devinit lzf_probe(struct pci_dev *pdev, 
                 const struct pci_device_id *id)
 {
         struct lzf_device *ioc;
@@ -385,12 +385,12 @@ static int __devinit lzf_probe(struct pci_dev  *pdev,
         if (pci_enable_device(pdev))
                 return res;
         ioc = kmalloc(sizeof(*ioc), GFP_KERNEL);
-
         ioc->bases = pci_resource_start(pdev, 1);
         ioc->base_size = pci_resource_len(pdev, 1);
         ioc->dev = pdev;
         ioc->irq = pdev->irq;
-       
+        dprintk("ioc %p\n", ioc);
+
         /* enable mmio and master */
         pci_read_config_dword(pdev, PCI_COMMAND, &val);
         val |= PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
@@ -407,6 +407,7 @@ static int __devinit lzf_probe(struct pci_dev  *pdev,
         /* intr enable */
         pci_write_config_dword(pdev, 0x1ec, 0x1);
 
+        dprintk("ioc %p, request mem region\n", ioc);
         r = request_mem_region(ioc->bases, ioc->base_size, MYNAM);
         if (!r) {
                 printk(KERN_ERR MYNAM ": ERROR - reserved base 1 failed\n");
@@ -419,6 +420,7 @@ static int __devinit lzf_probe(struct pci_dev  *pdev,
         ioc->R.DAR.address  = ioc->mmr_base + OFS_DAR;
         ioc->R.NDAR.address = ioc->mmr_base + OFS_NDAR;
 
+        dprintk("ioc %p, request irq %d\n", ioc, pdev->irq);
         res = request_irq(pdev->irq, lzf_intr_handler, SA_SHIRQ, MYNAM, ioc);
         if (res) {
                 printk(KERN_ERR MYNAM ": ERROR - reserved irq %d failed\n",
@@ -427,6 +429,9 @@ static int __devinit lzf_probe(struct pci_dev  *pdev,
                 return res;
         }
         pci_set_drvdata(pdev, ioc);
+        INIT_LIST_HEAD(&ioc->free_head);
+        INIT_LIST_HEAD(&ioc->used_head);
+        dprintk("ioc %p, new job entry\n", ioc);
 
         for (i = 0; i < MAX_QUEUE; i++) {
                 job_entry_t *j;
@@ -436,6 +441,7 @@ static int __devinit lzf_probe(struct pci_dev  *pdev,
         init_waitqueue_head(&ioc->wait);
         atomic_set(&ioc->queue, 0);
 
+        dprintk("ioc %p, start null desc\n", ioc);
         start_null_desc(ioc);
 
         return res;
