@@ -87,8 +87,6 @@ typedef struct {
         async_cb_t cb;
 
         sgbuf_t *src_buf, *dst_buf;
-        
-        dma_addr_t h_addr;
 } job_entry_t;
 
 static job_entry_t *new_job_entry(struct lzf_device *ioc)
@@ -126,23 +124,23 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
         spin_unlock_bh(&ioc->desc_lock);
         atomic_inc(&ioc->queue);
 
-        memset(p->desc, 0, sizeof(job_desc_t));
-        memset(p->res, 0, sizeof(res_desc_t));
-
         return p;
 }
 
 static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
-                sgbuf_t *s, dma_addr_t h_addr)
+                sgbuf_t *s)
 {
         int res = 0;
 
         while (d) {
                 buf_desc_t *n;
-                dma_addr_t addr = d->u[3];
-                n = (buf_desc_t *)d->u[4];
+                dma_addr_t addr = d->u[0];
+                n = (buf_desc_t *)d->u[1];
                 /* free it */
-                addr = d->u[2];
+                addr = d->desc_adr;
+                dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
+                                d, d->desc_next, d->desc, d->desc_adr,
+                                addr);
                 pci_free_consistent(ioc->dev, 64, d, addr);
                 d = n;
         }
@@ -164,16 +162,23 @@ static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
         struct scatterlist *sgl = NULL;
 
         if (s->use_sg == 0) {
+                dprintk("bytes_to_go %x, %x\n", 
+                                bytes_to_go, LZF_MAX_SG_ELEM_LEN);
                 s->addr = addr = 
                         pci_map_single(ioc->dev, s->buffer, s->bufflen, dir);
                 if (bytes_to_go <= LZF_MAX_SG_ELEM_LEN) {
                         dma_addr_t hw_addr;
                         b = pci_alloc_consistent(ioc->dev, 64, &hw_addr);
+                        b->desc_next = 0;
                         b->desc = bytes_to_go;
                         b->desc|= LZF_SG_LAST;
-                        b->u[2] = hw_addr;
-                        b->u[3] = addr;
-                        b->u[4] = (uint32_t)prev;
+                        b->desc_adr = addr;
+                        dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
+                                        b, b->desc_next, b->desc, b->desc_adr,
+                                        hw_addr);
+                        /* sf */ 
+                        b->u[0] = hw_addr;
+                        b->u[1] = 0;
                         return b;
                 }
         } else {
@@ -181,22 +186,35 @@ static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
                 pci_map_sg(ioc->dev, sgl, s->use_sg, dir);
         }
 
+        dprintk("bytes_to_go %x, %x\n", bytes_to_go, LZF_MAX_SG_ELEM_LEN);
         while (bytes_to_go > 0) {
                 int this_mapping_len = sgl ? sg_dma_len(sgl) : bytes_to_go;
                 int offset = 0;
+                dprintk("this_mapping_len %x\n", this_mapping_len);
                 while (this_mapping_len > 0) {
                         dma_addr_t hw_addr;
                         int this_len = min_t(int, LZF_MAX_SG_ELEM_LEN, 
                                         this_mapping_len);
+                        dprintk("this_len %x\n", this_len);
+
                         b = pci_alloc_consistent(ioc->dev, 64, &hw_addr);
+                        b->desc_next = 0; /* will fix later */
                         b->desc = this_len;
-                        b->u[2] = hw_addr;
-                        b->u[3] = (sgl ? sg_dma_address(sgl) : addr) + offset;
-                        if (prev == NULL)
+                        b->desc_adr = (sgl?sg_dma_address(sgl):addr) + offset;
+                        dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
+                                        b, b->desc_next, b->desc, b->desc_adr,
+                                        hw_addr);
+                        /* sf */
+                        b->u[0] = hw_addr;
+                        if (prev == NULL) {
                                 h = b;
-                        else
-                                b->u[4] = (uint32_t)prev;
+                        } else {
+                                prev->u[1] = (uint32_t)b;
+                                prev->desc_next = hw_addr;
+                        }
                         prev = b;
+
+                        /* adjust len */
                         this_mapping_len -= this_len;
                         bytes_to_go -= this_len;
                         offset += this_len;
@@ -205,7 +223,7 @@ static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
                         sgl++;
         }
         prev->desc |= LZF_SG_LAST;
-        prev->u[4] = 0;
+        prev->u[1] = 0;
 
         return h;
 }
@@ -239,7 +257,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
         spin_lock_bh(&ioc->desc_lock);
         prev = container_of(ioc->used_head.prev, job_entry_t, entry);
         prev->desc->next_desc = d->addr;
-        prev->desc->dc_fc    |= DC_CONT;
+        prev->desc->dc_fc |= DC_CONT;
 
         list_add(&d->entry, &new_chain);
         __list_splice(&new_chain, ioc->used_head.prev);
@@ -262,8 +280,11 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
         int res = 0;
 
         /* unmap result data */
-        unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE, d->src_buf, d->h_addr);
-        unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf, d->h_addr);
+        unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE, d->src_buf);
+        unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf);
+
+        dprintk("cb %p, err %x, ocnt %x\n",
+                        d->priv, d->res->err, d->res->ocnt);
 
         d->cb(d->priv, d->res->err, d->res->ocnt);
 
@@ -342,7 +363,7 @@ static void start_null_desc(struct lzf_device *ioc)
 
         d = get_job_entry(ioc);
         d->desc->next_desc = 0;
-        d->desc->dc_fc     = DC_NULL|DC_INTR_EN;
+        d->desc->dc_fc = DC_NULL|DC_INTR_EN;
 
         spin_lock_bh(&ioc->desc_lock);
         d->cookie = 0;

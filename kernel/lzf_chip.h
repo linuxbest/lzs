@@ -64,13 +64,15 @@ typedef struct {
 #define LZF_SG_LAST         BIT_20
         uint32_t desc;      /* 0 [15:00] total size 
                                  [20]    LAST */
-        uint32_t desc_adr0; /* 1 [31:03] */
-        uint32_t desc_adr1; /* 2 [31:03] */
+        uint32_t desc_adr;  /* 1 [31:03] */
         uint32_t desc_next; /* 3 [31:03] */
 
-        /* software driver using u[4] */
-        uint32_t u[4];      /* u[3] len 
-                               u[4] next address */
+        uint32_t u[5];      /* u[0] this desc hw address
+                               u[1] next desc sf address
+                               u[2] 
+                               u[3] 
+
+                               */
 } buf_desc_t;
 
 typedef struct {
