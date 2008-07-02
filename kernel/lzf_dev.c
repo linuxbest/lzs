@@ -518,9 +518,11 @@ static struct pci_driver lzf_driver = {
                 .shutdown = lzf_shutdown,
         },
 };
-        
+
 static int __init lzf_init(void)
 {
+        init_chdev();
+
         _cache = kmem_cache_create("lzf_cache", 
                         sizeof(job_desc_t),
                         8, /* for HW */
@@ -542,6 +544,7 @@ static int __init lzf_init(void)
 
 static void __exit lzf_exit(void)
 {
+        exit_chdev();
         pci_unregister_driver(&lzf_driver);
         kmem_cache_destroy(_cache);
         kmem_cache_destroy(job_cache);
