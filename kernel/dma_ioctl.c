@@ -21,7 +21,7 @@ static int ioctl_cb(void *priv, int err, int osize)
 {
         ioctl_t *p = priv;
 
-        printk("cb: %p, %d, %d\n", p, err, osize);
+        printk("cb: %p, %d, %d, %x\n", p, err, osize, p->dst[0]);
 
         return 0;
 }
@@ -37,6 +37,8 @@ static int __init ioctl_init(void)
         dst = (char *)get_zeroed_page(GFP_KERNEL);
         for (i = 0; i < 32; i++)
                 src[i] = i;
+        m.src = src;
+        m.dst = dst;
 
         m.src_sg.buffer = src;
         m.src_sg.use_sg = 0;

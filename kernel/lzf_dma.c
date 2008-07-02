@@ -71,6 +71,7 @@ struct lzf_device {
         wait_queue_head_t wait;
         atomic_t queue;
 
+        uint8_t cookie;
 };
 static struct lzf_device *first_ioc; /* XXX */
 
@@ -79,7 +80,7 @@ typedef struct {
         dma_addr_t addr;
 
         int cookie;
-        struct list_head entry;
+        struct list_head entry, job_entry;
 
         buf_desc_t *src, *dst;
         res_desc_t *res;
@@ -264,16 +265,22 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
 
         /* fill the hw desc */
         d->desc->next_desc = 0;
-        d->desc->dc_fc  = dc_ay[ops] | DC_INTR_EN;
-        d->desc->src_desc = d->src->u[2];
-        d->desc->dst_desc = d->dst->u[2];
+        d->desc->dc_fc  = dc_ay[ops] | DC_INTR_EN | DC_CTRL;
+        d->desc->src_desc = d->src->u[0];
+        d->desc->dst_desc = d->dst->u[0];
+        dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 
+                        d->addr, d->desc->dc_fc, d->desc->src_desc, 
+                        d->desc->dst_desc, d);
 
         /* callback function */
         d->cb = cb;
         d->priv = p;
+        d->cookie = ioc->cookie | 1<<31;
+        d->cookie ++;
 
         spin_lock_bh(&ioc->desc_lock);
         prev = container_of(ioc->used_head.prev, job_entry_t, entry);
+        dprintk("last desc %p\n", prev);
         prev->desc->next_desc = d->addr;
         prev->desc->dc_fc |= DC_CONT;
 
@@ -328,7 +335,7 @@ static int do_jobs(struct lzf_device *ioc)
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
                 dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
                 if (d->cookie)
-                        list_add_tail(&d->entry, &head);
+                        list_add_tail(&d->job_entry, &head);
                 if (d->addr != phys_complete) {
                         list_del(&d->entry);
                         list_add_tail(&d->entry, &ioc->free_head);
@@ -339,10 +346,10 @@ static int do_jobs(struct lzf_device *ioc)
         }
         /*spin_unlock_bh(&ioc->desc_lock);*/
 
-        list_for_each_entry_safe(d, t, &head, entry) {
+        list_for_each_entry_safe(d, t, &head, job_entry) {
                 dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
-                list_del(&d->entry);
                 do_job_one(ioc, d);
+                list_del(&d->job_entry);
         }
 
         return res;
@@ -459,6 +466,7 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
 
         start_null_desc(ioc);
         first_ioc = ioc;
+        ioc->cookie = 0;
 
         return res;
 }
