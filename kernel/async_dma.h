@@ -7,7 +7,7 @@ enum ops_enum {
         OP_COMPRESS   = 2,
         OP_UNCOMPRESS = 3,
 };
-
+#ifdef __KERNEL__
 /* 
  * this callback runing at interrupt level 
  */
@@ -25,5 +25,20 @@ int async_submit(sgbuf_t *src, /* source data buffer */
                 async_cb_t cb, /* callback function */
                 int ops,       /* ops */
                 void *priv);   /* private for callback */
+#endif
+/* user space ioctl interface */
+typedef struct {
+        uint8_t ops;
+        uint32_t src;
+        uint32_t slen;
+        uint32_t dst;
+        uint32_t dlen;
+
+        uint32_t err;
+        uint32_t osize;
+        uint32_t done;
+} sioctl_t;
+
+#define SIOCTL_SUBMIT 0x2285
 
 #endif

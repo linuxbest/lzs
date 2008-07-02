@@ -16,6 +16,7 @@
 
 #include "async_dma.h"
 #include "lzf_chip.h"
+#include "lzf_chdev.h"
 
 /* Debug */
 #define dprintk(format, a...) \
@@ -23,7 +24,7 @@
                 if (debug) printk("%s:%d "format, __FUNCTION__, __LINE__, ##a);\
         } while (0)
 
-static int debug = 1;
+static int debug = 0;
 
 /* backport hexdump.c */
 enum {

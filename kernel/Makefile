@@ -3,7 +3,7 @@ ifneq ($(KERNELRELEASE),)
 
 obj-m = lzf_dma.o
 
-lzf_dma-objs = lzf_dma.o lzf_chdev.o 
+lzf_dma-objs = lzf_dev.o lzf_chdev.o 
 
 else
 ifeq ($(KDIR),)
