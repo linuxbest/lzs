@@ -90,6 +90,7 @@ typedef struct {
         async_cb_t cb;
 
         sgbuf_t *src_buf, *dst_buf;
+        int s_cnt, d_cnt;
 } job_entry_t;
 
 static job_entry_t *new_job_entry(struct lzf_device *ioc)
@@ -101,7 +102,8 @@ static job_entry_t *new_job_entry(struct lzf_device *ioc)
                 return NULL;
         memset(p, 0, sizeof(*p));
 
-        p->desc = pci_alloc_consistent(ioc->dev, PAGE_SIZE, &p->addr);
+        p->desc = dma_alloc_coherent(&ioc->dev->dev, PAGE_SIZE, 
+                        &p->addr, GFP_KERNEL);
         if (p->desc == NULL)
                 return NULL;
 
@@ -140,7 +142,7 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
 }
 
 static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
-                sgbuf_t *s)
+                sgbuf_t *s, int cnt)
 {
         int res = 0;
 
@@ -153,7 +155,8 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                 dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
                                 d, d->desc_next, d->desc, d->desc_adr,
                                 addr);
-                pci_free_consistent(ioc->dev, 32, d, addr);
+                dma_free_coherent(&ioc->dev->dev, 32, d, addr);
+                cnt --;
                 d = n;
         }
         /* unmap data buffer */
@@ -162,11 +165,14 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
         else
                 pci_unmap_sg(ioc->dev, (struct scatterlist *)s->buffer,
                                 s->use_sg, dir);
+        dprintk("cnt is %d\n", cnt);
+        BUG_ON(cnt != 0);
 
         return res;
 }
 
-static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
+static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir, 
+                int *c)
 {
         int bytes_to_go = s->bufflen;
         buf_desc_t *b = NULL, *prev = NULL, *h = NULL;
@@ -180,7 +186,9 @@ static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
                         pci_map_single(ioc->dev, s->buffer, s->bufflen, dir);
                 if (bytes_to_go <= LZF_MAX_SG_ELEM_LEN) {
                         dma_addr_t hw_addr;
-                        b = pci_alloc_consistent(ioc->dev, 32, &hw_addr);
+                        b = dma_alloc_coherent(&ioc->dev->dev, 32, 
+                                        &hw_addr, GFP_KERNEL);
+                        (*c) ++;
                         b->desc_next = 0;
                         b->desc = bytes_to_go;
                         b->desc|= LZF_SG_LAST;
@@ -209,7 +217,9 @@ static buf_desc_t * map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir)
                                         this_mapping_len);
                         dprintk("this_len %x\n", this_len);
 
-                        b = pci_alloc_consistent(ioc->dev, 32, &hw_addr);
+                        b = dma_alloc_coherent(&ioc->dev->dev, 32, 
+                                        &hw_addr, GFP_KERNEL);
+                        (*c) ++;
                         b->desc_next = 0; /* will fix later */
                         b->desc = this_len;
                         b->desc_adr = (sgl?sg_dma_address(sgl):addr) + offset;
@@ -257,11 +267,11 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
         d = get_job_entry(ioc);
         if (src) {
                 d->src_buf = src;
-                d->src = map_bufs(ioc, src, PCI_DMA_TODEVICE);
+                d->src = map_bufs(ioc, src, PCI_DMA_TODEVICE, &d->s_cnt);
         }
         if (dst) {
                 d->dst_buf = dst;
-                d->dst = map_bufs(ioc, dst, PCI_DMA_FROMDEVICE);
+                d->dst = map_bufs(ioc, dst, PCI_DMA_FROMDEVICE, &d->d_cnt);
         }
 
         /* fill the hw desc */
@@ -307,9 +317,11 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
 
         /* unmap result data */
         if (d->src)
-                unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE, d->src_buf);
+                unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE, d->src_buf, 
+                                d->s_cnt);
         if (d->dst)
-                unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf);
+                unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf, 
+                                d->d_cnt);
 
         dprintk("cb %p,%p, err %x, ocnt %x\n", d->cb, d->priv, d->res->err, 
                         d->res->ocnt);
@@ -463,6 +475,7 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
                 list_add_tail(&j->entry, &ioc->free_head);
         }
         init_waitqueue_head(&ioc->wait);
+        spin_lock_init(&ioc->desc_lock);
         atomic_set(&ioc->queue, 0);
 
         start_null_desc(ioc);
@@ -488,7 +501,7 @@ static void __devexit lzf_remove(struct pci_dev *pdev)
         }
         list_for_each_entry_safe(j, t, &head, entry) {
                 list_del(&j->entry);
-                pci_free_consistent(ioc->dev, PAGE_SIZE, j->desc, j->addr);
+                dma_free_coherent(&ioc->dev->dev, PAGE_SIZE, j->desc, j->addr);
                 kmem_cache_free(job_cache, j);
         }
 

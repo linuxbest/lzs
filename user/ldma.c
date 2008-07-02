@@ -24,19 +24,21 @@ int main(int argc, char *argv[])
 
         src = malloc(len);
         dst = malloc(len);
+        while (res == 0) {
+                sio.ops = OP_COMPRESS;
+                sio.src = src;
+                sio.slen = len;
+                sio.dst = dst;
+                sio.dlen = len;
+                sio.err = 0;
+                sio.osize = 0;
+                sio.done = 0;
 
-        sio.ops = OP_COMPRESS;
-        sio.src = src;
-        sio.slen = len;
-        sio.dst = dst;
-        sio.dlen = len;
-        sio.err = 0;
-        sio.osize = 0;
-        sio.done = 0;
-       
-        res = ioctl(fd, SIOCTL_SUBMIT, &sio);
+                res = ioctl(fd, SIOCTL_SUBMIT, &sio);
 
-        printf("res %d, err %d, osize %d, done %d\n", 
-                        res, sio.err, sio.osize, sio.done);
-
+                printf("res %d, err %d, osize %d, done %d\n", 
+                                res, sio.err, sio.osize, sio.done);
+        }
+        free(src);
+        free(dst);
 }
