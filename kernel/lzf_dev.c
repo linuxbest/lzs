@@ -106,9 +106,11 @@ static job_entry_t *new_job_entry(struct lzf_device *ioc)
                         &p->addr, GFP_KERNEL);
         if (p->desc == NULL)
                 return NULL;
+        BUG_ON(p->addr & 0x7);
 
         p->res = (void *)((char *)p->desc + 2048);
         p->desc->ctl_addr = p->addr + 2048;
+        BUG_ON(p->desc->ctl_addr & 0x7);
 
         return p;
 }
@@ -170,7 +172,7 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                                 s->use_sg, dir);
         /* safe check */
         if (cnt != 0) {
-                printk("cnt %d is not zero\n", cnt);
+                printk("lzf_dma: cnt %d is not zero\n", cnt);
         }
 
         return res;
@@ -194,11 +196,13 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         b = kmem_cache_alloc(_cache, GFP_KERNEL);
                         hw_addr = pci_map_single(ioc->dev, b, 32, 
                                         PCI_DMA_TODEVICE);
+                        BUG_ON(hw_addr & 0x7);
                         (*c) ++;
                         b->desc_next = 0;
                         b->desc = bytes_to_go;
                         b->desc|= LZF_SG_LAST;
                         b->desc_adr = addr;
+                        BUG_ON(b->desc_adr & 0x7);
                         dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
                                         b, b->desc_next, b->desc, b->desc_adr,
                                         hw_addr);
@@ -225,10 +229,12 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         b = kmem_cache_alloc(_cache, GFP_KERNEL);
                         hw_addr = pci_map_single(ioc->dev, b, 32, 
                                         PCI_DMA_TODEVICE);
+                        BUG_ON(hw_addr & 0x7);
                         (*c) ++;
                         b->desc_next = 0; /* will fix later */
                         b->desc = this_len;
                         b->desc_adr = (sgl?sg_dma_address(sgl):addr) + offset;
+                        BUG_ON(b->desc_adr & 0x7);
                         dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
                                         b, b->desc_next, b->desc, b->desc_adr,
                                         hw_addr);
