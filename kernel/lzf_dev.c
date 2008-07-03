@@ -137,6 +137,8 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
         p->desc->dc_fc = 0;
         p->desc->src_desc = 0;
         p->desc->dst_desc = 0;
+        p->s_cnt = 0;
+        p->d_cnt = 0;
 
         return p;
 }
@@ -155,7 +157,8 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                 dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
                                 d, d->desc_next, d->desc, d->desc_adr,
                                 addr);
-                dma_free_coherent(&ioc->dev->dev, 32, d, addr);
+                pci_unmap_single(ioc->dev, addr, 32, PCI_DMA_TODEVICE);
+                kmem_cache_free(_cache, d);
                 cnt --;
                 d = n;
         }
@@ -165,8 +168,10 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
         else
                 pci_unmap_sg(ioc->dev, (struct scatterlist *)s->buffer,
                                 s->use_sg, dir);
-        dprintk("cnt is %d\n", cnt);
-        BUG_ON(cnt != 0);
+        /* safe check */
+        if (cnt != 0) {
+                printk("cnt %d is not zero\n", cnt);
+        }
 
         return res;
 }
@@ -186,8 +191,9 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         pci_map_single(ioc->dev, s->buffer, s->bufflen, dir);
                 if (bytes_to_go <= LZF_MAX_SG_ELEM_LEN) {
                         dma_addr_t hw_addr;
-                        b = dma_alloc_coherent(&ioc->dev->dev, 32, 
-                                        &hw_addr, GFP_KERNEL);
+                        b = kmem_cache_alloc(_cache, GFP_KERNEL);
+                        hw_addr = pci_map_single(ioc->dev, b, 32, 
+                                        PCI_DMA_TODEVICE);
                         (*c) ++;
                         b->desc_next = 0;
                         b->desc = bytes_to_go;
@@ -216,9 +222,9 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         int this_len = min_t(int, LZF_MAX_SG_ELEM_LEN, 
                                         this_mapping_len);
                         dprintk("this_len %x\n", this_len);
-
-                        b = dma_alloc_coherent(&ioc->dev->dev, 32, 
-                                        &hw_addr, GFP_KERNEL);
+                        b = kmem_cache_alloc(_cache, GFP_KERNEL);
+                        hw_addr = pci_map_single(ioc->dev, b, 32, 
+                                        PCI_DMA_TODEVICE);
                         (*c) ++;
                         b->desc_next = 0; /* will fix later */
                         b->desc = this_len;
@@ -537,8 +543,8 @@ static int __init lzf_init(void)
 {
         init_chdev();
 
-        _cache = kmem_cache_create("lzf_cache", 
-                        sizeof(job_desc_t),
+        _cache = kmem_cache_create("cache32", 
+                        32,
                         8, /* for HW */
                         0,
                         NULL,
