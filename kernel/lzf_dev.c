@@ -24,7 +24,7 @@
                 if (debug) printk("%s:%d "format, __FUNCTION__, __LINE__, ##a);\
         } while (0)
 
-static int debug = 0;
+static int debug = 1;
 
 /* backport hexdump.c */
 enum {
@@ -310,7 +310,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
         list_add(&d->entry, &new_chain);
         __list_splice(&new_chain, ioc->used_head.prev);
 
-        writel(CCR_RESUME|CCR_ENABLE, ioc->R.CCR.address);
+        writel(CCR_APPEND|CCR_ENABLE, ioc->R.CCR.address);
         spin_unlock_bh(&ioc->desc_lock);
 
         return res;
@@ -518,7 +518,7 @@ static void __devexit lzf_remove(struct pci_dev *pdev)
         }
 
         free_irq(ioc->irq, ioc);
-        iounmap(ioc->mmr_base);
+        iounmap((void __iomem *)ioc->mmr_base);
         release_mem_region(ioc->bases, ioc->base_size);
 
         kfree(ioc);

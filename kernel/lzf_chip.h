@@ -37,7 +37,7 @@
 
 enum {
         OFS_CCR = 0x0,
-#define CCR_RESUME BIT_0
+#define CCR_APPEND BIT_0
 #define CCR_ENABLE BIT_1
 #define CCR_C_INTP BIT_2 /* clear interrupt pending */
         OFS_CSR = 0x4,
@@ -87,16 +87,17 @@ typedef struct {
 } res_desc_t;
 
 enum ec_ops {
-        DC_NULL       = (1<<0),
-        DC_READ       = (1<<1),
-        DC_WRITE      = (1<<2),
-        DC_FILL       = (1<<3)|DC_WRITE,
-        DC_MEMCPY     = (1<<4)|DC_READ|DC_WRITE,
+        DC_NULL       = (1<<0)/*0x1*/,
+        DC_READ       = (1<<1)/*0x2*/,
+        DC_WRITE      = (1<<2)/*0x4*/,
+        DC_FILL       = (1<<3)|DC_WRITE/*0x0c*/,
+        DC_MEMCPY     = (1<<4)|DC_READ|DC_WRITE/*0x16*/,
         DC_COMPRESS   = (1<<5)|DC_READ|DC_WRITE,
         DC_UNCOMPRESS = (1<<6)|DC_READ|DC_WRITE,
         DC_CTRL       = (1<<7),
 
-        DC_CONT       = (1<<14),
+        DC_HASH       = (1<<8)|DC_READ,
+        DC_CONT       = (1<<14)/*0x40*/,
         DC_INTR_EN    = (1<<15), /* Enable Interrupt */
 };
 
