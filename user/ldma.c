@@ -81,12 +81,12 @@ int main(int argc, char *argv[])
                 return -1;
         }
 
-        src = memalign(16, len);
-        for (i = 0; i < len; i ++) {
+        src = memalign(16, len+0x10);
+        for (i = 0; i < len+0x10; i ++) {
                 src[i] = i;
         }
-        dst = memalign(16, len);
-        for (i = 0; i < len; i ++) {
+        dst = memalign(16, len+0x10);
+        for (i = 0; i < len+0x10; i ++) {
                 dst[i] = 0xff - i;
         }
         //while (res == 0) {
@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
                 res = ioctl(fd, SIOCTL_SUBMIT, &sio);
 
-                hexdump(dst, len);
+                hexdump(dst, len+0x10);
 
                 printf("res %d, err %d, osize %d, done %d\n", 
                                 res, sio.err, sio.osize, sio.done);

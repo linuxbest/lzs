@@ -76,6 +76,19 @@ struct lzf_device {
 };
 static struct lzf_device *first_ioc; /* XXX */
 
+void dump_register(void)
+{
+        int i = 0, j = 0, off = 0;
+        for (j = 0; j < 8; j ++) {
+                printk("%02x: ", j*4);
+                for (i = 0; i < 4; i ++) {
+                        printk(" %08X ", readl(first_ioc->mmr_base + off));
+                        off += 4;
+                }
+                printk("\n");
+        }
+}
+
 typedef struct {
         job_desc_t *desc;
         dma_addr_t addr;

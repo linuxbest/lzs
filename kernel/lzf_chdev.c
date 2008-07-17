@@ -184,7 +184,10 @@ static int map_sio(sioctl_t *sio)
         res = async_submit(&sgbuf_src, &sgbuf_dst, async_done, sio->ops, sio);
         if (res)
                 return res;
-        wait_event(wait, sio->done);
+        wait_event_timeout(wait, sio->done, 5*HZ);
+        if (sio->done == 0) {
+                dump_register();
+        }
 
         st_unmap_user_pages(sgl_dst, sgbuf_dst.use_sg, 1);
         st_unmap_user_pages(sgl_src, sgbuf_src.use_sg, 0);
