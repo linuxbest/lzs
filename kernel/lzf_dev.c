@@ -231,7 +231,8 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                 pci_map_sg(ioc->dev, sgl, s->use_sg, dir);
         }
 
-        dprintk("bytes_to_go %x, %x\n", bytes_to_go, LZF_MAX_SG_ELEM_LEN);
+        dprintk("bytes_to_go %x, %x, %x\n", bytes_to_go, LZF_MAX_SG_ELEM_LEN, 
+                        s->use_sg);
         while (bytes_to_go > 0) {
                 int this_mapping_len = sgl ? sg_dma_len(sgl) : bytes_to_go;
                 int offset = 0;
@@ -259,10 +260,12 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         } else {
                                 prev->u[1] = (uint32_t)b;
                                 prev->desc_next = hw_addr;
+                                dma_sync_single_for_device(&ioc->dev->dev, 
+                                                prev->u[0], 32, PCI_DMA_TODEVICE);
                         }
                         prev = b;
                         dma_sync_single_for_device(&ioc->dev->dev, 
-                                        hw_addr, 32, PCI_DMA_TODEVICE);
+                                        prev->u[0], 32, PCI_DMA_TODEVICE);
 
                         /* adjust len */
                         this_mapping_len -= this_len;
@@ -275,7 +278,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
         prev->desc |= LZF_SG_LAST;
         prev->u[1] = 0;
         dma_sync_single_for_device(&ioc->dev->dev, 
-                        hw_addr, 32, PCI_DMA_TODEVICE);
+                        prev->u[0], 32, PCI_DMA_TODEVICE);
 
         return h;
 }

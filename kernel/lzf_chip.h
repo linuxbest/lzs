@@ -60,7 +60,7 @@ typedef struct {
 } __attribute__ ((packed)) job_desc_t;
 
 typedef struct {
-#define LZF_MAX_SG_ELEM_LEN 0xffff
+#define LZF_MAX_SG_ELEM_LEN /*0xffff*/0x7fff8/*1<<16<<3 - 8*/
 #define LZF_SG_LAST         BIT_20
         uint32_t desc;      /* 0 [15:00] total size 
                                  [20]    LAST */
