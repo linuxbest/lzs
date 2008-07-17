@@ -169,7 +169,7 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                 n = (buf_desc_t *)d->u[1];
                 /* free it */
                 addr = d->desc_adr;
-                dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
+                dprintk("b %p, desc_next %08x, desc %08x, adr %08x, hw %08x\n",
                                 d, d->desc_next, d->desc, d->desc_adr,
                                 addr);
                 pci_unmap_single(ioc->dev, addr, 32, PCI_DMA_TODEVICE);
@@ -216,7 +216,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         b->desc|= LZF_SG_LAST;
                         b->desc_adr = addr;
                         BUG_ON(b->desc_adr & 0x7);
-                        dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
+                        dprintk("b %p, desc_next %08x, desc %08x, adr %08x, hw %08x\n",
                                         b, b->desc_next, b->desc, b->desc_adr,
                                         hw_addr);
                         /* sf */ 
@@ -250,7 +250,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         b->desc = this_len;
                         b->desc_adr = (sgl?sg_dma_address(sgl):addr) + offset;
                         BUG_ON(b->desc_adr & 0x7);
-                        dprintk("b %p, desc_next %x, desc %x, adr %x, hw %x\n",
+                        dprintk("b %p, desc_next %08x, desc %08x, adr %08x, hw %08x\n",
                                         b, b->desc_next, b->desc, b->desc_adr,
                                         hw_addr);
                         /* sf */
