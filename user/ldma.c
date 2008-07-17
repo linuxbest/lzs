@@ -9,6 +9,25 @@
 
 #include "async_dma.h"
 
+static void hexdump(void *data, unsigned size)
+{
+        while (size) {
+                unsigned char *p;
+                int w = 16, n = size < w? size: w, pad = w - n;
+                printf("%p:  ", data);
+                for (p = data; p < (unsigned char *)data + n;)
+                        printf("%02hx ", *p++);
+                printf("%*.s  \"", pad*3, "");
+                for (p = data; p < (unsigned char *)data + n;) {
+                        int c = *p++;
+                        printf("%c", c < ' ' || c > 127 ? '.' : c);
+                }
+                printf("\"\n");
+                data += w;
+                size -= n;
+        }
+}
+
 static char *
 op_to_name(int o)
 {
@@ -32,7 +51,7 @@ int main(int argc, char *argv[])
         char *dst;
         int len = 0x80;
         sioctl_t sio;
-        int fd, res = 0, opt, op = 0;
+        int fd, res = 0, opt, op = 0, i = 0;
         char *op_name;
 
         while ((opt = getopt(argc, argv, "s:o:")) != -1) {
@@ -63,12 +82,15 @@ int main(int argc, char *argv[])
         }
 
         src = memalign(16, len);
+        for (i = 0; i < len; i ++) {
+                src[i] = i;
+        }
         dst = memalign(16, len);
+        for (i = 0; i < len; i ++) {
+                dst[i] = 0xff - i;
+        }
         //while (res == 0) {
-                //sio.ops = OP_COMPRESS;
-                //sio.ops = OP_MEMCPY;
-                sio.ops = OP_FILL;
-                //sio.ops = OP_NULL;
+                sio.ops  = op;
                 sio.src  = src;
                 sio.slen = len;
                 sio.dst  = dst;
@@ -78,6 +100,8 @@ int main(int argc, char *argv[])
                 sio.done = 0;
 
                 res = ioctl(fd, SIOCTL_SUBMIT, &sio);
+
+                hexdump(dst, len);
 
                 printf("res %d, err %d, osize %d, done %d\n", 
                                 res, sio.err, sio.osize, sio.done);
