@@ -1,2 +1,2 @@
 ldma: ldma.c
-	gcc -o $@ $^ -I../kernel/
+	${CC} -o $@ $^ -I../kernel/

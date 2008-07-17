@@ -263,6 +263,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
 }
 
 static int dc_ay[] = {
+        [OP_NULL]       = DC_NULL,
         [OP_FILL]       = DC_FILL,
         [OP_MEMCPY]     = DC_MEMCPY,
         [OP_COMPRESS]   = DC_COMPRESS,
@@ -288,7 +289,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
 
         /* fill the hw desc */
         d->desc->next_desc = 0;
-        d->desc->dc_fc  = dc_ay[ops] | DC_INTR_EN | DC_CTRL;
+        d->desc->dc_fc  = dc_ay[ops] | DC_INTR_EN /*| DC_CTRL*/;
         d->desc->src_desc = d->src->u[0];
         d->desc->dst_desc = d->dst->u[0];
         dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 
@@ -409,6 +410,11 @@ out:
 static void start_null_desc(struct lzf_device *ioc)
 {
         job_entry_t *d;
+        /*uint32_t val;
+
+        val = readl(ioc->mmr_base + 0x7C);
+        printk("MAGIC: %08X\n", val);
+        BUG_ON(val != 0xAA55);*/
 
         /* reset device */
         writel(0, ioc->R.CCR.address);
@@ -416,6 +422,9 @@ static void start_null_desc(struct lzf_device *ioc)
         d = get_job_entry(ioc);
         d->desc->next_desc = 0;
         d->desc->dc_fc = DC_NULL|DC_INTR_EN;
+        dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 
+                        d->addr, d->desc->dc_fc, d->desc->src_desc, 
+                        d->desc->dst_desc, d);
 
         spin_lock_bh(&ioc->desc_lock);
         d->cookie = 0;
@@ -423,7 +432,7 @@ static void start_null_desc(struct lzf_device *ioc)
         spin_unlock_bh(&ioc->desc_lock);
 
         writel(d->addr, ioc->R.NDAR.address);
-        writel(2, ioc->R.CCR.address);
+        writel(CCR_ENABLE, ioc->R.CCR.address);
 }
 
 static int __devinit lzf_probe(struct pci_dev *pdev, 

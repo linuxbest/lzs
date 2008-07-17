@@ -2,10 +2,11 @@
 #define _ASYNC_DMA_H_
 
 enum ops_enum {
-        OP_FILL       = 0,
-        OP_MEMCPY     = 1,
-        OP_COMPRESS   = 2,
-        OP_UNCOMPRESS = 3,
+        OP_NULL       = 0,
+        OP_FILL       = 1,
+        OP_MEMCPY     = 2,
+        OP_COMPRESS   = 3,
+        OP_UNCOMPRESS = 4,
 };
 #ifdef __KERNEL__
 /* 
