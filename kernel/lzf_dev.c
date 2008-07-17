@@ -70,7 +70,7 @@ struct lzf_device {
         struct list_head used_head, free_head;
 
         wait_queue_head_t wait;
-        atomic_t queue;
+        atomic_t queue, intr;
 
         uint8_t cookie;
 };
@@ -185,6 +185,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
         buf_desc_t *b = NULL, *prev = NULL, *h = NULL;
         dma_addr_t addr = 0;
         struct scatterlist *sgl = NULL;
+        dma_addr_t hw_addr = 0;
 
         if (s->use_sg == 0) {
                 dprintk("bytes_to_go %x, %x\n", 
@@ -192,7 +193,6 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                 s->addr = addr = 
                         pci_map_single(ioc->dev, s->buffer, s->bufflen, dir);
                 if (bytes_to_go <= LZF_MAX_SG_ELEM_LEN) {
-                        dma_addr_t hw_addr;
                         b = kmem_cache_alloc(_cache, GFP_KERNEL);
                         hw_addr = pci_map_single(ioc->dev, b, 32, 
                                         PCI_DMA_TODEVICE);
@@ -209,6 +209,8 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         /* sf */ 
                         b->u[0] = hw_addr;
                         b->u[1] = 0;
+                        dma_sync_single_for_device(&ioc->dev->dev, 
+                                        hw_addr, 32, PCI_DMA_TODEVICE);
                         return b;
                 }
         } else {
@@ -222,7 +224,6 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                 int offset = 0;
                 dprintk("this_mapping_len %x\n", this_mapping_len);
                 while (this_mapping_len > 0) {
-                        dma_addr_t hw_addr;
                         int this_len = min_t(int, LZF_MAX_SG_ELEM_LEN, 
                                         this_mapping_len);
                         dprintk("this_len %x\n", this_len);
@@ -247,6 +248,8 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                                 prev->desc_next = hw_addr;
                         }
                         prev = b;
+                        dma_sync_single_for_device(&ioc->dev->dev, 
+                                        hw_addr, 32, PCI_DMA_TODEVICE);
 
                         /* adjust len */
                         this_mapping_len -= this_len;
@@ -258,6 +261,8 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
         }
         prev->desc |= LZF_SG_LAST;
         prev->u[1] = 0;
+        dma_sync_single_for_device(&ioc->dev->dev, 
+                        hw_addr, 32, PCI_DMA_TODEVICE);
 
         return h;
 }
@@ -342,7 +347,7 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
         d->cb(d->priv, d->res->err, d->res->ocnt);
 
         atomic_dec(&ioc->queue);
-        wake_up_all(&ioc->wait);
+        /*wake_up_all(&ioc->wait);*/
 
         return res;
 }
@@ -377,6 +382,7 @@ static int do_jobs(struct lzf_device *ioc)
                 do_job_one(ioc, d);
                 list_del(&d->job_entry);
         }
+        wake_up_all(&ioc->wait);
 
         return res;
 }
@@ -400,6 +406,7 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
         wmb();
         val = readl(ioc->R.CCR.address);
 
+        atomic_inc(&ioc->intr);
         /* call the finished jobs */
         do_jobs(ioc);
 
@@ -410,9 +417,9 @@ out:
 static void start_null_desc(struct lzf_device *ioc)
 {
         job_entry_t *d;
-        /*uint32_t val;
+        uint32_t next_desc, ctl_addr;
 
-        val = readl(ioc->mmr_base + 0x7C);
+        /*val = readl(ioc->mmr_base + 0x7C);
         printk("MAGIC: %08X\n", val);
         BUG_ON(val != 0xAA55);*/
 
@@ -420,8 +427,9 @@ static void start_null_desc(struct lzf_device *ioc)
         writel(0, ioc->R.CCR.address);
 
         d = get_job_entry(ioc);
-        d->desc->next_desc = 0;
-        d->desc->dc_fc = DC_NULL|DC_INTR_EN;
+        d->desc->next_desc = 0x300;
+        d->desc->ctl_addr  = 0x200;
+        d->desc->dc_fc     = DC_NULL|DC_INTR_EN;
         dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 
                         d->addr, d->desc->dc_fc, d->desc->src_desc, 
                         d->desc->dst_desc, d);
@@ -433,6 +441,15 @@ static void start_null_desc(struct lzf_device *ioc)
 
         writel(d->addr, ioc->R.NDAR.address);
         writel(CCR_ENABLE, ioc->R.CCR.address);
+       
+        /* data path check */
+        wait_event(ioc->wait, atomic_read(&ioc->intr));
+        next_desc = readl(ioc->mmr_base + 0x14*4);
+        ctl_addr  = readl(ioc->mmr_base + 0x16*4);
+        /* next_desc  must = 0x200
+         * ctl_addr   must = 0x300
+         */
+        dprintk("next desc %08x, ctrl_addr %08x\n", next_desc, ctl_addr);
 }
 
 static int __devinit lzf_probe(struct pci_dev *pdev, 
@@ -498,6 +515,7 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         init_waitqueue_head(&ioc->wait);
         spin_lock_init(&ioc->desc_lock);
         atomic_set(&ioc->queue, 0);
+        atomic_set(&ioc->intr, 0);
 
         start_null_desc(ioc);
         first_ioc = ioc;

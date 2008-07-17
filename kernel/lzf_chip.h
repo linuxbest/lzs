@@ -57,7 +57,7 @@ typedef struct {
         uint32_t u1;        /* 5 */
         uint32_t dst_desc;  /* 6 [31:3] */
         uint32_t u2;        /* 7 */
-} job_desc_t;
+} __attribute__ ((packed)) job_desc_t;
 
 typedef struct {
 #define LZF_MAX_SG_ELEM_LEN 0xffff
@@ -73,7 +73,7 @@ typedef struct {
                                u[3] 
 
                                */
-} buf_desc_t;
+} __attribute__ ((packed)) buf_desc_t;
 
 typedef struct {
         uint32_t ocnt;      /* 0 */
@@ -84,7 +84,7 @@ typedef struct {
         uint32_t u2;        /* 5 */
         uint32_t dc_fc;     /* 6 */
         uint32_t u3;        /* 7 */
-} res_desc_t;
+} __attribute__ ((packed)) res_desc_t;
 
 enum ec_ops {
         DC_NULL       = (1<<0)/*0x1*/,
