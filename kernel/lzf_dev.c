@@ -82,7 +82,7 @@ struct lzf_device {
 };
 static struct lzf_device *first_ioc; /* XXX */
 
-void dump_register(void)
+void async_dump_register(void)
 {
         int i = 0, j = 0, off = 0;
         for (j = 0; j < 8; j ++) {
@@ -444,6 +444,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
         return res;
 }
 EXPORT_SYMBOL(async_submit);
+EXPORT_SYMBOL(async_dump_register);
 
 /* 
  * Psuedo code:

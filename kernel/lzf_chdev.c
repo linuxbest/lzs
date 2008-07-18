@@ -187,7 +187,7 @@ static int map_sio(sioctl_t *sio)
                 return res;
         wait_event_timeout(wait, sio->done, 5*HZ);
         if (sio->done == 0 || (sio->flags & SIO_DEBUG)) {
-                dump_register();
+                async_dump_register();
         }
 
         st_unmap_user_pages(sgl_dst, sgbuf_dst.use_sg, 1);

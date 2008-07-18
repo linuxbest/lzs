@@ -132,12 +132,17 @@ static int __init lzf_init(void)
                 wait_event_timeout(wait, atomic_read(&job) == 0, 5*HZ);
                 e = do_getccnt(NULL, NULL);
                 e_jiffies = jiffies;
-
+                if (atomic_read(&job) != 0) {
+                        break;
+                }
                 used = (e-s) >> 20;
                 KB   = (size * 500) / used;
-                printk("jiffies %ld, cycles %lld, speed %08ld KB/s \n", e_jiffies-start, e-s, KB);
+                printk("jiffies %ld, cycles %lld, speed %08ld KB/s \n",
+                                e_jiffies-start, e-s, KB);
                 loop --;
         } while (loop > 0);
+
+        async_dump_register();
 
         return 0;
 }

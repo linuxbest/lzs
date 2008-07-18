@@ -29,7 +29,7 @@ int async_submit(sgbuf_t *src, /* source data buffer */
                 int commit);   /* commit to hw immedate */
 
 /* for debug */
-void dump_register(void);
+void async_dump_register(void);
 #endif
 /* user space ioctl interface */
 typedef struct {
