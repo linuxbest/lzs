@@ -2,6 +2,7 @@ ifneq ($(KERNELRELEASE),)
 #SCST_INC_DIR := /p/prod/d/scst/scst/include
 
 obj-m = lzf_dma.o
+obj-m += lzf_test.o
 
 lzf_dma-objs = lzf_dev.o lzf_chdev.o 
 

@@ -76,6 +76,7 @@ struct lzf_device {
 
         uint8_t cookie;
 
+        atomic_t mem_free;
         struct list_head mem_head;
         spinlock_t mem_lock;
 };
@@ -114,7 +115,8 @@ coherent_alloc(struct lzf_device *ioc)
                 list_del(&p->entry);
         }
         spin_unlock_bh(&ioc->mem_lock);
-        dprintk("p %p\n", p);
+        atomic_dec(&ioc->mem_free);
+        dprintk("p %p, %d\n", p, atomic_read(&ioc->mem_free));
 
         return p;
 }
@@ -122,10 +124,11 @@ coherent_alloc(struct lzf_device *ioc)
 static void 
 coherent_free(struct lzf_device *ioc, coherent_t *p)
 {
-        dprintk("p %p\n", p);
+        dprintk("p %p, %d\n", p, atomic_read(&ioc->mem_free));
         spin_lock_bh(&ioc->mem_lock);
         list_add_tail(&p->entry, &ioc->mem_head);
         spin_unlock_bh(&ioc->mem_lock);
+        atomic_inc(&ioc->mem_free);
 }
 
 static int init_coherent_one(struct lzf_device *ioc)
@@ -142,7 +145,7 @@ static int init_coherent_one(struct lzf_device *ioc)
 
         while (p < end) {
                 o = kmem_cache_alloc(_cache, GFP_KERNEL);
-                dprintk("o %p, virt %p, %08x\n", o, p, q);
+                /*dprintk("o %p, virt %p, %08x\n", o, p, q);*/
                 o->addr = q;
                 o->virt = p;
                 list_add_tail(&o->entry, &ioc->mem_head);
@@ -151,6 +154,7 @@ static int init_coherent_one(struct lzf_device *ioc)
 
                 q += 32;
                 p += 32;
+                atomic_inc(&ioc->mem_free);
         }
 
         o->orig_addr = addr;
@@ -162,8 +166,8 @@ static void free_coherent_pool(struct lzf_device *ioc)
         coherent_t *p, *q;
 
         list_for_each_entry_safe(p, q, &ioc->mem_head, entry) {
-                dprintk("p %p, virt %p, %08x\n", 
-                                p, p->virt, p->addr);
+                /*dprintk("p %p, virt %p, %08x\n", 
+                                p, p->virt, p->addr);*/
                 if (p->orig_virt) {
                         dprintk("p %p, virt %p, %08x\n", 
                                         p, p->orig_virt, p->orig_addr);
@@ -391,7 +395,8 @@ static int dc_ay[] = {
         [DC_UNCOMPRESS] = OP_UNCOMPRESS, 
 };
 
-int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
+int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, 
+                void *p, int commit)
 {
         int res = 0;
         job_entry_t *d, *prev;
@@ -432,7 +437,8 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, void *p)
         list_add(&d->entry, &new_chain);
         __list_splice(&new_chain, ioc->used_head.prev);
 
-        writel(CCR_APPEND|CCR_ENABLE, ioc->R.CCR.address);
+        if (commit)
+                writel(CCR_APPEND|CCR_ENABLE, ioc->R.CCR.address);
         spin_unlock_bh(&ioc->desc_lock);
 
         return res;
@@ -622,7 +628,8 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         pci_set_drvdata(pdev, ioc);
         INIT_LIST_HEAD(&ioc->free_head);
         INIT_LIST_HEAD(&ioc->used_head);
-        
+       
+        atomic_set(&ioc->mem_free, 0);
         INIT_LIST_HEAD(&ioc->mem_head);
         spin_lock_init(&ioc->mem_lock);
         for (i = 0; i < 32; i++)

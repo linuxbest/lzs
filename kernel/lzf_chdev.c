@@ -181,7 +181,8 @@ static int map_sio(sioctl_t *sio)
         sgbuf_dst.bufflen = sio->dlen;
 
         sio->done = 0;
-        res = async_submit(&sgbuf_src, &sgbuf_dst, async_done, sio->ops, sio);
+        res = async_submit(&sgbuf_src, &sgbuf_dst, async_done, sio->ops, 
+                        sio, 1);
         if (res)
                 return res;
         wait_event_timeout(wait, sio->done, 5*HZ);
