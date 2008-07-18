@@ -39,8 +39,8 @@ enum {
 #include "hexdump.c"
 
 enum {
-        MIN_QUEUE = 64,
-        MAX_QUEUE = 128,
+        MIN_QUEUE = 256,
+        MAX_QUEUE = 512,
 };
 
 static kmem_cache_t *_cache, *job_cache;
@@ -632,7 +632,7 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         atomic_set(&ioc->mem_free, 0);
         INIT_LIST_HEAD(&ioc->mem_head);
         spin_lock_init(&ioc->mem_lock);
-        for (i = 0; i < 32; i++)
+        for (i = 0; i < 256; i++)
                 init_coherent_one(ioc);
 
         for (i = 0; i < MAX_QUEUE; i++) {

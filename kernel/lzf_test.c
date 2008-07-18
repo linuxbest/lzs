@@ -29,6 +29,10 @@ static int cnt = 2;
 MODULE_PARM(cnt, "i");
 MODULE_PARM_DESC(ops, "cnt");
 
+static int loop = 1;
+MODULE_PARM(loop, "i");
+MODULE_PARM_DESC(loop, "loop");
+
 /* backport hexdump.c */
 enum {
         DUMP_PREFIX_NONE,
@@ -93,10 +97,17 @@ static int async_done(void *priv, int err, int osize)
         return 0;
 }
 
+extern unsigned long long do_getccnt(unsigned long *hi, unsigned long *lw);
+
 static int __init lzf_init(void)
 {
         int i;
         queue_t *q;
+        unsigned long start = jiffies, e_jiffies;
+        unsigned long long s = 0, e = 0;
+        unsigned long size = (64 * 4096 * cnt) >> 10;
+        unsigned long used = 0;
+        unsigned long KB   = 0;
 
         for (i = 0; i < cnt; i++) {
                 init_queue();
@@ -104,15 +115,29 @@ static int __init lzf_init(void)
         init_waitqueue_head(&wait); 
         atomic_set(&job, 0);
 
-        list_for_each_entry(q, &head, entry) {
-                atomic_inc(&job);
-                i --;
-                dprintk("%d\n", i);
-                async_submit(&q->sgbuf_src, &q->sgbuf_dst, 
-                                async_done, ops, NULL, i == 0);
-        }
+        do {
+                i = 64;
+                list_for_each_entry(q, &head, entry) {
+                        atomic_inc(&job);
+                        i --;
+                        dprintk("%d\n", i);
+                        if (i == 0) {
+                                start = jiffies;
+                                s = do_getccnt(NULL, NULL);
+                        }
+                        async_submit(&q->sgbuf_src, &q->sgbuf_dst, 
+                                        async_done, ops, NULL, i == 0);
+                }
 
-        wait_event_timeout(wait, atomic_read(&job) == 0, 5*HZ);
+                wait_event_timeout(wait, atomic_read(&job) == 0, 5*HZ);
+                e = do_getccnt(NULL, NULL);
+                e_jiffies = jiffies;
+
+                used = (e-s) >> 20;
+                KB   = (size * 500) / used;
+                printk("jiffies %ld, cycles %lld, speed %08ld KB/s \n", e_jiffies-start, e-s, KB);
+                loop --;
+        } while (loop > 0);
 
         return 0;
 }
