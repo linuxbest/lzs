@@ -415,7 +415,10 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
 
         /* fill the hw desc */
         d->desc->next_desc = 0;
-        d->desc->dc_fc  = dc_ay[ops] | DC_INTR_EN /*| DC_CTRL*/;
+        d->desc->dc_fc  = dc_ay[ops];
+        if (commit)
+                d->desc->dc_fc |= DC_INTR_EN;
+        /*d->desc->dc_fc |= DC_CTRL;*/
         d->desc->src_desc = d->src->u[0];
         d->desc->dst_desc = d->dst->u[0];
         dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 

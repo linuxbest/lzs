@@ -33,6 +33,10 @@ static int loop = 1;
 MODULE_PARM(loop, "i");
 MODULE_PARM_DESC(loop, "loop");
 
+static int order = 0;
+MODULE_PARM(order, "i");
+MODULE_PARM_DESC(order, "loop");
+
 /* backport hexdump.c */
 enum {
         DUMP_PREFIX_NONE,
@@ -65,23 +69,23 @@ init_queue(void)
         sg= q->src_sg;
 
         for (i = 0; i < 64; i++, sg++) {
-                sg->page = alloc_pages(GFP_KERNEL, 0);
+                sg->page = alloc_pages(GFP_KERNEL, order);
                 sg->offset = 0;
-                sg->length = PAGE_SIZE;
+                sg->length = PAGE_SIZE << order;
         }
         q->sgbuf_src.buffer = (char *)q->src_sg;
         q->sgbuf_src.use_sg = 64;
-        q->sgbuf_src.bufflen= PAGE_SIZE * 64;
+        q->sgbuf_src.bufflen= (PAGE_SIZE<<order) * 64;
 
         sg= q->dst_sg;
         for (i = 0; i < 64; i++, sg++) {
-                sg->page = alloc_pages(GFP_KERNEL, 0);
+                sg->page = alloc_pages(GFP_KERNEL, order);
                 sg->offset = 0;
-                sg->length = PAGE_SIZE;
+                sg->length = PAGE_SIZE << order;
         }
         q->sgbuf_dst.buffer = (char *)q->dst_sg;
         q->sgbuf_dst.use_sg = 64;
-        q->sgbuf_dst.bufflen= PAGE_SIZE * 64;
+        q->sgbuf_dst.bufflen= (PAGE_SIZE<<order) * 64;
 
         list_add_tail(&q->entry, &head);
 }
@@ -105,7 +109,7 @@ static int __init lzf_init(void)
         queue_t *q;
         unsigned long start = jiffies, e_jiffies;
         unsigned long long s = 0, e = 0;
-        unsigned long size = (64 * 4096 * cnt) >> 10;
+        unsigned long size = (64 * (PAGE_SIZE<<order) * cnt) >> 10;
         unsigned long used = 0;
         unsigned long KB   = 0;
 
@@ -116,7 +120,7 @@ static int __init lzf_init(void)
         atomic_set(&job, 0);
 
         do {
-                i = 64;
+                i = cnt;
                 list_for_each_entry(q, &head, entry) {
                         atomic_inc(&job);
                         i --;
@@ -142,7 +146,8 @@ static int __init lzf_init(void)
                 loop --;
         } while (loop > 0);
 
-        async_dump_register();
+        if (loop > 0)
+                async_dump_register();
 
         return 0;
 }
@@ -154,9 +159,9 @@ static void __exit lzf_exit(void)
         list_for_each_entry_safe(p, q, &head, entry) {
                 int i;
                 for (i = 0; i < 64; i ++)
-                        __free_pages(p->src_sg[i].page, 0);
+                        __free_pages(p->src_sg[i].page, order);
                 for (i = 0; i < 64; i ++)
-                        __free_pages(p->dst_sg[i].page, 0);
+                        __free_pages(p->dst_sg[i].page, order);
                 list_del(&p->entry);
                 kfree(p);
         }
