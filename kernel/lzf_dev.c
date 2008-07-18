@@ -75,6 +75,9 @@ struct lzf_device {
         atomic_t queue, intr;
 
         uint8_t cookie;
+
+        struct list_head mem_head;
+        spinlock_t mem_lock;
 };
 static struct lzf_device *first_ioc; /* XXX */
 
@@ -88,6 +91,87 @@ void dump_register(void)
                         off += 4;
                 }
                 printk("\n");
+        }
+}
+
+typedef struct {
+        dma_addr_t addr;
+        void *virt;
+        struct list_head entry;
+
+        void *orig_virt;
+        dma_addr_t orig_addr;
+} coherent_t;
+
+static coherent_t *
+coherent_alloc(struct lzf_device *ioc) 
+{
+        coherent_t *p = NULL;
+
+        spin_lock_bh(&ioc->mem_lock);
+        if (!list_empty(&ioc->mem_head)) {
+                p = container_of(ioc->mem_head.next, coherent_t, entry);
+                list_del(&p->entry);
+        }
+        spin_unlock_bh(&ioc->mem_lock);
+        dprintk("p %p\n", p);
+
+        return p;
+}
+
+static void 
+coherent_free(struct lzf_device *ioc, coherent_t *p)
+{
+        dprintk("p %p\n", p);
+        spin_lock_bh(&ioc->mem_lock);
+        list_add_tail(&p->entry, &ioc->mem_head);
+        spin_unlock_bh(&ioc->mem_lock);
+}
+
+static int init_coherent_one(struct lzf_device *ioc)
+{
+        coherent_t *o = NULL;
+        void *virt, *end, *p;
+        dma_addr_t addr, q;
+        int len = PAGE_SIZE;
+
+        p = virt = dma_alloc_coherent(&ioc->dev->dev, len, &addr, GFP_KERNEL);
+        dprintk("virt %p, %08x\n", virt, addr);
+        q = addr;
+        end  = virt + len;
+
+        while (p < end) {
+                o = kmem_cache_alloc(_cache, GFP_KERNEL);
+                dprintk("o %p, virt %p, %08x\n", o, p, q);
+                o->addr = q;
+                o->virt = p;
+                list_add_tail(&o->entry, &ioc->mem_head);
+                o->orig_addr = 0;
+                o->orig_virt = NULL;
+
+                q += 32;
+                p += 32;
+        }
+
+        o->orig_addr = addr;
+        o->orig_virt = virt;
+}
+
+static void free_coherent_pool(struct lzf_device *ioc)
+{
+        coherent_t *p, *q;
+
+        list_for_each_entry_safe(p, q, &ioc->mem_head, entry) {
+                dprintk("p %p, virt %p, %08x\n", 
+                                p, p->virt, p->addr);
+                if (p->orig_virt) {
+                        dprintk("p %p, virt %p, %08x\n", 
+                                        p, p->orig_virt, p->orig_addr);
+                        dma_free_coherent(&ioc->dev->dev, PAGE_SIZE, 
+                                        p->orig_virt, p->orig_addr);
+                }
+                list_del(&p->entry);
+                kmem_cache_free(_cache, p);
         }
 }
 
@@ -106,25 +190,30 @@ typedef struct {
 
         sgbuf_t *src_buf, *dst_buf;
         int s_cnt, d_cnt;
+
+        coherent_t *q1, *q2;
 } job_entry_t;
 
 static job_entry_t *new_job_entry(struct lzf_device *ioc)
 {
         job_entry_t *p;
+        coherent_t *q;
 
         p = kmem_cache_alloc(job_cache, GFP_KERNEL);
         if (p == NULL)
                 return NULL;
         memset(p, 0, sizeof(*p));
 
-        p->desc = dma_alloc_coherent(&ioc->dev->dev, PAGE_SIZE, 
-                        &p->addr, GFP_KERNEL);
-        if (p->desc == NULL)
-                return NULL;
+        q = coherent_alloc(ioc);
+        p->desc = q->virt;
+        p->addr = q->addr;
+        p->q1   = q;
         BUG_ON(p->addr & 0x7);
 
-        p->res = (void *)((char *)p->desc + 2048);
-        p->desc->ctl_addr = p->addr + 2048;
+        q = coherent_alloc(ioc);
+        p->res = q->virt;
+        p->desc->ctl_addr = q->addr;
+        p->q2   = q;
         BUG_ON(p->desc->ctl_addr & 0x7);
 
         return p;
@@ -167,6 +256,7 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
 
         while (d) {
                 buf_desc_t *n;
+                coherent_t *q   = (coherent_t *)d->u[2];
                 dma_addr_t addr = d->u[0];
                 n = (buf_desc_t *)d->u[1];
                 /* free it */
@@ -174,8 +264,7 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                 dprintk("b %p, desc_next %08x, desc %08x, adr %08x, hw %08x\n",
                                 d, d->desc_next, d->desc, d->desc_adr,
                                 addr);
-                pci_unmap_single(ioc->dev, addr, 32, PCI_DMA_TODEVICE);
-                kmem_cache_free(_cache, d);
+                coherent_free(ioc, q);
                 cnt --;
                 d = n;
         }
@@ -223,9 +312,9 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                 s->addr = addr = 
                         pci_map_single(ioc->dev, s->buffer, s->bufflen, dir);
                 if (bytes_to_go <= LZF_MAX_SG_ELEM_LEN) {
-                        b = kmem_cache_alloc(_cache, GFP_KERNEL);
-                        hw_addr = pci_map_single(ioc->dev, b, 32, 
-                                        PCI_DMA_TODEVICE);
+                        coherent_t *q = coherent_alloc(ioc);
+                        b = q->virt;
+                        hw_addr = q->addr;
                         BUG_ON(hw_addr & 0x7);
                         (*c) ++;
                         b->desc_next = 0;
@@ -239,8 +328,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         /* sf */ 
                         b->u[0] = hw_addr;
                         b->u[1] = 0;
-                        dma_sync_single_for_device(&ioc->dev->dev, 
-                                        hw_addr, 32, PCI_DMA_TODEVICE);
+                        b->u[2] = (uint32_t)q;
                         return b;
                 }
         } else {
@@ -255,12 +343,12 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                 int offset = 0;
                 dprintk("this_mapping_len %x\n", this_mapping_len);
                 while (this_mapping_len > 0) {
+                        coherent_t *q = coherent_alloc(ioc);
                         int this_len = min_t(int, LZF_MAX_SG_ELEM_LEN, 
                                         this_mapping_len);
                         dprintk("this_len %x\n", this_len);
-                        b = kmem_cache_alloc(_cache, GFP_KERNEL);
-                        hw_addr = pci_map_single(ioc->dev, b, 32, 
-                                        PCI_DMA_TODEVICE);
+                        b = q->virt;
+                        hw_addr = q->addr;
                         BUG_ON(hw_addr & 0x7);
                         (*c) ++;
                         b->desc_next = 0; /* will fix later */
@@ -272,17 +360,14 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                                         hw_addr);
                         /* sf */
                         b->u[0] = hw_addr;
+                        b->u[2] = (uint32_t)q;
                         if (prev == NULL) {
                                 h = b;
                         } else {
                                 prev->u[1] = (uint32_t)b;
                                 prev->desc_next = hw_addr;
-                                dma_sync_single_for_device(&ioc->dev->dev, 
-                                                prev->u[0], 32, PCI_DMA_TODEVICE);
                         }
                         prev = b;
-                        dma_sync_single_for_device(&ioc->dev->dev, 
-                                        prev->u[0], 32, PCI_DMA_TODEVICE);
 
                         /* adjust len */
                         this_mapping_len -= this_len;
@@ -294,8 +379,6 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
         }
         prev->desc |= LZF_SG_LAST;
         prev->u[1] = 0;
-        dma_sync_single_for_device(&ioc->dev->dev, 
-                        prev->u[0], 32, PCI_DMA_TODEVICE);
 
         return h;
 }
@@ -539,6 +622,11 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         pci_set_drvdata(pdev, ioc);
         INIT_LIST_HEAD(&ioc->free_head);
         INIT_LIST_HEAD(&ioc->used_head);
+        
+        INIT_LIST_HEAD(&ioc->mem_head);
+        spin_lock_init(&ioc->mem_lock);
+        for (i = 0; i < 32; i++)
+                init_coherent_one(ioc);
 
         for (i = 0; i < MAX_QUEUE; i++) {
                 job_entry_t *j;
@@ -573,13 +661,15 @@ static void __devexit lzf_remove(struct pci_dev *pdev)
         }
         list_for_each_entry_safe(j, t, &head, entry) {
                 list_del(&j->entry);
-                dma_free_coherent(&ioc->dev->dev, PAGE_SIZE, j->desc, j->addr);
+                coherent_free(ioc, j->q1);
+                coherent_free(ioc, j->q2);
                 kmem_cache_free(job_cache, j);
         }
 
         free_irq(ioc->irq, ioc);
         iounmap((void __iomem *)ioc->mmr_base);
         release_mem_region(ioc->bases, ioc->base_size);
+        free_coherent_pool(ioc);
 
         kfree(ioc);
         pci_set_drvdata(pdev, NULL);
@@ -605,16 +695,14 @@ static struct pci_driver lzf_driver = {
         },
 };
 
+
 static int __init lzf_init(void)
 {
         init_chdev();
 
-        _cache = kmem_cache_create("cache32", 
-                        32,
-                        8, /* for HW */
-                        0,
-                        NULL,
-                        NULL);
+        _cache = kmem_cache_create("coherent_t", 
+                        sizeof(coherent_t),
+                        0, 0, NULL, NULL);
         job_cache = kmem_cache_create("job_cache",
                         sizeof(job_entry_t),
                         0, 0, NULL, NULL);
