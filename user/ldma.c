@@ -51,11 +51,20 @@ int main(int argc, char *argv[])
         char *dst;
         int len = 0x80;
         sioctl_t sio;
-        int fd, res = 0, opt, op = 0, i = 0;
+        int fd, res = 0, opt, op = 0, i = 0, verbose = 0, debug = 0, loop = 0;
         char *op_name;
 
-        while ((opt = getopt(argc, argv, "s:o:")) != -1) {
+        while ((opt = getopt(argc, argv, "s:o:vdl:")) != -1) {
                 switch (opt) {
+                        case 'l': 
+                                loop = atoi(optarg);
+                                break;
+                        case 'd':
+                                debug = 1;
+                                break;
+                        case 'v':
+                                verbose = 1;
+                                break;
                         case 's':
                                 len = atoi(optarg);
                                 break;
@@ -81,31 +90,37 @@ int main(int argc, char *argv[])
                 return -1;
         }
 
-        src = memalign(16, len+0x10);
+        src = memalign(64, len+0x10);
         for (i = 0; i < len+0x10; i ++) {
                 src[i] = i;
         }
-        dst = memalign(16, len+0x10);
+        dst = memalign(64, len+0x10);
         for (i = 0; i < len+0x10; i ++) {
                 dst[i] = 0xff - i;
         }
-        //while (res == 0) {
+        do {
                 sio.ops  = op;
                 sio.src  = src;
                 sio.slen = len;
                 sio.dst  = dst;
                 sio.dlen = len;
-                sio.err = 0;
-                sio.osize = 0;
+                sio.err  = 0;
+                sio.osize= 0;
                 sio.done = 0;
+                sio.flags= 0;
+                if (debug) 
+                        sio.flags |= SIO_DEBUG;
 
                 res = ioctl(fd, SIOCTL_SUBMIT, &sio);
 
-                hexdump(dst, len+0x10);
+                if (sio.done == 0 || verbose) {
+                        hexdump(dst, len+0x10);
+                        printf("res %d, err %d, osize %d, done %d\n", 
+                                        res, sio.err, sio.osize, sio.done);
+                }
+                loop --;
+        } while (res == 0 && loop > 0);
 
-                printf("res %d, err %d, osize %d, done %d\n", 
-                                res, sio.err, sio.osize, sio.done);
-        //}
         free(src);
         free(dst);
 }

@@ -24,7 +24,9 @@
                 if (debug) printk("%s:%d "format, __FUNCTION__, __LINE__, ##a);\
         } while (0)
 
-static int debug = 1;
+static int debug = 0;
+MODULE_PARM(debug, "i");
+MODULE_PARM_DESC(debug, "debug flag");
 
 /* backport hexdump.c */
 enum {
@@ -159,7 +161,7 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
 }
 
 static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
-                sgbuf_t *s, int cnt)
+                sgbuf_t *s, int cnt, char *pre)
 {
         int res = 0;
 
@@ -178,11 +180,26 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                 d = n;
         }
         /* unmap data buffer */
-        if (s->use_sg) 
+        if (s->use_sg == 0) 
                 pci_unmap_single(ioc->dev, s->addr, s->bufflen, dir);
-        else
+        else {
                 pci_unmap_sg(ioc->dev, (struct scatterlist *)s->buffer,
                                 s->use_sg, dir);
+        }
+
+        if (debug && s->use_sg) {
+                struct scatterlist *sg = (struct scatterlist *)s->buffer;
+                int i;
+                for (i = 0; i < s->use_sg && debug; i++, sg++) {
+                        char *virt = page_address(sg->page) + sg->offset;
+                        print_hex_dump_bytes(pre, DUMP_PREFIX_ADDRESS, virt, 
+                                        sg->length);
+                }
+        } else if (debug) {
+                print_hex_dump_bytes(pre, DUMP_PREFIX_ADDRESS, s->buffer, 
+                                s->bufflen);
+        }
+
         /* safe check */
         if (cnt != 0) {
                 printk("lzf_dma: cnt %d is not zero\n", cnt);
@@ -352,10 +369,10 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
         /* unmap result data */
         if (d->src)
                 unmap_bufs(ioc, d->src, PCI_DMA_TODEVICE, d->src_buf, 
-                                d->s_cnt);
+                                d->s_cnt, "src ");
         if (d->dst)
                 unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf, 
-                                d->d_cnt);
+                                d->d_cnt, "dst ");
 
         dprintk("cb %p,%p, err %x, ocnt %x\n", d->cb, d->priv, d->res->err, 
                         d->res->ocnt);

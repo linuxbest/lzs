@@ -38,10 +38,13 @@ typedef struct {
         uint32_t dst;
         uint32_t dlen;
 
+        uint32_t flags;
         uint32_t err;
         uint32_t osize;
         uint32_t done;
 } sioctl_t;
+
+#define SIO_DEBUG    (1<<0)
 
 #define SIOCTL_SUBMIT 0x2285
 

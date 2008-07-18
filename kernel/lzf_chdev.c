@@ -185,7 +185,7 @@ static int map_sio(sioctl_t *sio)
         if (res)
                 return res;
         wait_event_timeout(wait, sio->done, 5*HZ);
-        if (sio->done == 0) {
+        if (sio->done == 0 || (sio->flags & SIO_DEBUG)) {
                 dump_register();
         }
 
