@@ -184,7 +184,7 @@ module encode_out(/*AUTOARG*/
 endmodule // encode_out
 
 // Local Variables:
-// verilog-library-directories:("." "../../../../common/" "../../encode/src" "../../encode_ctl/src/" "../../encode_out/src/" "../../encode_dp/src/")
+// verilog-library-directories:("." "../../rtl/verilog/")
 // verilog-library-files:("")
 // verilog-library-extensions:(".v" ".h")
 // End:
