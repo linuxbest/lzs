@@ -9,12 +9,13 @@
 
 #include "async_dma.h"
 
-static void hexdump(void *data, unsigned size)
+static void hexdump(char *data, unsigned size)
 {
+        char *start = data;
         while (size) {
                 unsigned char *p;
                 int w = 16, n = size < w? size: w, pad = w - n;
-                printf("%p:  ", data);
+                printf("%04x:  ", data-start);
                 for (p = data; p < (unsigned char *)data + n;)
                         printf("%02hx ", *p++);
                 printf("%*.s  \"", pad*3, "");
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
         int fd, res = 0, opt, op = 0, i = 0, verbose = 0, debug = 0, loop = 0;
         char *op_name;
 
-        while ((opt = getopt(argc, argv, "s:o:vdl:")) != -1) {
+        while ((opt = getopt(argc, argv, "s:o:v:dl:")) != -1) {
                 switch (opt) {
                         case 'l': 
                                 loop = atoi(optarg);
@@ -63,7 +64,7 @@ int main(int argc, char *argv[])
                                 debug = 1;
                                 break;
                         case 'v':
-                                verbose = 1;
+                                verbose = atoi(optarg);
                                 break;
                         case 's':
                                 len = atoi(optarg);
@@ -114,8 +115,9 @@ int main(int argc, char *argv[])
                 res = ioctl(fd, SIOCTL_SUBMIT, &sio);
 
                 if (sio.done == 0 || verbose) {
-                        hexdump(dst, len+0x10);
-                        printf("res %d, err %d, osize %d, done %d\n", 
+                        if (verbose == 2)
+                                hexdump(dst, len+0x10);
+                        printf("res %d, err %d, osize %x, done %d\n", 
                                         res, sio.err, sio.osize, sio.done);
                 }
                 loop --;
