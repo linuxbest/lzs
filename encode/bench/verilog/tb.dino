@@ -1,0 +1,68 @@
+#print on
+
+signal_delete *.*
+
+signal_add top.encode.dp.clk
+
+signal_add top.encode.dp.ce
+signal_add top.encode.dp.rst
+signal_add top.encode.dp.fi_cnt
+signal_add top.encode.dp.fi_get
+signal_add top.encode.dp.m_src_empty
+signal_add top.encode.dp.fi
+
+signal_add top.encode.dp.iidx
+signal_add top.encode.dp.data
+signal_add top.encode.dp.data_d1
+signal_add top.encode.dp.data_d2
+signal_add top.encode.dp.data_valid
+signal_add top.encode.dp.data_empty
+signal_add top.encode.dp.iidxL
+signal_add top.encode.dp.state
+signal_add top.encode.dp.waddr
+signal_add top.encode.dp.hdone
+
+signal_add top.encode.dp.hash_ref
+signal_add top.encode.dp.hash_data
+signal_add top.encode.dp.hash_data1
+signal_highlight top.encode.dp.hash_data 8
+
+signal_add top.encode.ctl.hdata
+signal_add top.encode.ctl.hraddr
+
+signal_add top.encode.ctl.state
+signal_add top.encode.ctl.cnt
+
+signal_add top.encode.ctl.off
+signal_add top.encode.ctl.cnt_output
+signal_add top.encode.ctl.cnt_finish
+signal_add top.encode.ctl.cnt_output_enable
+signal_add top.encode.ctl.cnt_len
+signal_add top.encode.out.cnt_length
+signal_highlight top.encode.out.cnt_length 8
+
+signal_add top.encode.out.din_len
+signal_add top.encode.out.din_data
+signal_add top.encode.out.din_valid
+
+signal_add top.encode.out.doe
+signal_add top.encode.out.doe
+signal_add top.encode.out.do
+signal_add top.encode.out.tcnt
+signal_add top.encode.out.cnt
+signal_add top.encode.out.sreg
+
+signal_add top.encode.out.dout_out
+signal_add top.encode.out.dout_done
+signal_add top.encode.out.dout_en_out
+signal_add top.encode.out.data_flush
+
+# # # # Aligning to the first signal is the default.  We'll just change the color
+grid_signal 0   *
+grid_color  0   2
+#refreshing  auto
+
+#signal_highlight tb.seq.in_match 8
+#signal_highlight tb.seq.valid_i  7
+#signal_highlight tb.seq.htab_we  6
+#signal_highlight tb.seq.match_wire 5
