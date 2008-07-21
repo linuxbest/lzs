@@ -132,7 +132,7 @@ static int __init lzf_init(void)
                 list_for_each_entry(q, &head, entry) {
                         atomic_inc(&job);
                         i --;
-                        dprintk("%d\n", i);
+                        /*dprintk("%d\n", i);*/
                         if (i == 0) {
                                 start = jiffies;
                                 s = do_getccnt(NULL, NULL);
