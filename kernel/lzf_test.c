@@ -72,21 +72,24 @@ init_queue(void)
                 sg->page = alloc_pages(GFP_KERNEL, order);
                 sg->offset = 0;
                 sg->length = PAGE_SIZE << order;
+                if (ops == 3) {
+                        int j;
+                        char *s = page_address(sg->page);
+                        for(j = 0;j < sg->length; j++)  {
+                                s[j] = j;
+                        }
+                }
         }
         q->sgbuf_src.buffer = (char *)q->src_sg;
         q->sgbuf_src.use_sg = 64;
         q->sgbuf_src.bufflen= (PAGE_SIZE<<order) * 64;
-        if (ops == 3) {
-                for(i = 0;i < q->sgbuf_src.bufflen; i++)  {
-                        q->sgbuf_src.buffer[i] = i;
-                }
-        }
 
         sg= q->dst_sg;
         for (i = 0; i < 64; i++, sg++) {
                 sg->page = alloc_pages(GFP_KERNEL, order);
                 sg->offset = 0;
                 sg->length = PAGE_SIZE << order;
+                memset(page_address(sg->page), 0xff, sg->length);
         }
         q->sgbuf_dst.buffer = (char *)q->dst_sg;
         q->sgbuf_dst.use_sg = 64;

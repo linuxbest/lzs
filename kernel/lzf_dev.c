@@ -418,7 +418,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
         d->desc->dc_fc  = dc_ay[ops];
         if (commit)
                 d->desc->dc_fc |= DC_INTR_EN;
-        /*d->desc->dc_fc |= DC_CTRL;*/
+        d->desc->dc_fc |= DC_CTRL;
         d->desc->src_desc = d->src->u[0];
         d->desc->dst_desc = d->dst->u[0];
         dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 
@@ -467,6 +467,8 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
                 unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf, 
                                 d->d_cnt, "dst ");
 
+        if (debug)
+                print_hex_dump_bytes("res ", DUMP_PREFIX_ADDRESS, d->res, 32);
         dprintk("cb %p,%p, err %x, ocnt %x\n", d->cb, d->priv, d->res->err, 
                         d->res->ocnt);
 
