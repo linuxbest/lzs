@@ -18,7 +18,7 @@
 
 module data(/*AUTOARG*/
    // Outputs
-   clk, rst, src_empty, ce, fo_full, fi, fi_cnt,
+   clk, rst, src_empty, ce, fo_full, m_last, fi, fi_cnt,
    // Inputs
    m_src_getn, m_endn
    );
@@ -31,9 +31,11 @@ module data(/*AUTOARG*/
    parameter LZF_FIFO_AW = 5;
    
    /* output parts */
-   output    clk, rst, src_empty, ce, fo_full;
+   output    clk, rst, src_empty, ce, fo_full, m_last;
    output [63:0] fi;
    output [LZF_WIDTH-1:0] fi_cnt;
+
+   wire 		  m_last;
    
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
@@ -54,6 +56,8 @@ module data(/*AUTOARG*/
 
    wire [LZF_FIFO_AW-1:0] src_waddr, src_raddr;
    wire 		  src_rallow, src_wallow;
+
+   reg 			  src_last;
    
    fifo_control #(.ADDR_LENGTH(LZF_FIFO_AW))
      src_FIFO (.rclock_in(clk),
@@ -71,13 +75,13 @@ module data(/*AUTOARG*/
 	       .wallow_out(src_wallow),
 	       .full_out(src_FIFO_full));
 
-   tpram #(.aw(LZF_FIFO_AW), .dw(64))
+   tpram #(.aw(LZF_FIFO_AW), .dw(65))
 	src_mem (.clk_a(clk),
 		 .rst_a(rst),
 		 .ce_a(1'b1),
 		 .we_a(src_wallow),
 		 .addr_a(src_waddr),
-		 .di_a(src_din),
+		 .di_a({src_last, src_din}),
 		 .do_a(),
 		 .oe_a(1'b1),
 		 
@@ -87,7 +91,7 @@ module data(/*AUTOARG*/
 		 .we_b(1'b0),
 		 .oe_b(1'b1),
 		 .addr_b(src_raddr),
-		 .do_b(fi),
+		 .do_b({m_last, fi}),
 		 .di_b(0));
 
    always @(/*AS*/src_FIFO_empty or src_FIFO_emptyN)
@@ -113,6 +117,7 @@ module data(/*AUTOARG*/
        fi_cnt = LZF_SIZE;
       $write("size is %h\n", fi_cnt);
       fo_full = 0;
+      src_last  = 0;
       
       /* read the memory */
       f = $fopen(LZF_FILE, "r");
@@ -140,7 +145,7 @@ module data(/*AUTOARG*/
       @(negedge clk);
       ce = 1;
 
-      for (i = 0; i <= j; f = f + 1/*loop*/) begin
+      for (i = 0; i < j; f = f + 1/*loop*/) begin
 	 if (src_empty && src_we == 0) begin
 	    for (k = 0; k < LZF_DELAY; k = k + 1) begin
 	       @(negedge clk);
@@ -157,6 +162,11 @@ module data(/*AUTOARG*/
 	 @(negedge clk);
       end
       src_we = 0;
+
+      @(negedge clk);
+      src_last = 1'b1;
+      src_we   = 1'b1;
+      @(negedge clk);
 
       wait (!m_endn)
 	$finish;

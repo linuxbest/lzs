@@ -91,15 +91,6 @@ module encode_dp(/*AUTOARG*/
 	  data <= #1 data_next;
      end
 
-   reg [LZF_WIDTH-1:3] iidxH;
-   always @(posedge clk or posedge rst) 
-     begin
-	if (rst)
-	  iidxH <= #1 0;
-	else if (!getn_reg)
-	  iidxH <= #1 iidxH + 1;
-     end
-   
    reg [2:0] 	       iidxL;
    always @(posedge clk or posedge rst)
      begin
@@ -146,8 +137,8 @@ module encode_dp(/*AUTOARG*/
 	  hwe <= #1 data_valid_next;
      end
    
-   always @(/*AS*/ce or fi_cnt or fo_full or hdone or iidxH
-	    or iidxL or m_last or src_empty or state)
+   always @(/*AS*/ce or fo_full or hdone or iidxL or m_last
+	    or src_empty or state)
      begin
 	state_next = S_IDLE;
 	data_valid_next = 0;
@@ -163,7 +154,7 @@ module encode_dp(/*AUTOARG*/
 	  end
 	  
 	  S_PROC: begin
-	     if (iidxH == fi_cnt[LZF_WIDTH-1:3]) begin
+	     if (m_last) begin
 		data_valid_next = 1;
 		state_next = S_DONE;
 	     end else if (fo_full && (&iidxL)) begin
