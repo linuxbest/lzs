@@ -16,14 +16,12 @@ module encode_dp(/*AUTOARG*/
    m_src_getn, data_empty, data, data_valid, hash_data,
    hash_data1, hash_ref, data_d1, data_d2, iidx, hdata,
    // Inputs
-   clk, rst, ce, fo_full, fi, fi_cnt, src_empty, m_last,
-   hraddr
+   clk, rst, ce, fo_full, fi, src_empty, m_last, hraddr
    );
    parameter LZF_WIDTH = 20;
 
    input     clk, rst, ce, fo_full;
    input [63:0] fi;
-   input [LZF_WIDTH-1:0] fi_cnt;
    input 		 src_empty, m_last;
    
    output    m_src_getn;

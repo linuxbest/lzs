@@ -15,7 +15,7 @@ module encode(/*AUTOARG*/
    // Outputs
    m_src_getn, m_endn, m_dst_putn, m_dst_last, m_dst,
    // Inputs
-   src_empty, rst, m_last, fo_full, fi_cnt, fi, clk, ce
+   src_empty, rst, m_last, fo_full, fi, clk, ce
    );
    parameter LZF_WIDTH = 20;
 
@@ -24,7 +24,6 @@ module encode(/*AUTOARG*/
    input		ce;			// To dp of encode_dp.v, ...
    input		clk;			// To dp of encode_dp.v, ...
    input [63:0]		fi;			// To dp of encode_dp.v
-   input [LZF_WIDTH-1:0]fi_cnt;			// To dp of encode_dp.v
    input		fo_full;		// To dp of encode_dp.v
    input		m_last;			// To dp of encode_dp.v
    input		rst;			// To dp of encode_dp.v, ...
@@ -75,7 +74,6 @@ module encode(/*AUTOARG*/
 		.ce			(ce),
 		.fo_full		(fo_full),
 		.fi			(fi[63:0]),
-		.fi_cnt			(fi_cnt[LZF_WIDTH-1:0]),
 		.src_empty		(src_empty),
 		.m_last			(m_last),
 		.hraddr			(hraddr[10:0]));
