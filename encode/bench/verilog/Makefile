@@ -1,4 +1,4 @@
-top: top.v #/tmp/encode.src /tmp/encode.chk 
+top: top.v /tmp/encode.src /tmp/encode.chk 
 	iverilog -Wall -o top top.v
 	vvp top +size=${SIZE}
 	rm top
@@ -8,7 +8,7 @@ clean:
 	rm -f top *.vcd
 
 
-FILE := "../../../../files/01"
+FILE := "../../../files/01"
 SIZE := "512"
 
 /tmp/encode.src:
