@@ -64,7 +64,7 @@ init_queue(void)
         queue_t *q;
         int i;
         struct scatterlist *sg;
-
+        
         q = kmalloc(sizeof(*q), GFP_KERNEL);
         sg= q->src_sg;
 
@@ -76,6 +76,11 @@ init_queue(void)
         q->sgbuf_src.buffer = (char *)q->src_sg;
         q->sgbuf_src.use_sg = 64;
         q->sgbuf_src.bufflen= (PAGE_SIZE<<order) * 64;
+        if (ops == 3) {
+                for(i = 0;i < q->sgbuf_src.bufflen; i++)  {
+                        q->sgbuf_src.buffer[i] = i;
+                }
+        }
 
         sg= q->dst_sg;
         for (i = 0; i < 64; i++, sg++) {

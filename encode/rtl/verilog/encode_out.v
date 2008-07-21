@@ -13,7 +13,7 @@
  *****************************************************************************/
 module encode_out(/*AUTOARG*/
    // Outputs
-   m_dst_putn, m_dst, m_endn,
+   m_dst_putn, m_dst, m_endn, m_dst_last,
    // Inputs
    clk, rst, ce, cnt_output_enable, cnt_finish, cnt_output,
    cnt_len
@@ -28,6 +28,7 @@ module encode_out(/*AUTOARG*/
    output [63:0] m_dst;
 
    output 	 m_endn;
+   output 	 m_dst_last;
    
    /*AUTOREG*/
    
@@ -135,11 +136,14 @@ module encode_out(/*AUTOARG*/
 	  dcnt <= #1 dcnt + 1;
      end
    
+   reg m_dst_last_reg;   
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
 	  m_dst_putn_reg <= #1 1;
 	else if (doe && (&dcnt) && m_endn_reg)
+	  m_dst_putn_reg <= #1 0;
+	else if (m_endn_reg == 0 && m_dst_last_reg == 0)
 	  m_dst_putn_reg <= #1 0;
 	else
 	  m_dst_putn_reg <= #1 1;
@@ -154,11 +158,20 @@ module encode_out(/*AUTOARG*/
 	  m_endn_reg <= #1 0;
      end
 
+   always @(posedge clk or posedge rst)
+     begin
+	if (rst)
+	  m_dst_last_reg <= #1 0;
+	else if (m_endn_reg == 0)
+	  m_dst_last_reg <= #1 1;
+     end
+   
    /* output tri-buffer */
    assign 		m_endn     = ce ? m_endn_reg     : 1'bz;
    assign 		m_dst_putn = ce ? m_dst_putn_reg : 1'bz;
    assign 		m_dst      = ce ? dst_reg        : 64'bz;
-
+   assign 		m_dst_last = ce ? m_dst_last_reg : 1'bz;
+   
    /* for simuation */
    reg [19:0] 		tcnt;
    always @(posedge clk or posedge rst)

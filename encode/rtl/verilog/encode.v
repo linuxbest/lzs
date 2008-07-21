@@ -13,7 +13,7 @@
  *****************************************************************************/
 module encode(/*AUTOARG*/
    // Outputs
-   m_src_getn, m_endn, m_dst_putn, m_dst,
+   m_src_getn, m_endn, m_dst_putn, m_dst_last, m_dst,
    // Inputs
    src_empty, rst, m_last, fo_full, fi_cnt, fi, clk, ce
    );
@@ -33,6 +33,7 @@ module encode(/*AUTOARG*/
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output [63:0]	m_dst;			// From out of encode_out.v
+   output		m_dst_last;		// From out of encode_out.v
    output		m_dst_putn;		// From out of encode_out.v
    output		m_endn;			// From out of encode_out.v
    output		m_src_getn;		// From dp of encode_dp.v
@@ -103,6 +104,7 @@ module encode(/*AUTOARG*/
 		  .m_dst_putn		(m_dst_putn),
 		  .m_dst		(m_dst[63:0]),
 		  .m_endn		(m_endn),
+		  .m_dst_last		(m_dst_last),
 		  // Inputs
 		  .clk			(clk),
 		  .rst			(rst),
