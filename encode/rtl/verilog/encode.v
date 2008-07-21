@@ -15,8 +15,7 @@ module encode(/*AUTOARG*/
    // Outputs
    m_src_getn, m_endn, m_dst_putn, m_dst,
    // Inputs
-   src_empty, rst, m_src_empty, m_last, fo_full, fi_cnt, fi,
-   clk, ce
+   src_empty, rst, m_last, fo_full, fi_cnt, fi, clk, ce
    );
    parameter LZF_WIDTH = 20;
 
@@ -28,7 +27,6 @@ module encode(/*AUTOARG*/
    input [LZF_WIDTH-1:0]fi_cnt;			// To dp of encode_dp.v
    input		fo_full;		// To dp of encode_dp.v
    input		m_last;			// To dp of encode_dp.v
-   input		m_src_empty;		// To dp of encode_dp.v
    input		rst;			// To dp of encode_dp.v, ...
    input		src_empty;		// To dp of encode_dp.v
    // End of automatics
@@ -78,7 +76,6 @@ module encode(/*AUTOARG*/
 		.fi			(fi[63:0]),
 		.fi_cnt			(fi_cnt[LZF_WIDTH-1:0]),
 		.src_empty		(src_empty),
-		.m_src_empty		(m_src_empty),
 		.m_last			(m_last),
 		.hraddr			(hraddr[10:0]));
    encode_ctl ctl(/*AUTOINST*/
@@ -117,7 +114,7 @@ module encode(/*AUTOARG*/
    
 endmodule // encode
 // Local Variables:
-// verilog-library-directories:("." "../../../../common/" "../../encode/src" "../../encode_ctl/src/" "../../encode_out/src/" "../../encode_dp/src/")
+// verilog-library-directories:("." "../../common/")
 // verilog-library-files:("")
 // verilog-library-extensions:(".v" ".h")
 // End:

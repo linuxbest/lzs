@@ -18,7 +18,7 @@
 
 module data(/*AUTOARG*/
    // Outputs
-   clk, rst, m_src_empty, ce, fo_full, fi, fi_cnt,
+   clk, rst, src_empty, ce, fo_full, fi, fi_cnt,
    // Inputs
    m_src_getn, m_endn
    );
@@ -31,7 +31,7 @@ module data(/*AUTOARG*/
    parameter LZF_FIFO_AW = 5;
    
    /* output parts */
-   output    clk, rst, m_src_empty, ce, fo_full;
+   output    clk, rst, src_empty, ce, fo_full;
    output [63:0] fi;
    output [LZF_WIDTH-1:0] fi_cnt;
    
@@ -41,8 +41,8 @@ module data(/*AUTOARG*/
    reg			clk;
    reg [LZF_WIDTH-1:0]	fi_cnt;
    reg			fo_full;
-   reg			m_src_empty;
    reg			rst;
+   reg			src_empty;
    // End of automatics
    
    input 	 m_src_getn, m_endn;
@@ -92,9 +92,9 @@ module data(/*AUTOARG*/
 
    always @(/*AS*/src_FIFO_empty or src_FIFO_emptyN)
      if (src_FIFO_emptyN == 0 && src_FIFO_empty == 0)
-       m_src_empty = 0;
+       src_empty = 0;
      else
-       m_src_empty = 1;
+       src_empty = 1;
 
    reg [63:0] 	 mem[65535:0];
    
@@ -141,7 +141,7 @@ module data(/*AUTOARG*/
       ce = 1;
 
       for (i = 0; i <= j; f = f + 1/*loop*/) begin
-	 if (m_src_empty && src_we == 0) begin
+	 if (src_empty && src_we == 0) begin
 	    for (k = 0; k < LZF_DELAY; k = k + 1) begin
 	       @(negedge clk);
 	    end
@@ -169,7 +169,7 @@ module data(/*AUTOARG*/
 endmodule // data
 
 // Local Variables:
-// verilog-library-directories:("." "../../../../common/")
+// verilog-library-directories:("." "../../common/")
 // verilog-library-files:("")
 // verilog-library-extensions:(".v" ".h")
 // End:

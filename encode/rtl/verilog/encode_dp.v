@@ -16,16 +16,15 @@ module encode_dp(/*AUTOARG*/
    m_src_getn, data_empty, data, data_valid, hash_data,
    hash_data1, hash_ref, data_d1, data_d2, iidx, hdata,
    // Inputs
-   clk, rst, ce, fo_full, fi, fi_cnt, src_empty,
-   m_src_empty, m_last, hraddr
+   clk, rst, ce, fo_full, fi, fi_cnt, src_empty, m_last,
+   hraddr
    );
    parameter LZF_WIDTH = 20;
 
    input     clk, rst, ce, fo_full;
    input [63:0] fi;
    input [LZF_WIDTH-1:0] fi_cnt;
-   input 		 src_empty;
-   input 		 m_src_empty, m_last;
+   input 		 src_empty, m_last;
    
    output    m_src_getn;
    output    data_empty;
@@ -148,7 +147,7 @@ module encode_dp(/*AUTOARG*/
      end
    
    always @(/*AS*/ce or fi_cnt or fo_full or hdone or iidxH
-	    or iidxL or m_last or m_src_empty or state)
+	    or iidxL or m_last or src_empty or state)
      begin
 	state_next = S_IDLE;
 	data_valid_next = 0;
@@ -157,7 +156,7 @@ module encode_dp(/*AUTOARG*/
 	
 	case (state)
 	  S_IDLE: begin
-	     if (hdone && (!m_src_empty) && ce)
+	     if (hdone && (!src_empty) && ce)
 	       state_next = S_PROC;
 	     else
 	       state_next = S_IDLE;
@@ -170,7 +169,7 @@ module encode_dp(/*AUTOARG*/
 	     end else if (fo_full && (&iidxL)) begin
 		data_valid_next = 1;
 		state_next = S_WAIT;
-	     end else if (m_src_empty && (!m_last)) begin
+	     end else if (src_empty && (!m_last)) begin
 		state_next = S_PROC;
 	     end else if (iidxL == 3'b110) begin
 		data_valid_next = 1;
@@ -185,7 +184,7 @@ module encode_dp(/*AUTOARG*/
 	  S_WAIT: begin
 	     if (fo_full) 
 	       state_next = S_WAIT;
-	     else if (!m_src_empty || m_last) begin
+	     else if (!src_empty || m_last) begin
 		state_next = S_PROC;
 	     end else
 	       state_next = S_WAIT;
@@ -287,7 +286,7 @@ module encode_dp(/*AUTOARG*/
 endmodule // encode
 
 // Local Variables:
-// verilog-library-directories:("." "../../../../common/" "../../encode/src" "../../encode_ctl/src/" "../../encode_out/src/" "../../encode_dp/src/")
+// verilog-library-directories:("." "../../common/")
 // verilog-library-files:("")
 // verilog-library-extensions:(".v" ".h")
 // End:
