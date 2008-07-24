@@ -1,0 +1,527 @@
+<!DOCTYPE html PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="GENERATOR"
+ content="Mozilla/4.77 [en] (Windows NT 5.0; U) [Netscape]">
+  <title>Pseudocode Standard</title>
+<!-- Converted by AscToHTM 3.3 - unregistered version : 0 (visit www.jafsoft.com) -->
+</head>
+<body>
+<blockquote>
+  <center>
+  <h3>PSEUDOCODE STANDARD</h3>
+  </center>
+</blockquote>
+Pseudocode is a kind of structured english for describing algorithms.
+It
+allows the designer to focus on the logic of the algorithm without
+being
+distracted by details of language syntax.&nbsp; At the same time, the
+pseudocode
+needs to be complete.&nbsp; It describe the entire logic of the
+algorithm
+so that implementation becomes a rote mechanical task of translating
+line
+by line into source code.
+<p>In general the vocabulary used in the pseudocode should be the
+vocabulary
+of the problem domain, not of the implementation domain.&nbsp; The
+pseudocode
+is a narrative for someone who knows the requirements (problem domain)
+and is trying to learn how the solution is organized.&nbsp; E.g.,
+</p>
+<blockquote>Extract the next word from the line (good) <br>
+set word to get next token (poor)
+  <p>Append the file extension to the name (good) <br>
+name = name + extension (poor) </p>
+  <p>FOR all the characters in the name (good) <br>
+FOR character = first to last (ok)</p>
+</blockquote>
+Note that the logic must be decomposed to the level of a single
+loop or decision.
+Thus "Search the list and find the customer with highest balance" is
+too
+vague because it takes a loop AND a nested decision to implement it.
+It's okay to use "Find" or "Lookup" if there's a predefined function
+for it such as <code>String.indexOf()</code>.
+<p>Each textbook and each individual designer may have their own
+personal
+style of pseudocode. Pseudocode is not a rigorous notation, since it is
+read by other people, not by the computer. There is no universal
+"standard"
+for the industry, but for instructional purposes it is helpful if we
+all
+follow a similar style. The format below is recommended for expressing
+your solutions in our class.
+</p>
+<p>The "structured" part of pseudocode is a notation for representing
+six
+specific structured programming constructs: SEQUENCE, WHILE,
+IF-THEN-ELSE,
+REPEAT-UNTIL, FOR, and CASE. Each of these constructs can be embedded
+inside
+any other construct. These constructs represent the logic, or flow of
+control
+in an algorithm.
+</p>
+<p>It has been proven that three basic constructs for flow of control
+are
+sufficient to implement any "proper" algorithm.
+</p>
+<blockquote><b>SEQUENCE</b> is a linear progression where one task is
+performed
+sequentially after another. <br>
+  <b>WHILE</b> is a loop (repetition) with a simple conditional test
+at its beginning. <br>
+  <b>IF-THEN-ELSE</b> is a decision (selection) in which a choice is
+made between two alternative courses of action.</blockquote>
+<p><br>
+Although these constructs are sufficient, it is often useful to
+include three more constructs:
+<br>
+&nbsp;
+</p>
+<blockquote><b>REPEAT-UNTIL</b> is a loop with a simple conditional
+test
+at the bottom. <br>
+  <b>CASE</b> is a multiway branch (decision) based on the value of an
+expression. CASE is a generalization of IF-THEN-ELSE. <br>
+  <b>FOR </b>is a "counting" loop.</blockquote>
+<b>SEQUENCE</b>
+<p>Sequential control is indicated by writing one action after another,
+each action on a line by itself, and all actions aligned with the same
+indent. The actions are performed in the sequence (top to bottom) that
+they are written.
+</p>
+<p>Example (non-computer)
+</p>
+<blockquote>Brush teeth <br>
+Wash face <br>
+Comb hair <br>
+Smile in mirror</blockquote>
+Example
+<blockquote>READ height of rectangle <br>
+READ width of rectangle <br>
+COMPUTE area as height times width</blockquote>
+Common Action Keywords
+<blockquote>Several keywords are often used to indicate common input,
+output,
+and processing operations.
+  <blockquote>Input: READ, OBTAIN, GET <br>
+Output: PRINT, DISPLAY, SHOW <br>
+Compute: COMPUTE, CALCULATE, DETERMINE <br>
+Initialize: SET, INIT <br>
+Add one: INCREMENT, BUMP</blockquote>
+</blockquote>
+<b>IF-THEN-ELSE</b>
+<p>Binary choice on a given Boolean condition is indicated by the use
+of
+four keywords: IF, THEN, ELSE, and ENDIF. The general form is:
+</p>
+<blockquote>IF condition THEN
+  <blockquote>sequence 1</blockquote>
+ELSE
+  <blockquote>sequence 2</blockquote>
+ENDIF</blockquote>
+The ELSE keyword and "sequence 2" are optional. If the condition is
+true,
+sequence 1 is performed, otherwise sequence 2 is performed.
+<p>Example
+</p>
+<blockquote><tt>IF HoursWorked &gt; NormalMax THEN</tt>
+  <blockquote><tt>Display overtime message</tt></blockquote>
+  <tt>ELSE</tt>
+  <blockquote><tt>Display regular time message</tt></blockquote>
+  <tt>ENDIF</tt></blockquote>
+<b>WHILE</b>
+<p>The WHILE construct is used to specify a loop with a test at the
+top.
+The beginning and ending of the loop are indicated by two keywords
+WHILE
+and ENDWHILE. The general form is:
+</p>
+<blockquote>WHILE condition
+  <blockquote>sequence</blockquote>
+ENDWHILE</blockquote>
+The loop is entered only if the condition is true. The "sequence" is
+performed
+for each iteration. At the conclusion of each iteration, the condition
+is evaluated and the loop continues as long as the condition is true.
+<p>Example
+</p>
+<blockquote><tt>WHILE Population &lt; Limit</tt>
+  <blockquote><tt>Compute Population as Population + Births - Deaths</tt></blockquote>
+  <tt>ENDWHILE</tt></blockquote>
+<p>Example
+</p>
+<blockquote><tt>WHILE employee.type NOT EQUAL manager AND personCount
+&lt; numEmployees</tt>
+  <blockquote><tt>INCREMENT personCount<br>
+CALL employeeList.getPerson with personCount RETURNING employee<br>
+    </tt></blockquote>
+  <tt>ENDWHILE</tt></blockquote>
+<b>CASE</b>
+<p>A CASE construct indicates a multiway branch based on conditions
+that
+are mutually exclusive. Four keywords, CASE, OF, OTHERS, and ENDCASE,
+and
+conditions are used to indicate the various alternatives. The general
+form
+is:
+</p>
+<blockquote>CASE expression OF
+  <blockquote>condition 1 : sequence 1 <br>
+condition 2 : sequence 2 <br>
+... <br>
+condition n : sequence n <br>
+OTHERS: <br>
+default sequence</blockquote>
+ENDCASE
+  <p>The OTHERS clause with its default sequence is optional.
+Conditions
+are normally numbers or characters</p>
+</blockquote>
+indicating the value of "expression", but they can be English
+statements
+or some other notation that specifies the condition under which the
+given
+sequence is to be performed. A certain sequence may be associated with
+more than one condition.
+<p>Example
+<br>
+<!-- User-specified pre-formatted text --></p>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CASE&nbsp; Title&nbsp; OF<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Mr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : Print "Mister"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Mrs&nbsp;&nbsp;&nbsp;&nbsp; : Print "Missus"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Miss&nbsp;&nbsp;&nbsp; : Print "Miss"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ms&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : Print "Mizz"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Dr&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : Print "Doctor"<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCASE</pre>
+<!-- end of user-specified pre-formatted text -->
+<p>Example
+<br>
+<!-- User-specified pre-formatted text --></p>
+<pre>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; CASE&nbsp; grade&nbsp; OF<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; A&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : points = 4<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; B&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : points = 3<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; C&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : points = 2<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; D&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : points = 1<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; F&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; : points = 0<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ENDCASE</pre>
+<!-- end of user-specified pre-formatted text -->
+<p><b>REPEAT-UNTIL</b>
+</p>
+<p>This loop is similar to the WHILE loop except that the test is
+performed
+at the bottom of the loop instead of at the top. Two keywords, REPEAT
+and
+UNTIL are used. The general form is:
+</p>
+<blockquote>REPEAT
+  <blockquote>sequence</blockquote>
+UNTIL condition</blockquote>
+The "sequence" in this type of loop is always performed at least once,
+because the test is peformed after the sequence is executed. At the
+conclusion
+of each iteration, the condition is evaluated, and the loop repeats if
+the condition is false. The loop terminates when the condition becomes
+true.
+<br>
+&nbsp;
+<p><b>FOR</b>
+</p>
+<p>This loop is a specialized construct for iterating a specific number
+of times, often called a "counting" loop.&nbsp; Two keywords, FOR and
+ENDFOR
+are used. The general form is:
+</p>
+<blockquote>FOR iteration bounds
+  <blockquote>sequence</blockquote>
+ENDFOR</blockquote>
+In cases where the loop constraints can be obviously inferred it is
+best
+to describe the loop using problem domain vocabulary.
+<p>Example
+</p>
+<blockquote>FOR each month of the year (good) <br>
+FOR month = 1 to 12 (ok)
+  <p>FOR each employee in the list (good) <br>
+FOR empno = 1 to listsize (ok)</p>
+</blockquote>
+<p><br>
+<b>NESTED CONSTRUCTS</b>
+</p>
+<p>The constructs can be embedded within each other, and this is made
+clear
+by use of indenting. Nested constructs should be clearly indented from
+their surrounding constructs.
+</p>
+<p>Example
+</p>
+<blockquote><tt>SET total to zero</tt> <br>
+  <tt>REPEAT</tt>
+  <blockquote><tt>READ Temperature</tt> <br>
+    <tt>IF Temperature &gt; Freezing THEN</tt> <br>
+    <tt>&nbsp;&nbsp;&nbsp; INCREMENT total</tt> <br>
+    <tt>END IF</tt></blockquote>
+  <tt>UNTIL Temperature &lt; zero</tt> <br>
+  <tt>Print total</tt></blockquote>
+In the above example, the IF construct is nested within the REPEAT
+construct,
+and therefore is indented.
+<br>
+&nbsp;
+<br>
+&nbsp;
+<p><b>INVOKING SUBPROCEDURES</b>
+</p>
+<p>Use the <tt>CALL</tt> keyword. For example:
+</p>
+<blockquote><tt>CALL AvgAge with StudentAges</tt> <br>
+  <tt>CALL Swap with CurrentItem and TargetItem</tt> <br>
+  <tt>CALL Account.debit with CheckAmount</tt> <br>
+  <tt>CALL getBalance RETURNING aBalance</tt> <br>
+  <tt>CALL SquareRoot with orbitHeight RETURNING nominalOrbit</tt></blockquote>
+<!-- Converted by AscToHTM 3.3 - unregistered version : 0 (visit www.jafsoft.com) -->
+<p></p>
+<br>
+<b>EXCEPTION HANDLING</b><br>
+<br>
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;BEGIN
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+statements
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;EXCEPTION
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+WHEN exception type
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+statements to handle exception</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+WHEN another exception type
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+statements
+</span><span style="font-family: monospace;">to handle exception</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;END
+</span><br style="font-family: monospace;">
+<br>
+<br>
+<hr width="100%">
+<center>
+<h3>Sample Pseudocode</h3>
+</center>
+"Adequate"<br>
+<span style="font-family: monospace;"><br>
+FOR X = 1 to 10
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; FOR Y = 1 to
+10
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IF gameBoard[X][Y] = 0
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Do nothing
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ELSE
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+CALL theCall(X, Y) (recursive method)
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+increment counter&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; END IF</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+END FOR</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">END FOR</span><br
+ style="font-family: monospace;">
+<br>
+<p>"Better"
+</p>
+<span style="font-family: monospace;">Set moveCount to 1</span><br>
+<span style="font-family: monospace;">FOR each row on the board
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp; FOR each
+column on the board
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IF gameBoard position (row, column) is occupied THEN
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+CALL findAdjacentTiles with row, column</span><br
+ style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+INCREMENT moveCount
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; END IF
+</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;
+END FOR</span><br style="font-family: monospace;">
+<span style="font-family: monospace;">END FOR</span><br
+ style="font-family: monospace;">
+<br>
+(Note: the logic is restructured to omit the "do nothing" clause)
+<br>
+<hr width="100%">
+<br>
+"Not So Good"
+<p><tt>FOR all the number at the back of the array</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; SET Temp equal the addition of each number</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; IF &gt; 9 THEN</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; get the remainder of
+the number divided by 10 to that index</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and carry the "1"</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; Decrement one</tt>
+<br>
+<tt>Do it again for numbers before the decimal</tt>
+<br>
+&nbsp;
+</p>
+<p>"Good Enough (not perfect)"
+</p>
+<p><tt>SET Carry to 0</tt>
+<br>
+<tt>FOR each DigitPosition in Number from least significant to most
+significant</tt>
+</p>
+<p><tt>&nbsp;&nbsp;&nbsp; COMPUTE Total as sum of
+FirstNum[DigitPosition] and
+SecondNum[DigitPosition] and Carry</tt>
+&nbsp;<br>
+</p>
+<p><tt>&nbsp;&nbsp;&nbsp; IF Total &gt; 10 THEN</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SET Carry to 1</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SUBTRACT 10 from Total</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; ELSE</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; SET Carry to 0</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; END IF</tt>
+</p>
+<p><tt>&nbsp;&nbsp;&nbsp; STORE Total in Result[DigitPosition]</tt>
+</p>
+<p><tt>END LOOP</tt>
+&nbsp;<br>
+</p>
+<p><tt>IF Carry = 1 THEN</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; RAISE Overflow exception</tt>
+<br>
+<tt>END IF</tt>
+<br>
+&nbsp;
+</p>
+<p></p>
+<hr style="width: 100%; height: 2px;"><br>
+<p>"Pretty Good"&nbsp; This example shows how pseudocode is written as
+comments in the source file. Note that the double slashes are indented.
+</p>
+<p><tt>public boolean moveRobot (Robot aRobot)</tt>
+<br>
+<tt>{</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; //IF robot has no obstacle in front THEN</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Call Move robot</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Add the move command
+to the command history</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // RETURN true</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; //ELSE</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // RETURN false without
+moving the robot</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; //END IF</tt>
+<br>
+<tt>}</tt>
+</p>
+<p>Example Java Implementation
+</p>
+<ul>
+  <li>source code statements are interleaved with pseudocode.</li>
+  <li>comments that correspond exactly to source code are removed during
+coding.</li>
+</ul>
+<p></p>
+<p><tt>public boolean moveRobot (Robot aRobot)</tt>
+<br>
+<tt>{</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; //IF </tt><tt>robot has no o</tt><tt>bstacle in
+front THEN</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; if (aRobot.isFrontClear())</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; {</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Call Move robot</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; aRobot.move();</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; // Add the move command
+to the command history</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+cmdHistory.add(RobotAction.MOVE);</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return true;</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; }</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; else // don't move the robot</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; {</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return false;</tt>
+<br>
+<tt>&nbsp;&nbsp;&nbsp; }//END IF</tt>
+<br>
+<tt>}</tt>
+<br>
+&nbsp; <br>
+</p>
+<div align="center">
+<h4>&nbsp;<a href="pdl_vague.html">
+Examples of vague pseudocode</a></h4>
+</div>
+<p>&nbsp;
+</p>
+<p></p>
+<hr width="100%"><br>
+Document History
+<table border="1" width="100%">
+  <tbody>
+    <tr>
+      <td>Date</td>
+      <td>Author</td>
+      <td>Change</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">12/2/03<br>
+      </td>
+      <td style="vertical-align: top;">JD<br>
+      </td>
+      <td style="vertical-align: top;">Added Exception Handling and
+more examples<br>
+      </td>
+    </tr>
+    <tr>
+      <td>2/21/03</td>
+      <td>JD</td>
+      <td>Added "problem domain vocabulary" paragraph. <br>
+Modified FOR loop explanation.</td>
+    </tr>
+  </tbody>
+</table>
+</body>
+</html>
