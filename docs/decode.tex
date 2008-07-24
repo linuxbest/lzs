@@ -1,0 +1,128 @@
+\RequirePackage{ifpdf} % running on pdftex
+\ifpdf
+ \documentclass[10pt,letterpaper,pdftex]{article}
+ \else
+ \documentclass[10pt,letterpaper,dvips]{article}
+\fi
+\ifpdf
+ \usepackage{lmodern}
+ \usepackage[pdftex,CJKbookmarks,colorlinks]{hyperref}
+ \usepackage{ccmap,CJK,CJKnumb}
+\fi
+\usepackage{CJK}
+
+\usepackage{algorithmicx}
+\usepackage[ruled]{algorithm}
+\usepackage{algpseudocode}
+\usepackage{algpascal}
+\usepackage{algc}
+
+\begin{document}
+\begin{CJK}{GBK}{song}
+
+\section{Decode}
+\alglanguage{pseudocode}
+
+\begin{algorithm}
+\caption{Decode algorithm}\label{encode}
+\begin{algorithmic}[1]
+\Procedure{Decode}{}
+\While {input data exists}
+ \State $X \gets get\_bit(1)$
+ \If {X = 0}
+  \State $Y \gets get\_bit(8)$
+  \State Output\_token(Y)
+ \Else
+  \State $ offset \gets Offset\_get $
+  \State $ length \gets Length\_get $
+  \State Copy\_ref(offset, length)
+ \EndIf
+\EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Offset\_get}
+
+\begin{algorithm}
+\caption{Offset\_get algorithm}\label{Offset_get}
+\begin{algorithmic}[1]
+\Procedure{Offset\_get}{}
+ \State $ A \gets Get\_bit(1) $ 
+ \If {A = 0}
+  \State $ B \gets get\_bit(11) $
+  \State Use B to count offset value
+ \Else
+  \State $ C \gets get\_bit(7) $
+  \State Use C to count offset value
+ \EndIf
+ \State Return offset
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Length\_get}
+
+\begin{algorithm}
+\caption{Length\_get algorithm}\label{Length_get}
+\begin{algorithmic}[1]
+\Procedure{Length\_get}{}
+ \State  $ M \gets get\_bit(2) $
+ \If{M = 0b11}
+  \State $ N \gets get\_bit(2) $ 
+  \If {N = 0b11}
+   \State $ P \gets get\_bit(4) $
+   \While{P = 0b1111}
+     \State $ num \gets num + 15 $
+     \State $ P \gets get\_bit(4) $
+   \EndWhile
+   \State $ length \gets num + P + 8 $
+  \Else
+   \State Use N to count length value
+  \EndIf
+ \Else
+  \State Use M to count length value
+ \EndIf
+ \State Return length
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Copy\_ref}
+
+\begin{algorithm}
+\caption{Copy\_ref algorithm}\label{Copy_ref}
+\begin{algorithmic}[1]
+\Procedure{Copy\_ref}{}
+ \State $ copy\_num \gets length $
+ \State Use offset to count read\_address
+ \While {$ copy\_num \not= 0 $}
+  \State Read history\_data from history\_ram base on the read\_address
+  \State Output\_token(history\_data)
+  \State $ copy\_num \gets copy\_num - 1 $
+  \State $ read\_address \gets read\_address + 1 $
+ \EndWhile
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Output\_token}
+
+\begin{algorithm}
+\caption{Output\_token algorithm}\label{Output_token}
+\begin{algorithmic}[1]
+\Procedure{Output\_token}{data}
+ \State Put data to output buffer
+ \State Put data to history\_ram base on write\_address
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\end{CJK}
+\end{document}
+
+% opencores_coding_guidelines.pdf

@@ -1,0 +1,142 @@
+\RequirePackage{ifpdf} % running on pdftex
+\ifpdf
+ \documentclass[10pt,letterpaper,pdftex]{article}
+ \else
+ \documentclass[10pt,letterpaper,dvips]{article}
+\fi
+\ifpdf
+ \usepackage{lmodern}
+ \usepackage[pdftex,CJKbookmarks,colorlinks]{hyperref}
+ \usepackage{ccmap,CJK,CJKnumb}
+\fi
+\usepackage{CJK}
+
+\usepackage{algorithmicx}
+\usepackage[ruled]{algorithm}
+\usepackage{algpseudocode}
+\usepackage{algpascal}
+\usepackage{algc}
+
+\begin{document}
+\begin{CJK}{GBK}{song}
+
+\section{Encode}
+\alglanguage{pseudocode}
+
+\begin{algorithm}
+\caption{Encode algorithm}\label{encode}
+\begin{algorithmic}[1]
+\Procedure{Encode}{}
+\While {input data exists}
+ \State Read\_byte
+ \If{there is no matching pattern in the history\_buffer %
+     the extractly matches the source patern in the holding\_buffer, %
+     that also satisfiles the condition that offset less 2047}
+   \State Output\_token
+ \EndIf
+\EndWhile
+\State Flush
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Read\_byte}
+
+\begin{algorithm}
+\caption{Read\_byte algorithm}\label{read_byte}
+\begin{algorithmic}[1]
+\Procedure{Read\_byte}{}
+ \State Get 8-bit from the input stream
+ \State Insert byte into history\_buffer
+ \State Insert byte into holding\_buffer
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Output\_token}
+
+\begin{algorithm}
+\caption{Output\_token algorithm}\label{output_token}
+\begin{algorithmic}[1]
+\Procedure{Output\_token}{}
+ \If{number of bytes in hodling\_buffer $\le 2$}
+  \State Put single 0 bit to output bit stream
+  \State Put oldest byte in holding\_buffer to output stream
+  \State Clear the oldest byte from the holding\_buffer
+ \ElsIf
+  \State Put single 1 bit to output bit stream
+  \If{$Offset \le 127$}
+   \State Put single 1 bit to output bit stream
+   \State Put 7-bit binary value of $offset$ to output stream
+  \ElsIf
+   \State Put single 0 bit to output bit stream
+   \State Put 11-bit binary value of $offset$ to output stream
+  \EndIf
+  \State  Output\_length
+  \State  Clear all bytes from the holding\_buffer except the newest byte
+ \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Output\_length}
+\begin{algorithm}
+\caption{Output\_length algorithm}\label{output_length}
+\begin{algorithmic}[1]
+\Procedure{Output\_length}{}
+ \State $X\gets number of bytes in holding\_buffer -1$
+ \If{$X \le 4$}
+  \State Put 2-bit binary value of (X-2) to output stream
+ \ElsIf 
+  \If{$X \le 7$}
+   \State Put 2-bit pattern with all bits set to a 1bit to output stream
+   \State Put 2-bit binary value of (X-5) to output stream
+  \ElsIf
+   \State Put 4-bit pattern with all bits set to a 1bit to output stream
+   \State $X\gets X-8$
+   \While{$X\le15$}
+    \State Put 4-bit pattern with all bits set to 1bit to output stream
+    \State $X\gets X-15$
+   \EndWhile
+  \EndIf
+ \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Offset}
+\begin{algorithm}
+\caption{Offset algorithm}\label{offsetlength}
+\begin{algorithmic}[1]
+\Procedure{Offset}{}
+Return the value of (the distance in bytes within the history\_buffer from the %
+first byte of the source pattern to the first byte of the matching pattern).
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\newpage
+\section{Flush}
+\begin{algorithm}
+\caption{Flush algorithm}\label{flush}
+\begin{algorithmic}[1]
+\Procedure{Flush}{}
+ \While{number of bytes in holding\_buffer $ > 0$}
+  \State Output\_token
+ \EndWhile
+ \State Put 9-bit pattern with b8 and b9 set to 1s and bits b1 through b7 to 0s to output stream
+ \If{desired to clear the history}
+  \State Clear all byte from the history\_buffer 
+ \EndIf
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\end{CJK}
+\end{document}
+
+% opencores_coding_guidelines.pdf
