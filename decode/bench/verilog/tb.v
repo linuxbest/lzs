@@ -67,7 +67,7 @@ module tb(/*AUTOARG*/
    wire clk;
    always @(posedge clk)
    if (tb.decode.state.all_end) begin
-      //$writememh("history_ram.mem", tb.decode.history.mem);
+      $writememh("history_ram.mem", tb.decode.history.mem);
       # 200;
       $finish;
    end

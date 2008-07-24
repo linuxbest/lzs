@@ -67,6 +67,7 @@ module tb_data(/*AUTOARG*/
    endtask // getword
   
    reg [255:0] lzs_file;
+   reg dummy;
 
    initial begin
       ce_decode  = 0;
@@ -106,7 +107,7 @@ module tb_data(/*AUTOARG*/
       left = 64;
       stream_valid = 1;
             
-      for (src_cnt = 2; src_cnt < src_size; src_size = LZF_SIZE) begin
+      for (src_cnt = 2; src_cnt < src_size; dummy = 1) begin
 	 if (src_cnt % 'hd == 0) begin
 	    stream_valid =  0;
 	    @(negedge clk);
@@ -139,7 +140,8 @@ module tb_data(/*AUTOARG*/
 	    stream_valid = 1;
 	 end
 	 stream_data = src_char[63:64-IN_WIDTH];
-	 //$write("data: %h %d %h\n", stream_data ,left, src_char << 9);
+	 $write("data: %h %d %h, %d\n", stream_data ,left, src_char << 9, 
+                         src_cnt, src_size);
 	 @(negedge clk);
 	 if (stream_ack) begin
 	    src_char = src_char << stream_width;
