@@ -13,13 +13,6 @@
 
 `timescale 1ns/1ps
 
-`include "tb_data.v"
-`include "../src/decode.v"
-`include "../../state_machine/src/state_machine.v"
-`include "../../copy_ref/src/copy_ref.v"
-`include "../../output_token/src/output_token.v"
-`include "../../history_ram/src/history_ram.v"
-
 module tb(/*AUTOARG*/
    // Outputs
    stream_empty, out_valid, out_data, current_state,
