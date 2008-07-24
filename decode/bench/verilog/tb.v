@@ -42,19 +42,26 @@ module tb(/*AUTOARG*/
 
    integer 		     c, cnt, o;
    parameter 		     SRC_FILE = "/home/kevin/lzf-hg.git/files/texbook.pdf";
-   //parameter 		     SRC_FILE = "/home/kevin/lzf-hg.git/files/01";
+   parameter 		     LZS_FILE = "/home/kevin/lzf-hg.git/files/01";
    parameter 		     OUT_FILE = "/tmp/t.lzs";
-   
+   parameter                 LZS_SIZE = 299;
+
+   reg [255:0] lzs_file;
+   reg [31:0]  lzs_size;
+   reg [255:0] src_file;
+
    initial
    begin : VCD_and_MEM
       
       $dumpfile("tb.vcd");
       $dumpvars(0,tb);
+      
+      if (0 == $value$plusargs("SRC_FILE=%s", src_file))
+        src_file = SRC_FILE;
 
       cnt = 0;
-      c = $fopen(SRC_FILE, "r");
+      c = $fopen(src_file, "r");
       o = $fopen(OUT_FILE, "w");
-      
    end
 
    wire clk;
@@ -77,7 +84,7 @@ module tb(/*AUTOARG*/
 		// Inputs
 		.stream_ack		(stream_ack),
 		.stream_width		(stream_width[3:0]));
-      
+
    decode decode(/*AUTOINST*/
 		 // Outputs
 		 .all_end		(all_end),
@@ -103,8 +110,8 @@ module tb(/*AUTOARG*/
 	   if (s_data != tb.decode.out_data) begin
 	      $write("cnt %h: right/current %h/%h\n", 
 		     cnt, s_data, tb.decode.out_data);
-	      //$dumpflush(".");
-	      //$stop;
+	      $dumpflush(".");
+	      $stop;
 	   end else
 	     $write("cnt %h: right %h \n", cnt, tb.decode.out_data);
 	   cnt = cnt + 1;

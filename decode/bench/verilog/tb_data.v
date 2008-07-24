@@ -20,7 +20,7 @@ module tb_data(/*AUTOARG*/
    stream_ack, stream_width
    );
    
-   parameter SRC_FILE = "/home/kevin/lzf-hg.git/lzs/01.lzs";
+   parameter LZF_FILE = "/home/kevin/lzf-hg.git/lzs/01.lzs";
    parameter LZF_WIDTH = 20;
    parameter LZF_SIZE  = 65536;
    parameter IN_WIDTH = 13;
@@ -65,15 +65,22 @@ module tb_data(/*AUTOARG*/
 	 data = high << 8 | low;
       end
    endtask // getword
-   
+  
+   reg [255:0] lzs_file;
+
    initial begin
       ce_decode  = 0;
       fo_full = 0;
       rst = 0;
-      
-      src_file = $fopen(SRC_FILE, "r");
-      src_size = LZF_SIZE;
-      
+     
+      if (0 == $value$plusargs("LZS_FILE=%s", lzs_file))
+        lzs_file = LZF_FILE;
+      if (0 == $value$plusargs("LZS_SIZE=%d", src_size))
+        src_size = LZF_SIZE;
+
+      src_file = $fopen(lzs_file, "r");
+      //$write("src_file %d, %s, %d\n", src_file, lzs_file, src_size);
+
       stream_valid = 0;
       stream_data  = 0;
       stream_empty = 0;

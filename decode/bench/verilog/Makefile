@@ -5,15 +5,22 @@ OBJS += ../../rtl/verilog/copy_ref.v
 OBJS += ../../rtl/verilog/output_token.v
 OBJS += ../../rtl/verilog/history_ram.v
 
-D_SRC = /tmp/decode.src
+D_SRC  = /tmp/decode.src
+C_FILE = /tmp/decode.chk
 
 tb : tb.v ${OBJS} ${D_SRC}
 	iverilog -o $@ tb.v ${OBJS}
-	vvp tb +SRC_FILE=${D_SRC}
+
+trun: tb
+	vvp tb +LZS_FILE=${D_SRC} +SRC_FILE=${C_FILE} +LZS_SIZE=299
 
 /tmp/decode.src: ../../../files/01 ../../../lzs
 	../../../lzs -s 512 -c < ../../../files/01
 	cp /tmp/lzs.out $@
 
+/tmp/decode.chk: /tmp/decode.src
+	../../../lzs -d < /tmp/decode.src
+	cp /tmp/lzs.out $@
+		
 clean :
 	rm -f tb *.mem *.vcd
