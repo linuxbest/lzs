@@ -1,0 +1,28 @@
+#print on
+
+signal_delete *.*
+
+signal_add tb.decode.clk
+signal_add tb.decode.rst
+signal_add tb.decode.stream_data
+signal_add tb.decode.stream_valid
+signal_add tb.decode.stream_width
+signal_add tb.decode.stream_ack
+signal_highlight tb.decode.stream_ack 8
+
+signal_add tb.decode.out_data
+signal_add tb.decode.out_valid
+signal_add tb.decode.current_state
+signal_add tb.decode.all_end
+#signal_highlight tb.decode.rst 8
+
+
+# # # # Aligning to the first signal is the default.  We'll just change the color
+grid_signal 0   *
+grid_color  0   2
+#refreshing  auto
+
+#signal_highlight tb.seq.in_match 8
+#signal_highlight tb.seq.valid_i  7
+#signal_highlight tb.seq.htab_we  6
+#signal_highlight tb.seq.match_wire 5
