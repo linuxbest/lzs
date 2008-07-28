@@ -33,6 +33,11 @@ signal_add top.encode.ctl.hraddr
 signal_add top.encode.ctl.state
 signal_add top.encode.ctl.cnt
 
+signal_add top.encode.ctl.hash_data_d1
+signal_add top.encode.ctl.data_d1
+signal_add top.encode.ctl.hash_d1
+signal_highlight top.encode.ctl.hash_d1 8
+
 signal_add top.encode.ctl.off
 signal_add top.encode.ctl.cnt_output
 signal_add top.encode.ctl.cnt_finish

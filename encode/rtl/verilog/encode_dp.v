@@ -14,7 +14,8 @@
 module encode_dp(/*AUTOARG*/
    // Outputs
    m_src_getn, data_empty, data, data_valid, hash_data,
-   hash_data1, hash_ref, data_d1, data_d2, iidx, hdata,
+   hash_data1, hash_ref, data_d1, data_d2, iidx, hash_d1,
+   hash_data_d1, hdata,
    // Inputs
    clk, rst, ce, fo_full, fi, src_empty, m_last, hraddr
    );
@@ -231,6 +232,22 @@ module encode_dp(/*AUTOARG*/
 	  data_d1 <= #1 data;
      end
 
+   output [7:0] hash_d1;
+   reg [7:0] hash_d1;
+   always @(posedge clk)
+     begin
+	if (data_valid)
+	  hash_d1 <= #1 hash_data1;
+     end
+   
+   output hash_data_d1;
+   reg    hash_data_d1;
+   always @(posedge clk)
+     begin
+	if (data_valid_next) 
+	  hash_data_d1 <= #1 data == hash_data1;
+     end
+   
    always @(posedge clk or posedge rst)
      begin
 	if (rst)

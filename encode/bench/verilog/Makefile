@@ -1,8 +1,8 @@
 top: top.v /tmp/encode.src /tmp/encode.chk 
 	iverilog -Wall -o top top.v
+
+trun: top
 	vvp top +size=${SIZE}
-	rm top
-	rm /tmp/encode.src /tmp/encode.chk
 
 clean:
 	rm -f top *.vcd

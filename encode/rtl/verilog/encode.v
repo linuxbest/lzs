@@ -48,8 +48,10 @@ module encode(/*AUTOARG*/
    wire [7:0]		data_d2;		// From dp of encode_dp.v
    wire			data_empty;		// From dp of encode_dp.v
    wire			data_valid;		// From dp of encode_dp.v
+   wire [7:0]		hash_d1;		// From dp of encode_dp.v
    wire [7:0]		hash_data;		// From dp of encode_dp.v
    wire [7:0]		hash_data1;		// From dp of encode_dp.v
+   wire			hash_data_d1;		// From dp of encode_dp.v
    wire [LZF_WIDTH-1:0]	hash_ref;		// From dp of encode_dp.v
    wire [7:0]		hdata;			// From dp of encode_dp.v
    wire [10:0]		hraddr;			// From ctl of encode_ctl.v
@@ -67,6 +69,8 @@ module encode(/*AUTOARG*/
 		.data_d1		(data_d1[7:0]),
 		.data_d2		(data_d2[7:0]),
 		.iidx			(iidx[LZF_WIDTH-1:0]),
+		.hash_d1		(hash_d1[7:0]),
+		.hash_data_d1		(hash_data_d1),
 		.hdata			(hdata[7:0]),
 		// Inputs
 		.clk			(clk),
@@ -96,7 +100,9 @@ module encode(/*AUTOARG*/
 		  .hash_ref		(hash_ref[LZF_WIDTH-1:0]),
 		  .iidx			(iidx[LZF_WIDTH-1:0]),
 		  .hdata		(hdata[7:0]),
-		  .data			(data[7:0]));
+		  .data			(data[7:0]),
+		  .hash_d1		(hash_d1[7:0]),
+		  .hash_data_d1		(hash_data_d1));
    encode_out out(/*AUTOINST*/
 		  // Outputs
 		  .m_dst_putn		(m_dst_putn),

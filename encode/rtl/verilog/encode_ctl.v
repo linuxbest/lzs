@@ -17,7 +17,8 @@ module encode_ctl(/*AUTOARG*/
    cnt_finish,
    // Inputs
    clk, rst, data_valid, data_empty, hash_data, hash_data1,
-   data_d1, data_d2, hash_ref, iidx, hdata, data
+   data_d1, data_d2, hash_ref, iidx, hdata, data, hash_d1,
+   hash_data_d1
    );
    parameter LZF_WIDTH = 20;
 
@@ -28,9 +29,10 @@ module encode_ctl(/*AUTOARG*/
    input [7:0] hash_data, hash_data1, data_d1, data_d2;
    input [LZF_WIDTH-1:0] hash_ref, iidx;
    
-   input [7:0] 		 hdata, data;
+   input [7:0] 		 hdata, data, hash_d1;
    output [10:0] 	 hraddr;
-
+   input 		 hash_data_d1;
+   
    /*AUTOREG*/
 
    reg 			off_valid;
@@ -176,13 +178,6 @@ module encode_ctl(/*AUTOARG*/
 	end
      end // always @ (...
 
-   reg [7:0] hash_d1;
-   always @(posedge clk)
-     begin
-	if (data_valid)
-	  hash_d1 <= #1 hash_data1;
-     end
-
    output cnt_output_enable;
    output [3:0] cnt_len;
    output [12:0] cnt_output;
@@ -204,8 +199,8 @@ module encode_ctl(/*AUTOARG*/
    
    always @(/*AS*/cnt or cnt_big7 or data_d1 or data_d2
 	    or data_empty or data_valid or dummy_cnt
-	    or hash_d1 or hash_data or hdata or off_valid
-	    or state)
+	    or hash_data or hash_data_d1 or hdata
+	    or off_valid or state)
      begin
 	state_next = S_IDLE;         // state
 	cnt_output_enable_next = 0;  // will output the length data
@@ -245,7 +240,7 @@ module encode_ctl(/*AUTOARG*/
 	  end // case: S_SEARCH
 	  
 	  S_TR: begin // driver the history memory 
-	     if (data_valid && data_d1 == hash_d1) begin
+	     if (data_valid && hash_data_d1) begin
 		cnt_count = 1;
 		state_next = S_MATCH;
 	     end else if (data_valid) begin
