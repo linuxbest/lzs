@@ -73,23 +73,15 @@ module encode_dp(/*AUTOARG*/
      end
 
    assign m_src_getn = ce ? getn_reg : 'bz;
+
+   reg 	  data_empty_next;   
+   always @(posedge clk)
+     begin
+	data_valid <= #1 data_valid_next;
+	data <= #1 data_next;
+	data_empty <= #1 data_empty_next;
+     end
    
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  data_valid <= #1 0;
-	else
-	  data_valid <= #1 data_valid_next;
-     end
-
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  data <= #1 0;
-	else 
-	  data <= #1 data_next;
-     end
-
    reg [2:0] 	       iidxL;
    always @(posedge clk or posedge rst)
      begin
@@ -98,21 +90,12 @@ module encode_dp(/*AUTOARG*/
 	else if (data_valid_next)
 	  iidxL <= #1 iidxL + 1;
      end
-
-   reg data_empty_next;
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  data_empty <= #1 0;
-	else
-	  data_empty <= #1 data_empty_next;
-     end
-
+   
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
 	  hdone <= #1 0;
-	else if (hdone == 0 && waddr == 8'hff)
+	else if (hdone == 0 && (&waddr))
 	  hdone <= #1 1;
      end
 
@@ -121,7 +104,7 @@ module encode_dp(/*AUTOARG*/
 	if (rst)
 	  waddr <= #1 0;
 	else if (hdone == 0)
-	  waddr <= #1 waddr + 1;
+	  waddr <= #1 waddr + 1'b1;
 	else 
 	  waddr <= #1 data_next;
      end
@@ -224,11 +207,14 @@ module encode_dp(/*AUTOARG*/
 	  {hash_data1, hash_data, hash_ref} <= #1 htab[raddr];
      end
 
-   always @(posedge clk or posedge rst)
+   always @(posedge clk)
      begin
-	if (rst)
-	  data_d1 <= #1 0;
-	else if (data_valid)
+	raddr <= #1 data_next;
+     end
+   
+   always @(posedge clk)
+     begin
+	if (data_valid)
 	  data_d1 <= #1 data;
      end
 
@@ -264,13 +250,6 @@ module encode_dp(/*AUTOARG*/
 	  iidx <= #1 iidx + 1;
      end
 
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  raddr <= #1 0;
-	else if (data_valid)
-	  raddr <= #1 data_next;
-     end
    /* history */
    input [10:0] hraddr;
    output [7:0] hdata;

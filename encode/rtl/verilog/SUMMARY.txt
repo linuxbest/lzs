@@ -1,13 +1,13 @@
 encode_dp
- Number of Slices:                      61  out of   3584     1%  
- Number of Slice Flip Flops:            83  out of   7168     1%  
+ Number of Slices:                      57  out of   3584     1%  
+ Number of Slice Flip Flops:            75  out of   7168     1%  
  Number of 4 input LUTs:                89  out of   7168     1%  
-   Minimum period: 6.725ns (Maximum Frequency: 148.699MHz)
+   Minimum period: 6.715ns (Maximum Frequency: 148.920MHz)
 
 encode_ctl
- Number of Slices:                     128  out of   3584     3%  
+ Number of Slices:                     125  out of   3584     3%  
  Number of Slice Flip Flops:            96  out of   7168     1%  
- Number of 4 input LUTs:               238  out of   7168     3%  
+ Number of 4 input LUTs:               233  out of   7168     3%  
    Minimum period: 9.471ns (Maximum Frequency: 105.585MHz)
 
 encode_out
@@ -17,8 +17,8 @@ encode_out
    Minimum period: 6.485ns (Maximum Frequency: 154.202MHz)
 
 encode
- Number of Slices:                     305  out of   3584     8%  
- Number of Slice Flip Flops:           273  out of   7168     3%  
- Number of 4 input LUTs:               552  out of   7168     7%  
+ Number of Slices:                     298  out of   3584     8%  
+ Number of Slice Flip Flops:           265  out of   7168     3%  
+ Number of 4 input LUTs:               547  out of   7168     7%  
    Minimum period: 9.633ns (Maximum Frequency: 103.810MHz)
 

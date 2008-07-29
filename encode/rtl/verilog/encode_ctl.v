@@ -41,7 +41,7 @@ module encode_ctl(/*AUTOARG*/
      begin
 	if (rst)
 	  iidx_window <= #1 0;
-	else if (iidx == 2048)
+	else if (iidx[11]) /* 2048 */
 	  iidx_window <= #1 1;
      end
    
@@ -74,17 +74,17 @@ module encode_ctl(/*AUTOARG*/
 	off = max_off - hash_ref;
      end
    
-   parameter [3:0]
-		S_IDLE   = 4'h0,
-		S_SEARCH = 4'h1,
-		S_TR     = 4'h2,
-		S_MATCH  = 4'h3,
-		S_DELAY  = 4'h4,
-		S_END    = 4'h5,
-		S_DONE   = 4'h6,
-		S_STOP   = 4'h7;
+   parameter [2:0]
+		S_IDLE   = 3'h0,
+		S_SEARCH = 3'h1,
+		S_TR     = 3'h2,
+		S_MATCH  = 3'h3,
+		S_DELAY  = 3'h4,
+		S_END    = 3'h5,
+		S_DONE   = 3'h6,
+		S_STOP   = 3'h7;
 
-   reg [3:0] 	  state, state_next;
+   reg [2:0] 	  state, state_next;
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
