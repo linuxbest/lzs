@@ -48,8 +48,8 @@ module encode_out(/*AUTOARG*/
      end // always @ (...
 
    reg 			state, state_next;
-   reg [4:0] 		cnt, cnt_next;
-   reg [31:0] 		sreg; /* 13 + 15 = 28 */
+   reg [3:0] 		cnt, cnt_next;
+   reg [29:0] 		sreg; /* 13 + 15 = 28 */
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
@@ -74,44 +74,20 @@ module encode_out(/*AUTOARG*/
 	  cnt <= #1 cnt_next;
      end  
 
-   always @(/*AS*/cnt or din_len or din_valid or state)
+   always @(/*AS*/cnt or din_len or din_valid)
      begin
 	state_next = 0;
-	cnt_next = 0;
-
-	case (state)
-	  0: begin
-	     if (din_valid) begin
-		cnt_next = cnt + din_len;
-		if (cnt_next > 15)
-		  state_next = 1;
-		else
-		  state_next = 0;
-	     end else begin
-		state_next = 0;
-		cnt_next = cnt;
-	     end
-	  end
-	  
-	  1: begin
-	     if (din_valid) 
-	       cnt_next = (cnt + din_len) - 5'h10;
-	     else
-	       cnt_next = cnt - 5'h10;
-	     
-	     if (cnt_next < 16)
-	       state_next = 0;
-	     else
-	       state_next = 1;
-	  end
-	endcase // case(state)
+	cnt_next = cnt;
+	
+	if (din_valid)
+	  {state_next, cnt_next} = cnt + din_len;
      end // always @ (...
 
    /* output */
    reg [15:0] do;
    always @(/*AS*/cnt or sreg)
      begin
-	do = sreg >> (cnt - 5'h10);
+	do = sreg >> cnt;
      end
    
    reg doe;
@@ -119,15 +95,21 @@ module encode_out(/*AUTOARG*/
      doe = state;
 
    /* 16 -> 64 */
+   reg [1:0] dcnt;
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
 	  dst_reg <= #1 0;
-	else if (doe)
-	  dst_reg <= #1 {do[07:00], do[15:08], dst_reg[63:16]};
-     end
+	else if (doe) begin
+	   case (dcnt)
+	     2'b00: dst_reg[15:00]<= #1 {do[07:00], do[15:08]};
+	     2'b01: dst_reg[31:16]<= #1 {do[07:00], do[15:08]};
+	     2'b10: dst_reg[47:32]<= #1 {do[07:00], do[15:08]};
+	     2'b11: dst_reg[63:48]<= #1 {do[07:00], do[15:08]};
+	   endcase
+	end
+     end // always @ (posedge clk or posedge rst)
    
-   reg [1:0] dcnt;
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
@@ -172,7 +154,7 @@ module encode_out(/*AUTOARG*/
    assign 		m_dst      = ce ? dst_reg        : 64'bz;
    assign 		m_dst_last = ce ? m_dst_last_reg : 1'bz;
    
-   /* for simuation */
+   // synopsys translate_off
    reg [19:0] 		tcnt;
    always @(posedge clk or posedge rst)
      begin
@@ -181,6 +163,7 @@ module encode_out(/*AUTOARG*/
 	else if (!m_dst_putn_reg)
 	  tcnt <= #1 tcnt + 2;
      end
+   // synopsys translate_on
 endmodule // encode_out
 
 // Local Variables:
