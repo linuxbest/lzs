@@ -100,14 +100,8 @@ module encode_out(/*AUTOARG*/
      begin
 	if (rst)
 	  dst_reg <= #1 0;
-	else if (doe) begin
-	   case (dcnt)
-	     2'b00: dst_reg[15:00]<= #1 {do[07:00], do[15:08]};
-	     2'b01: dst_reg[31:16]<= #1 {do[07:00], do[15:08]};
-	     2'b10: dst_reg[47:32]<= #1 {do[07:00], do[15:08]};
-	     2'b11: dst_reg[63:48]<= #1 {do[07:00], do[15:08]};
-	   endcase
-	end
+	else if (doe) 
+	  dst_reg <= #1 {do[07:00], do[15:08], dst_reg[63:16]};
      end // always @ (posedge clk or posedge rst)
    
    always @(posedge clk or posedge rst)
