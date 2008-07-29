@@ -94,11 +94,8 @@ module encode_ctl(/*AUTOARG*/
      end
 
    reg [3:0] cnt, cnt_next;
-   always @(posedge clk or posedge rst)
+   always @(posedge clk)
      begin
-	if (rst)
-	  cnt <= #1 0;
-	else
 	  cnt <= #1 cnt_next;
      end
 
@@ -121,32 +118,25 @@ module encode_ctl(/*AUTOARG*/
    always @(/*AS*/hash_ref)
      hash_ref_plus_one = hash_ref + 1'b1;
    
-   always @(posedge clk or posedge rst)
+   always @(posedge clk)
      begin
-	if (rst)
-	  raddr_plus_one <= #1 0;
-	else if (cnt_load)
+	if (cnt_load)
 	  raddr_plus_one <= #1 hash_ref_plus_one + 1'b1;
 	else if (cnt_count)
 	  raddr_plus_one <= #1 raddr_plus_one + 1'b1;
      end
 
-   always @(posedge clk or posedge rst)
+   always @(posedge clk)
      begin
-	if (rst)
-	  raddr_reg <= #1 0;
-	else if (cnt_load)
+	if (cnt_load)
 	  raddr_reg <= #1 hash_ref_plus_one;
 	else if (cnt_count)
 	  raddr_reg <= #1 raddr_plus_one;
      end
    
    reg cnt_big7, cnt_big7_next;
-   always @(posedge clk or posedge rst)
+   always @(posedge clk)
      begin
-	if (rst)
-	  cnt_big7 <= #1 0;
-	else
 	  cnt_big7 <= #1 cnt_big7_next;
      end
    
@@ -183,13 +173,13 @@ module encode_ctl(/*AUTOARG*/
    output [12:0] cnt_output;
    output 	 cnt_finish;
 
-   reg [2:0] 	 dummy_cnt, dummy_cnt_next;
+   reg [2:0] 	 dummy_cnt;
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
 	  dummy_cnt <= #1 0;
-	else
-	  dummy_cnt <= #1 dummy_cnt_next;
+	else if (state == S_DONE)
+	  dummy_cnt <= #1 dummy_cnt + 1'b1;
      end
    
    reg 		 cnt_finish;
@@ -292,12 +282,10 @@ module encode_ctl(/*AUTOARG*/
 	endcase // case(state)
      end // always @ (...
 
-   always @(posedge clk or posedge rst)
+   always @(posedge clk)
      begin
-	if (rst)
-	  cnt_output <= #1 0;
-	else
-	  cnt_output <= #1 cnt_output_next;
+	cnt_output <= #1 cnt_output_next;
+	cnt_len    <= #1 cnt_len_next;
      end
    
    always @(posedge clk or posedge rst)
@@ -308,21 +296,8 @@ module encode_ctl(/*AUTOARG*/
 	  cnt_output_enable <= #1 cnt_output_enable_next;
      end
 
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  cnt_len <= #1 0;
-	else
-	  cnt_len <= #1 cnt_len_next;
-     end
-
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  cnt_finish <= #1 0;
-	else if (state == S_STOP)
-	  cnt_finish <= #1 1;
-     end
+   always @(/*AS*/state)
+     cnt_finish = state == S_STOP;
    
    /* state == S_SEARCH lit char with offset */
    reg [3:0] encode_len_s;
@@ -334,13 +309,12 @@ module encode_ctl(/*AUTOARG*/
    reg [3:0]  encode_len;
    reg [12:0] encode_data;
    
-   always @(/*AS*/cnt_output_enable_next or dummy_cnt
-	    or encode_data_m or encode_data_s
-	    or encode_len_m or encode_len_s or state)
+   always @(/*AS*/cnt_output_enable_next or encode_data_m
+	    or encode_data_s or encode_len_m or encode_len_s
+	    or state)
      begin
 	cnt_output_next = 0;
 	cnt_len_next= 0;
-	dummy_cnt_next = dummy_cnt;
 	
 	if (cnt_output_enable_next && state == S_SEARCH) begin
 	   /* output offset and liter data */
@@ -354,7 +328,6 @@ module encode_ctl(/*AUTOARG*/
 	   /* output flush data */
 	   cnt_output_next = 9'b000000000;
 	   cnt_len_next    = 4'hf;
-	   dummy_cnt_next  = dummy_cnt + 1;
 	end else begin
 	   cnt_output_next = encode_data_m;
 	   cnt_len_next = encode_len_m;
