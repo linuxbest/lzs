@@ -1,5 +1,5 @@
 top: top.v /tmp/encode.src /tmp/encode.chk 
-	iverilog -Wall -o top top.v
+	iverilog -Wall -o top top.v -y ../../../common/
 
 trun: top
 	vvp top +size=${SIZE}

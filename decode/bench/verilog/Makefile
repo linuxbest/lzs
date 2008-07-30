@@ -1,4 +1,4 @@
-OBJS += tb_data.v
+OBJS += ../../../encode/bench/verilog/data.v
 OBJS += ../../rtl/verilog/decode.v
 OBJS += ../../rtl/verilog/state_machine.v
 OBJS += ../../rtl/verilog/copy_ref.v
@@ -9,7 +9,7 @@ D_SRC  = /tmp/decode.src
 C_FILE = /tmp/decode.chk
 
 tb : tb.v ${OBJS} ${D_SRC}
-	iverilog -o $@ tb.v ${OBJS} -y../../rtl/verilog/
+	iverilog -o $@ tb.v ${OBJS} -y../../rtl/verilog/ -y ../../../common/ -y../../../encode/bench/verilog/
 
 trun: tb ${D_SRC} ${C_FILE}
 	vvp tb +LZS_FILE=${D_SRC} +SRC_FILE=${C_FILE} +LZS_SIZE=299

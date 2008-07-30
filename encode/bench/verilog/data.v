@@ -12,10 +12,6 @@
  *
  *****************************************************************************/
 
-`include "../../common/fifo_control.v"
-`include "../../common/synchronizer_flop.v"
-`include "../../common/tpram.v"
-
 module data(/*AUTOARG*/
    // Outputs
    clk, rst, src_empty, ce, fo_full, m_last, fi, fi_cnt,
