@@ -62,13 +62,16 @@ module tb(/*AUTOARG*/
       cnt = 0;
       c = $fopen(src_file, "r");
       o = $fopen(OUT_FILE, "w");
+
+#5000;
+      $finish;
    end
 
    wire clk;
    always @(posedge clk)
-   if (tb.decode.state.all_end) begin
-      $writememh("history_ram.mem", tb.decode.history.mem);
-      # 200;
+   if (tb.decode.all_end) begin
+      //$writememh("history_ram.mem", tb.decode.history.mem);
+      //# 200;
       $finish;
    end
    
@@ -85,10 +88,9 @@ module tb(/*AUTOARG*/
 		.stream_ack		(stream_ack),
 		.stream_width		(stream_width[3:0]));
 
-   decode decode(/*AUTOINST*/
+   decode_ctl decode(/*AUTOINST*/
 		 // Outputs
 		 .all_end		(all_end),
-		 .current_state		(current_state[2:0]),
 		 .out_data		(out_data[7:0]),
 		 .out_valid		(out_valid),
 		 .stream_ack		(stream_ack),
@@ -113,7 +115,7 @@ module tb(/*AUTOARG*/
 	      $dumpflush(".");
 	      $stop;
 	   end else
-	     $write("cnt %h: right %h \n", cnt, tb.decode.out_data);
+//	     $write("cnt %h: right %h \n", cnt, tb.decode.out_data);
 	   cnt = cnt + 1;
 	end
      end

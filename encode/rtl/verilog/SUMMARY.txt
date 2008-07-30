@@ -11,10 +11,10 @@ encode_ctl
    Minimum period: 9.471ns (Maximum Frequency: 105.585MHz)
 
 encode_out
- Number of Slices:                     127  out of   3584     3%  
+ Number of Slices:                     128  out of   3584     3%  
  Number of Slice Flip Flops:           106  out of   7168     1%  
- Number of 4 input LUTs:               232  out of   7168     3%  
-   Minimum period: 6.485ns (Maximum Frequency: 154.202MHz)
+ Number of 4 input LUTs:               237  out of   7168     3%  
+   Minimum period: 6.630ns (Maximum Frequency: 150.830MHz)
 
 encode
  Number of Slices:                     298  out of   3584     8%  

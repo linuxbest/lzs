@@ -245,7 +245,9 @@ lzsCompress(const void *const _in_data, unsigned int in_len,
                 return -1;
 done:
         putBits(s, skbout, 0x180, 9);
-        /*putBits(s, skbout, 0, 16);*/
+        putBits(s, skbout, 0x00, 16);
+        putBits(s, skbout, 0x00, 16);
+        putBits(s, skbout, 0, 16);
         dprintf("Leave, %x\n", skbout->len);
 #ifdef DEBUG
         fclose(fp_debug);

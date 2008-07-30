@@ -9,7 +9,7 @@ D_SRC  = /tmp/decode.src
 C_FILE = /tmp/decode.chk
 
 tb : tb.v ${OBJS} ${D_SRC}
-	iverilog -o $@ tb.v ${OBJS}
+	iverilog -o $@ tb.v ${OBJS} -y../../rtl/verilog/
 
 trun: tb ${D_SRC} ${C_FILE}
 	vvp tb +LZS_FILE=${D_SRC} +SRC_FILE=${C_FILE} +LZS_SIZE=299

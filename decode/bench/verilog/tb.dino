@@ -12,8 +12,11 @@ signal_highlight tb.decode.stream_ack 8
 
 signal_add tb.decode.out_data
 signal_add tb.decode.out_valid
-signal_add tb.decode.current_state
 signal_add tb.decode.all_end
+signal_add tb.decode.state
+signal_add tb.decode.len_n
+signal_add tb.decode.offset_n
+signal_add tb.decode.cnt_n
 #signal_highlight tb.decode.rst 8
 
 

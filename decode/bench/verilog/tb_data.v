@@ -25,7 +25,8 @@ module tb_data(/*AUTOARG*/
    parameter LZF_SIZE  = 65536;
    parameter IN_WIDTH = 13;
    
-   integer src_file , src_cnt, left;
+   integer src_file , src_cnt;
+   reg [15:0] left;
    reg [63:0] src_char;
    reg [15:0] temp;
    reg [LZF_WIDTH-1:0] src_size;
@@ -108,49 +109,15 @@ module tb_data(/*AUTOARG*/
       stream_valid = 1;
             
       for (src_cnt = 2; src_cnt < src_size; dummy = 1) begin
-	 if (src_cnt % 'hd == 0) begin
-	    stream_valid =  0;
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    stream_valid = 1;
-	 end
-	 else if (src_cnt % 'h37 == 0) begin
-	    stream_valid =  0;
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    @(negedge clk);
-	    stream_valid = 1;
-	 end
 	 stream_data = src_char[63:64-IN_WIDTH];
-	 $write("data: %h %d %h, %d\n", stream_data ,left, src_char << 9, 
-                         src_cnt, src_size);
-	 @(negedge clk);
+	 @(posedge clk);
 	 if (stream_ack) begin
 	    src_char = src_char << stream_width;
-	    //$write("src_char: %h  %d\n", src_char, left-stream_width);
 	    if (left - stream_width < 32) begin
 	       getword(src_file, temp);
-	       //$write("temp : %h \n", temp);
-	       src_char = src_char | (temp << (63 - left + stream_width - 15));
-	       //$write("%h, %d\n", src_char, 63-left+stream_width-15);
+	       $write("data %h, left %d, used %d, %h, temp %h\n", 
+                               src_char[63:64-IN_WIDTH], left, stream_width, src_char, temp);
+	       src_char = src_char | (temp << (48 - left + stream_width));
 	       left = left + 'd16;
 	       src_cnt = src_cnt + 2;
 	    end
