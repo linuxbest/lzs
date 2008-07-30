@@ -13,6 +13,7 @@
 module decode_ctl (/*AUTOARG*/
    // Outputs
    stream_width, stream_ack, out_data, out_valid, all_end,
+   hdata,
    // Inputs
    clk, rst, ce_decode, fo_full, stream_data, stream_valid
    );
@@ -31,6 +32,8 @@ module decode_ctl (/*AUTOARG*/
    output 	out_valid;
    output 	all_end;
 
+   output [7:0] hdata;
+   
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
    reg [7:0]		out_data;
@@ -154,12 +157,42 @@ module decode_ctl (/*AUTOARG*/
 	out_data  <= #1 out_data_n;
      end
 
-   /* offset */
-   reg [10:0] off, off_n;
-   reg 	      off_load;
-   always @(/*AS*/off or state or stream_data)
+   wire [7:0] hdata;
+   reg [10:0] waddr, raddr;
+   always @(posedge clk or posedge rst)
      begin
-	off_n = off;
+	if (rst)
+	  waddr <= #1 11'h0;
+	else if (out_valid)
+	  waddr <= #1 waddr + 1'b1;
+     end
+
+   tpram history_mem (.clk_a(clk),
+		      .rst_a(rst),
+		      .ce_a(1'b1),
+		      .we_a(out_valid),
+		      .oe_a(1'b0),
+		      .addr_a(waddr),
+		      .di_a(out_data),
+		      .do_a(),
+		      
+		      .clk_b(clk),
+		      .rst_b(rst),
+		      .ce_b(1'b1),
+		      .we_b(1'b0),
+		      .oe_b(1'b1),
+		      .addr_b(raddr),
+		      .di_b(),
+		      .do_b(hdata));
+   defparam history_mem.aw = 11;
+   defparam history_mem.dw = 8;
+   
+   /* offset */
+   reg [10:0] off_n;
+   reg 	      off_load;
+   always @(/*AS*/state or stream_data)
+     begin
+	off_n = 11'h0;
 	off_load = 1'b0;
 	if (state == S_PROC && stream_data[12]) begin 
 	   if(~stream_data[11]) begin
@@ -172,10 +205,12 @@ module decode_ctl (/*AUTOARG*/
 	end
      end
    
-   always @(posedge clk)
+   always @(posedge clk or posedge rst)
      begin
-	if (off_load)
-	  off <= #1 off_n;
+	if (rst)
+	  raddr <= #1 11'h0;
+	else if (off_load)
+	  raddr <= #1 off_n;
      end
    
    assign all_end = state == S_END;
