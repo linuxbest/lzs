@@ -32,11 +32,11 @@ module data(/*AUTOARG*/
    output [LZF_WIDTH-1:0] fi_cnt;
 
    wire 		  m_last;
+   reg			clk = 1'b1;
    
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
    reg			ce;
-   reg			clk;
    reg [LZF_WIDTH-1:0]	fi_cnt;
    reg			fo_full;
    reg			rst;
@@ -168,10 +168,7 @@ module data(/*AUTOARG*/
 	$finish;
    end
 
-   initial begin
-      clk = 0;
-      #10 forever #2.5 clk = ~clk;
-   end
+   always #7.5 clk = !clk;
 endmodule // data
 
 // Local Variables:
