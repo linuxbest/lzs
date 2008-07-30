@@ -33,7 +33,6 @@ module decode_ctl (/*AUTOARG*/
 
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
-   reg			all_end;
    reg [7:0]		out_data;
    reg			out_valid;
    reg			stream_ack;
@@ -59,16 +58,6 @@ module decode_ctl (/*AUTOARG*/
 	  state <= #1 state_n;
      end
 
-   reg [10:0] offset_n, offset;
-   reg [3:0]  cnt_n, cnt;
-   reg [7:0]  out_data_n;
-   reg 	      out_valid_n;
-   always @(posedge clk)
-     begin
-	out_data  <= #1 out_data_n;
-	out_valid <= #1 out_valid_n;
-     end
-	     
    always @(/*AS*/ce_decode or state or stream_data
 	    or stream_valid)
      begin
@@ -76,9 +65,6 @@ module decode_ctl (/*AUTOARG*/
 	stream_ack   = 1'b0;
 	
 	state_n = state;
-
-	out_valid_n = 1'b0;
-	
 	case (state)
 	  S_IDLE: begin
 	     if (ce_decode)
@@ -89,22 +75,16 @@ module decode_ctl (/*AUTOARG*/
 	     if (stream_valid) begin
 		if (stream_data[12:4] == 9'b110000000) begin /* END */
 		   state_n = S_END;
-		end else if (~stream_data[12]) begin      /* uncompress data */
+		end else if (~stream_data[12]) begin         /* uncompress*/
 		   stream_width = 4'h9;
 		   stream_ack   = 1'b1;
-		   
-		   out_data_n  = stream_data[11:4];
-		   out_valid_n = 1'b1;
 		end else begin                   /* offset and first len */
 		   if (~stream_data[11]) begin
 		      stream_width = 4'hd;       /* 11 + 2 */
-		      offset_n     = stream_data[10:0];
 		   end else begin
 		      stream_width = 4'h9;       /* 7 + 2 */
-		      offset_n     = stream_data[10:4];
 		   end
-		   stream_ack   = 1'b1;
-		   cnt_n = stream_data[12:09];
+		   stream_ack = 1'b1;
 		   state_n = S_LEN1;
 		end // else: !if(~stream_data[12])
 	     end // if (stream_valid)
@@ -112,7 +92,6 @@ module decode_ctl (/*AUTOARG*/
 
 	  S_LEN1:   begin
 	     if (stream_valid) begin
-		cnt_n = stream_data[12:09];
 		stream_width = 4'h2;
 		stream_ack   = 1'b1;
 		if (stream_data[12:11] == 2'b11) begin
@@ -125,7 +104,6 @@ module decode_ctl (/*AUTOARG*/
 	  
 	  S_LEN2:   begin
 	     if (stream_valid) begin
-		cnt_n = stream_data[12:09];
 		stream_width = 4'h2;
 		stream_ack   = 1'b1;
 		if (stream_data[12:11] == 2'b11) begin
@@ -135,10 +113,9 @@ module decode_ctl (/*AUTOARG*/
 		end
 	     end
 	  end
-
+	  
 	  S_LEN3: begin
 	     if (stream_valid) begin
-		cnt_n = stream_data[12:09];
 		stream_width = 4'h4;
 		stream_ack   = 1'b1;
 		if (stream_data[12:09] == 4'b1111) begin
@@ -154,5 +131,26 @@ module decode_ctl (/*AUTOARG*/
 	  end
 	  
 	endcase
+     end // always @ (...
+
+   /* out data and valid signal */
+   reg out_valid_n;
+   reg [7:0] out_data_n;
+   always @(/*AS*/out_data or state or stream_data)
+     if (state == S_PROC && ~stream_data[12])  begin
+	out_valid_n = 1'b1;
+	out_data_n = stream_data[11:4];
+     end else begin
+	out_valid_n = 1'b0;
+	out_data_n = out_data;
      end
+   
+   always @(posedge clk)
+     begin
+	out_valid <= #1 out_valid_n;
+	out_data  <= #1 out_data_n;
+     end
+
+   assign all_end = state == S_END;
+   
 endmodule // decode_ctl
