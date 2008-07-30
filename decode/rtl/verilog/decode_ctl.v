@@ -136,21 +136,48 @@ module decode_ctl (/*AUTOARG*/
    /* out data and valid signal */
    reg out_valid_n;
    reg [7:0] out_data_n;
-   always @(/*AS*/out_data or state or stream_data)
-     if (state == S_PROC && ~stream_data[12])  begin
-	out_valid_n = 1'b1;
-	out_data_n = stream_data[11:4];
-     end else begin
-	out_valid_n = 1'b0;
-	out_data_n = out_data;
-     end
    
+   always @(/*AS*/out_data or state or stream_data)
+     begin
+	if (state == S_PROC && ~stream_data[12])  begin
+	   out_valid_n = 1'b1;
+	   out_data_n = stream_data[11:4];
+	end else begin
+	   out_valid_n = 1'b0;
+	   out_data_n = out_data;
+	end
+     end
+
    always @(posedge clk)
      begin
 	out_valid <= #1 out_valid_n;
 	out_data  <= #1 out_data_n;
      end
 
+   /* offset */
+   reg [10:0] off, off_n;
+   reg 	      off_load;
+   always @(/*AS*/off or state or stream_data)
+     begin
+	off_n = off;
+	off_load = 1'b0;
+	if (state == S_PROC && stream_data[12]) begin 
+	   if(~stream_data[11]) begin
+	      off_n = stream_data[10:0];
+	      off_load = 1'b1;
+	   end else begin
+	      off_n = stream_data[10:4];
+	      off_load = 1'b1;
+	   end
+	end
+     end
+   
+   always @(posedge clk)
+     begin
+	if (off_load)
+	  off <= #1 off_n;
+     end
+   
    assign all_end = state == S_END;
    
 endmodule // decode_ctl
