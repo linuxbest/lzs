@@ -48,6 +48,7 @@ module decode_ctl (/*AUTOARG*/
 		S_LEN2 = 3'h3,
 		S_LEN3 = 3'h4,
 		S_WAIT = 3'h5,
+		S_COPY = 3'h6,
 		S_END  = 3'h7;
    reg [2:0]
 	    state, state_n;
@@ -59,13 +60,24 @@ module decode_ctl (/*AUTOARG*/
 	else
 	  state <= #1 state_n;
      end
-
-   always @(/*AS*/state or stream_data or stream_valid)
+   reg [3:0] cnt, cnt_n, cnt_load, cnt_dec;
+   reg [10:0] off, off_n;
+   reg 	      off_load, off_load_n;
+   always @(/*AS*/cnt or state or stream_data
+	    or stream_valid)
      begin
 	stream_width = 4'h0;
 	stream_ack   = 1'b0;
 	
 	state_n = state;
+
+	cnt_load = 1'b0;
+	cnt_n    = cnt;
+	cnt_dec  = 1'b0;
+
+	off_n = 11'h0;
+	off_load_n = 1'b0;
+	
 	case (state)
 	  S_IDLE: begin
 	     state_n = S_PROC;
@@ -81,9 +93,12 @@ module decode_ctl (/*AUTOARG*/
 		end else begin                   /* offset and first len */
 		   if (~stream_data[11]) begin
 		      stream_width = 4'hd;       /* 11 + 2 */
+		      off_n = stream_data[10:0];
 		   end else begin
 		      stream_width = 4'h9;       /* 7 + 2 */
+		      off_n = stream_data[10:4];
 		   end
+		   off_load_n = 1'b1;
 		   stream_ack = 1'b1;
 		   state_n = S_LEN1;
 		end // else: !if(~stream_data[12])
@@ -94,11 +109,17 @@ module decode_ctl (/*AUTOARG*/
 	     if (stream_valid) begin
 		stream_width = 4'h2;
 		stream_ack   = 1'b1;
-		if (stream_data[12:11] == 2'b11) begin
-		   state_n = S_LEN2;
-		end else begin
-		   state_n = S_WAIT;
-		end
+		cnt_load     = 1'b1;
+		state_n      = S_WAIT;
+		case (stream_data[12:11])
+		  2'b00: cnt_n = 4'b0010; /* 2 */
+		  2'b01: cnt_n = 4'b0011; /* 3 */
+		  2'b10: cnt_n = 4'b0100; /* 4 */
+		  2'b11: begin 
+		     cnt_load = 1'b0;
+		     state_n = S_LEN2;
+		  end
+		endcase
 	     end
 	  end // case: S_LEN
 	  
@@ -106,11 +127,25 @@ module decode_ctl (/*AUTOARG*/
 	     if (stream_valid) begin
 		stream_width = 4'h2;
 		stream_ack   = 1'b1;
-		if (stream_data[12:11] == 2'b11) begin
-		   state_n = S_LEN3;
-		end else begin
-		   state_n = S_WAIT;
-		end
+		cnt_load     = 1'b1;
+		state_n      = S_WAIT;
+		case (stream_data[12:11])
+		  2'b00: cnt_n = 4'b0101; /* 5 */
+		  2'b01: cnt_n = 4'b0110; /* 6 */
+		  2'b10: cnt_n = 4'b0111; /* 7 */
+		  2'b11: begin
+		     cnt_n = 4'b1000;
+		     state_n = S_COPY;
+		  end
+		endcase
+	     end
+	  end
+
+	  S_COPY: begin
+	     if (cnt != 0) begin
+		cnt_dec = 1'b1;
+	     end else begin
+		state_n = S_LEN3;
 	     end
 	  end
 	  
@@ -118,8 +153,10 @@ module decode_ctl (/*AUTOARG*/
 	     if (stream_valid) begin
 		stream_width = 4'h4;
 		stream_ack   = 1'b1;
+		cnt_load = 1'b1;
+		cnt_n = stream_data[12:09];
 		if (stream_data[12:09] == 4'b1111) begin
-		   state_n = S_LEN3;
+		   state_n = S_COPY;
 		end else begin
 		   state_n = S_WAIT;
 		end
@@ -127,7 +164,11 @@ module decode_ctl (/*AUTOARG*/
 	  end // case: S_LEN3
 	  
 	  S_WAIT: begin
-	     state_n = S_PROC;
+	     if (cnt != 0) begin
+		cnt_dec = 1'b1;
+	     end else begin
+		state_n = S_PROC;
+	     end
 	  end
 	  
 	endcase
@@ -137,14 +178,14 @@ module decode_ctl (/*AUTOARG*/
    reg out_valid_n;
    reg [7:0] out_data_n;
    
-   always @(/*AS*/out_data or state or stream_data)
+   always @(/*AS*/state or stream_data or stream_valid)
      begin
-	if (state == S_PROC && ~stream_data[12])  begin
+	if (stream_valid && state == S_PROC && ~stream_data[12])  begin
 	   out_valid_n = 1'b1;
 	   out_data_n = stream_data[11:4];
 	end else begin
 	   out_valid_n = 1'b0;
-	   out_data_n = out_data;
+	   out_data_n = 8'h0;
 	end
      end
 
@@ -183,33 +224,33 @@ module decode_ctl (/*AUTOARG*/
 		      .do_b(hdata));
    defparam history_mem.aw = 11;
    defparam history_mem.dw = 8;
+
+   reg 	    hwe;
+   always @(posedge clk)
+     hwe <= #1 cnt_dec;
    
-   /* offset */
-   reg [10:0] off_n;
-   reg 	      off_load;
-   always @(/*AS*/state or stream_data)
+   always @(posedge clk)
      begin
-	off_n = 11'h0;
-	off_load = 1'b0;
-	if (state == S_PROC && stream_data[12]) begin 
-	   if(~stream_data[11]) begin
-	      off_n = stream_data[10:0];
-	      off_load = 1'b1;
-	   end else begin
-	      off_n = stream_data[10:4];
-	      off_load = 1'b1;
-	   end
-	end
+	if (cnt_load)
+	  cnt <= #1 cnt_n;
+	else if (cnt_dec)
+	  cnt <= #1 cnt - 1'b1;
+     end
+
+   always @(posedge clk)
+     begin
+	off <= #1 off_n;
+	off_load <= #1 off_load_n;
      end
    
-   always @(posedge clk or posedge rst)
+   always @(posedge clk)
      begin
-	if (rst)
-	  raddr <= #1 11'h0;
-	else if (off_load)
-	  raddr <= #1 off_n;
+	if (off_load)
+	  raddr <= #1 waddr - off;
+	else if (cnt_dec)
+	  raddr <= #1 raddr + 1'b1;
      end
-   
+
    assign all_end = state == S_END;
    
 endmodule // decode_ctl
