@@ -13,7 +13,6 @@
 module decode_ctl (/*AUTOARG*/
    // Outputs
    stream_width, stream_ack, out_data, out_valid, all_end,
-   hdata,
    // Inputs
    clk, rst, fo_full, stream_data, stream_valid
    );
@@ -31,12 +30,8 @@ module decode_ctl (/*AUTOARG*/
    output 	out_valid;
    output 	all_end;
 
-   output [7:0] hdata;
-   
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
-   reg [7:0]		out_data;
-   reg			out_valid;
    reg			stream_ack;
    reg [3:0]		stream_width;
    // End of automatics
@@ -63,6 +58,9 @@ module decode_ctl (/*AUTOARG*/
    reg [3:0] cnt, cnt_n, cnt_load, cnt_dec;
    reg [10:0] off, off_n;
    reg 	      off_load, off_load_n;
+   reg 	      out_valid_n;
+   reg [7:0]  out_data_n;
+   
    always @(/*AS*/cnt or state or stream_data
 	    or stream_valid)
      begin
@@ -77,6 +75,9 @@ module decode_ctl (/*AUTOARG*/
 
 	off_n = 11'h0;
 	off_load_n = 1'b0;
+
+	out_data_n = 8'h0;
+	out_valid_n = 1'b0;
 	
 	case (state)
 	  S_IDLE: begin
@@ -90,6 +91,8 @@ module decode_ctl (/*AUTOARG*/
 		end else if (~stream_data[12]) begin         /* uncompress*/
 		   stream_width = 4'h9;
 		   stream_ack   = 1'b1;
+		   out_valid_n = 1'b1;
+		   out_data_n = stream_data[11:4];
 		end else begin                   /* offset and first len */
 		   if (~stream_data[11]) begin
 		      stream_width = 4'hd;       /* 11 + 2 */
@@ -175,24 +178,12 @@ module decode_ctl (/*AUTOARG*/
      end // always @ (...
 
    /* out data and valid signal */
-   reg out_valid_n;
-   reg [7:0] out_data_n;
-   
-   always @(/*AS*/state or stream_data or stream_valid)
-     begin
-	if (stream_valid && state == S_PROC && ~stream_data[12])  begin
-	   out_valid_n = 1'b1;
-	   out_data_n = stream_data[11:4];
-	end else begin
-	   out_valid_n = 1'b0;
-	   out_data_n = 8'h0;
-	end
-     end
-
+   reg [7:0] out_data_r;
+   reg 	     out_valid_r;
    always @(posedge clk)
      begin
-	out_valid <= #1 out_valid_n;
-	out_data  <= #1 out_data_n;
+	out_valid_r <= #1 out_valid_n;
+	out_data_r  <= #1 out_data_n;
      end
 
    wire [7:0] hdata;
@@ -251,6 +242,8 @@ module decode_ctl (/*AUTOARG*/
 	  raddr <= #1 raddr + 1'b1;
      end
 
-   assign all_end = state == S_END;
+   assign all_end   = state == S_END;
+   assign out_data  = out_data_r  | hdata;
+   assign out_valid = out_valid_r | hwe;
    
 endmodule // decode_ctl
