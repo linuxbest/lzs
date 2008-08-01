@@ -20,18 +20,19 @@
 
 module top(/*AUTOARG*/
    // Outputs
-   out_valid, out_done, out_data, m_dst_putn, m_dst_last,
-   m_dst, fi_cnt
+   out_valid, out_done, out_data, fi_cnt,
+   // Inputs
+   m_endn
    );
    parameter LZF_WIDTH = 20;
    
    /*AUTOINPUT*/
+   // Beginning of automatic inputs (from unused autoinst inputs)
+   input		m_endn;			// To data of data.v
+   // End of automatics
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output [LZF_WIDTH-1:0]fi_cnt;		// From data of data.v
-   output [63:0]	m_dst;			// From encode of encode.v
-   output		m_dst_last;		// From encode of encode.v
-   output		m_dst_putn;		// From encode of encode.v
    output [15:0]	out_data;		// From encode of encode.v
    output		out_done;		// From encode of encode.v
    output		out_valid;		// From encode of encode.v
@@ -42,7 +43,6 @@ module top(/*AUTOARG*/
    wire			clk;			// From data of data.v
    wire [63:0]		fi;			// From data of data.v
    wire			fo_full;		// From data of data.v
-   wire			m_endn;			// From encode of encode.v
    wire			m_last;			// From data of data.v
    wire			m_src_getn;		// From encode of encode.v
    wire			rst;			// From data of data.v
@@ -80,10 +80,6 @@ module top(/*AUTOARG*/
 
    encode encode(/*AUTOINST*/
 		 // Outputs
-		 .m_dst			(m_dst[63:0]),
-		 .m_dst_last		(m_dst_last),
-		 .m_dst_putn		(m_dst_putn),
-		 .m_endn		(m_endn),
 		 .m_src_getn		(m_src_getn),
 		 .out_data		(out_data[15:0]),
 		 .out_done		(out_done),

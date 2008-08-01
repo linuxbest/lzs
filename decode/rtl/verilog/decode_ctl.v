@@ -180,12 +180,16 @@ module decode_ctl (/*AUTOARG*/
    /* out data and valid signal */
    reg [7:0] out_data_r;
    reg 	     out_valid_r;
-   always @(posedge clk)
+   always @(posedge clk or posedge rst)
      begin
-	out_valid_r <= #1 out_valid_n;
-	out_data_r  <= #1 out_data_n;
+	if (rst)
+	  out_valid_r <= #1 1'b0;
+	else 
+	  out_valid_r <= #1 out_valid_n;
      end
-
+   always @(posedge clk)
+     out_data_r  <= #1 out_data_n;
+   
    wire [7:0] hdata;
    reg [10:0] waddr, raddr;
    always @(posedge clk or posedge rst)

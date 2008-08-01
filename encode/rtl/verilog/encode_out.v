@@ -13,8 +13,7 @@
  *****************************************************************************/
 module encode_out(/*AUTOARG*/
    // Outputs
-   m_dst_putn, m_dst, m_endn, m_dst_last, out_data,
-   out_valid, out_done,
+   data_o, valid_o, done_o,
    // Inputs
    clk, rst, ce, cnt_output_enable, cnt_finish, cnt_output,
    cnt_len
@@ -25,23 +24,17 @@ module encode_out(/*AUTOARG*/
    input [12:0] cnt_output;
    input [3:0] cnt_len;
 
-   output m_dst_putn;
-   output [63:0] m_dst;
+   /* output */
+   output [15:0] data_o;
+   output 	 valid_o;
+   output 	 done_o;
 
-   output 	 m_endn;
-   output 	 m_dst_last;
-   
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
-   reg [63:0]		m_dst;
-   reg			m_dst_last;
-   reg			m_dst_putn;
-   reg			m_endn;
+   reg [15:0]		data_o;
+   reg			done_o;
+   reg			valid_o;
    // End of automatics
-   
-   reg 		 m_endn_reg;
-   reg 		 m_dst_putn_reg;
-   reg [63:0] 	 dst_reg;
    
    reg [3:0] 		din_len;
    reg [12:0] 		din_data;
@@ -90,27 +83,20 @@ module encode_out(/*AUTOARG*/
 	  {state_next, cnt_next} = cnt + din_len;
      end // always @ (...
 
-   /* output */
-   output [15:0] out_data;
-   output 	 out_valid;
-   output 	 out_done;
    
-   reg [15:0] out_data;
    always @(posedge clk)
      begin
-	out_data <= #1 sreg >> cnt;
+	data_o <= #1 sreg >> cnt;
      end
    
-   reg out_valid;
    always @(posedge clk)
-     out_valid <= #1 state;
-
-   reg out_done;
+     valid_o <= #1 state;
+   
    always @(posedge clk)
      if (cnt_finish && state == 0 && state == 0)
-       out_done <= #1 1'b1;
+       done_o <= #1 1'b1;
      else
-       out_done <= #1 1'b0;
+       done_o <= #1 1'b0;
    
 endmodule // encode_out
 
