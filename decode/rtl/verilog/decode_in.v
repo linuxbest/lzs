@@ -78,7 +78,7 @@ module decode_in (/*AUTOARG*/
      begin
 	pull_n  = 1'b0;
 	state_n = state;
-	sreg_n  = state;
+	sreg_n  = sreg;
 	left_n  = left;
 	
 	case (state)
