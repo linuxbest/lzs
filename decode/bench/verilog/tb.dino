@@ -8,13 +8,14 @@ signal_add tb.ce
 signal_add tb.fi
 signal_add tb.src_empty
 
-signal_add tb.decode_in.state
-signal_add tb.decode_in.sreg
-signal_add tb.decode_in.cnt
-signal_add tb.decode_in.left
-signal_add tb.decode_in.data
-signal_add tb.decode_in.pull
-signal_highlight tb.decode_in.pull 8
+#signal_add tb.decode_in.state
+#signal_add tb.decode_in.sreg
+#signal_add tb.decode_in.cnt
+#signal_add tb.decode_in.left
+#signal_add tb.decode_in.data
+#signal_add tb.decode_in.pull
+#signal_highlight tb.decode_in.pull 8
+#signal_add tb.tb_data.src_char
 
 signal_add tb.decode_ctl.stream_data
 signal_add tb.decode_ctl.stream_valid
@@ -22,12 +23,21 @@ signal_add tb.decode_ctl.stream_width
 signal_add tb.decode_ctl.stream_ack
 signal_highlight tb.decode_ctl.stream_ack 8
 
+signal_add tb.decode_ctl.state
+signal_add tb.decode_ctl.raddr
+signal_add tb.decode_ctl.waddr
+signal_add tb.decode_ctl.busy
+signal_add tb.decode_ctl.cnt
+signal_highlight tb.decode_ctl.cnt 8
+
+signal_add tb.decode_ctl.hdata
+signal_add tb.decode_ctl.hwe
+signal_highlight tb.decode_ctl.hwe 8 
+
 signal_add tb.decode_ctl.out_data
 signal_add tb.decode_ctl.out_valid
 signal_add tb.decode_ctl.all_end
-signal_add tb.decode_ctl.state
-signal_add tb.decode_ctl.off
-#signal_highlight tb.decode_ctl.rst 8
+signal_highlight tb.decode_ctl.all_end 8
 
 
 # # # # Aligning to the first signal is the default.  We'll just change the color

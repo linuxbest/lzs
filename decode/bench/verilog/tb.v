@@ -15,7 +15,8 @@
 
 module tb(/*AUTOARG*/
    // Outputs
-   out_valid, out_data, m_last, hdata, fi_cnt, all_end,
+   stream_empty, out_valid, out_data, m_last, fi_cnt,
+   ce_decode, all_end,
    // Inputs
    m_endn
    );
@@ -28,11 +29,12 @@ module tb(/*AUTOARG*/
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output		all_end;		// From decode_ctl of decode_ctl.v
+   output		ce_decode;		// From tb_data of tb_data.v
    output [LZF_WIDTH-1:0]fi_cnt;		// From data of data.v
-   output [7:0]		hdata;			// From decode_ctl of decode_ctl.v
    output		m_last;			// From data of data.v
    output [7:0]		out_data;		// From decode_ctl of decode_ctl.v
    output		out_valid;		// From decode_ctl of decode_ctl.v
+   output		stream_empty;		// From tb_data of tb_data.v
    // End of automatics
    /*AUTOINPUT*/
    // Beginning of automatic inputs (from unused autoinst inputs)
@@ -42,14 +44,14 @@ module tb(/*AUTOARG*/
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
    wire			ce;			// From data of data.v
-   wire			clk;			// From data of data.v
+   wire			clk;			// From tb_data of tb_data.v, ...
    wire [63:0]		fi;			// From data of data.v
-   wire			fo_full;		// From data of data.v
+   wire			fo_full;		// From tb_data of tb_data.v, ...
    wire			m_src_getn;		// From decode_in of decode_in.v
-   wire			rst;			// From data of data.v
+   wire			rst;			// From tb_data of tb_data.v, ...
    wire			src_empty;		// From data of data.v
    wire			stream_ack;		// From decode_ctl of decode_ctl.v
-   wire			stream_valid;		// From decode_in of decode_in.v
+   wire			stream_valid;		// From tb_data of tb_data.v, ...
    // End of automatics
 
    /* Local variable */
@@ -66,53 +68,69 @@ module tb(/*AUTOARG*/
    reg [255:0] lzs_file;
    reg [31:0]  lzs_size;
    reg [255:0] src_file;
-
-   data data(/*AUTOINST*/
-	     // Outputs
-	     .clk			(clk),
-	     .rst			(rst),
-	     .src_empty			(src_empty),
-	     .ce			(ce),
-	     .fo_full			(fo_full),
-	     .m_last			(m_last),
-	     .fi			(fi[63:0]),
-	     .fi_cnt			(fi_cnt[LZF_WIDTH-1:0]),
-	     // Inputs
-	     .m_src_getn		(m_src_getn),
-	     .m_endn			(m_endn));
-
+//`define ABC
+`ifdef ABC
+   tb_data tb_data(/*AUTOINST*/
+		   // Outputs
+		   .stream_valid	(stream_valid),
+		   .stream_data		(stream_data[IN_WIDTH-1:0]),
+		   .stream_empty	(stream_empty),
+		   .fo_full		(fo_full),
+		   .clk			(clk),
+		   .ce_decode		(ce_decode),
+		   .rst			(rst),
+		   // Inputs
+		   .stream_ack		(stream_ack),
+		   .stream_width	(stream_width[3:0]));
+`else // !`ifdef ABC
+   data  data(/*AUTOINST*/
+	      // Outputs
+	      .clk			(clk),
+	      .rst			(rst),
+	      .src_empty		(src_empty),
+	      .ce			(ce),
+	      .fo_full			(fo_full),
+	      .m_last			(m_last),
+	      .fi			(fi[63:0]),
+	      .fi_cnt			(fi_cnt[LZF_WIDTH-1:0]),
+	      // Inputs
+	      .m_src_getn		(m_src_getn),
+	      .m_endn			(m_endn));
    defparam    data.LZF_FILE = "/tmp/decode.src";
    defparam    data.LZF_DEBUG = 1;
    defparam    data.LZF_DELAY = 0;
    defparam    data.LZF_FIFO_AW = 15;
    
+   decode_in decode_in(/*AUTOINST*/
+		       // Outputs
+		       .m_src_getn	(m_src_getn),
+		       .stream_data	(stream_data[12:0]),
+		       .stream_valid	(stream_valid),
+		       // Inputs
+		       .clk		(clk),
+		       .rst		(rst),
+		       .ce		(ce),
+		       .fo_full		(fo_full),
+		       .src_empty	(src_empty),
+		       .fi		(fi[63:0]),
+		       .stream_width	(stream_width[3:0]),
+		       .stream_ack	(stream_ack));
+`endif
    initial
      begin : VCD_and_MEM
 	
 	$dumpfile("tb.vcd");
 	$dumpvars(0,tb);
-	
+        if (0 == $value$plusargs("SRC_FILE=%s", src_file))	
+           src_file = SRC_FILE;
 	c = $fopen(src_file, "r");
 	o = $fopen(OUT_FILE, "w");
-	
-	#5000;
+        cnt = 0;
+
+	#10000;
 	$finish;
      end
    
-   decode_in  decode_in(/*AUTOINST*/
-			// Outputs
-			.m_src_getn	(m_src_getn),
-			.stream_data	(stream_data[12:0]),
-			.stream_valid	(stream_valid),
-			// Inputs
-			.clk		(clk),
-			.rst		(rst),
-			.ce		(ce),
-			.fo_full	(fo_full),
-			.src_empty	(src_empty),
-			.fi		(fi[63:0]),
-			.stream_width	(stream_width[3:0]),
-			.stream_ack	(stream_ack));
    
    decode_ctl decode_ctl(/*AUTOINST*/
 			 // Outputs
@@ -121,7 +139,6 @@ module tb(/*AUTOARG*/
 			 .out_data		(out_data[7:0]),
 			 .out_valid		(out_valid),
 			 .all_end		(all_end),
-			 .hdata			(hdata[7:0]),
 			 // Inputs
 			 .clk			(clk),
 			 .rst			(rst),
@@ -132,18 +149,18 @@ module tb(/*AUTOARG*/
    reg [7:0] s_data;
    always @(posedge clk)
      begin
-	/*if (tb.decode.out_valid) begin
-	   $fputc(o, tb.decode.out_data);
+	if (out_valid) begin
+	   $fputc(o, out_data);
 	   s_data = $fgetc(c);
-	   if (s_data != tb.decode.out_data) begin
+	   if (s_data != out_data) begin
 	      $write("cnt %h: right/current %h/%h\n", 
-		     cnt, s_data, tb.decode.out_data);
+		     cnt, s_data, out_data);
 	      $dumpflush(".");
 	      $stop;
 	   end else
-	     $write("cnt %h: right %h \n", cnt, tb.decode.out_data);
+	     $write("cnt %h: right %h \n", cnt, out_data);
 	   cnt = cnt + 1;
-	end*/
+	end
      end
 
 endmodule // tb

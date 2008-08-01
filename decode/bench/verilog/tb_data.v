@@ -116,11 +116,16 @@ module tb_data(/*AUTOARG*/
 	    if (left - stream_width < 32) begin
 	       getword(src_file, temp);
 	       $write("data %h, left %d, used %d, %h, temp %h\n", 
-                               src_char[63:64-IN_WIDTH], left, stream_width, src_char, temp);
+                               src_char[63:64-IN_WIDTH], left, stream_width, 
+                               src_char, temp);
 	       src_char = src_char | (temp << (48 - left + stream_width));
 	       left = left + 'd16;
 	       src_cnt = src_cnt + 2;
-	    end
+	    end else begin
+	       $write("data %h, left %d, used %d, %h, temp %h, %h\n", 
+                               src_char[63:64-IN_WIDTH], left, stream_width, 
+                               src_char, temp, src_char >> 3);
+            end
 	    left = left - stream_width;	    
 	 end // if (stream_ack)
       end // for (src_cnt = 2;...
@@ -133,8 +138,8 @@ module tb_data(/*AUTOARG*/
    
    initial begin
       clk = 1'b0;
-      #10 forever #2.5 clk = ~clk;
    end
+   always #7.5 clk = !clk;
 
 endmodule // tb_data   
 // Local Variables:
