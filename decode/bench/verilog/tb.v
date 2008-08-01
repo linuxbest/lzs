@@ -15,8 +15,8 @@
 
 module tb(/*AUTOARG*/
    // Outputs
-   stream_empty, out_valid, out_data, m_last, fi_cnt,
-   ce_decode, all_end,
+   stream_empty, out_valid, out_done, out_data, m_last,
+   fi_cnt, ce_decode,
    // Inputs
    m_endn
    );
@@ -28,11 +28,11 @@ module tb(/*AUTOARG*/
    
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
-   output		all_end;		// From decode_ctl of decode_ctl.v
    output		ce_decode;		// From tb_data of tb_data.v
    output [LZF_WIDTH-1:0]fi_cnt;		// From data of data.v
    output		m_last;			// From data of data.v
    output [7:0]		out_data;		// From decode_ctl of decode_ctl.v
+   output		out_done;		// From decode_ctl of decode_ctl.v
    output		out_valid;		// From decode_ctl of decode_ctl.v
    output		stream_empty;		// From tb_data of tb_data.v
    // End of automatics
@@ -138,7 +138,7 @@ module tb(/*AUTOARG*/
 			 .stream_ack		(stream_ack),
 			 .out_data		(out_data[7:0]),
 			 .out_valid		(out_valid),
-			 .all_end		(all_end),
+			 .out_done		(out_done),
 			 // Inputs
 			 .clk			(clk),
 			 .rst			(rst),

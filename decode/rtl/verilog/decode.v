@@ -7,22 +7,22 @@
  *        Dependencies :
  * 
  *             Company : Beijing Soul
- *              Author : Chen Tong
+ *              Author : Hu Gang
  * 
  *****************************************************************************/
 
 module decode(/*AUTOARG*/
    // Outputs
-   out_valid, out_data, m_src_getn, all_end,
+   out_valid, out_end, out_data, m_src_getn,
    // Inputs
    src_empty, rst, fo_full, fi, clk, ce
    );
    
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
-   output		all_end;		// From decode_ctl of decode_ctl.v
    output		m_src_getn;		// From decode_in of decode_in.v
    output [7:0]		out_data;		// From decode_ctl of decode_ctl.v
+   output		out_end;		// From decode_ctl of decode_ctl.v
    output		out_valid;		// From decode_ctl of decode_ctl.v
    // End of automatics
    /*AUTOINPUT*/
@@ -66,7 +66,7 @@ module decode(/*AUTOARG*/
 			  .stream_ack		(stream_ack),
 			  .out_data		(out_data[7:0]),
 			  .out_valid		(out_valid),
-			  .all_end		(all_end),
+			  .out_end		(out_end),
 			  // Inputs
 			  .clk			(clk),
 			  .rst			(rst),

@@ -1,9 +1,4 @@
 OBJS += ../../../encode/bench/verilog/data.v
-OBJS += ../../rtl/verilog/decode.v
-OBJS += ../../rtl/verilog/state_machine.v
-OBJS += ../../rtl/verilog/copy_ref.v
-OBJS += ../../rtl/verilog/output_token.v
-OBJS += ../../rtl/verilog/history_ram.v
 OBJS += tb_data.v
 
 I_FILE ?= ../../../files/01

@@ -13,7 +13,8 @@
  *****************************************************************************/
 module encode(/*AUTOARG*/
    // Outputs
-   m_src_getn, m_endn, m_dst_putn, m_dst_last, m_dst,
+   out_valid, out_done, out_data, m_src_getn, m_endn,
+   m_dst_putn, m_dst_last, m_dst,
    // Inputs
    src_empty, rst, m_last, fo_full, fi, clk, ce
    );
@@ -36,6 +37,9 @@ module encode(/*AUTOARG*/
    output		m_dst_putn;		// From out of encode_out.v
    output		m_endn;			// From out of encode_out.v
    output		m_src_getn;		// From dp of encode_dp.v
+   output [15:0]	out_data;		// From out of encode_out.v
+   output		out_done;		// From out of encode_out.v
+   output		out_valid;		// From out of encode_out.v
    // End of automatics
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
@@ -109,6 +113,9 @@ module encode(/*AUTOARG*/
 		  .m_dst		(m_dst[63:0]),
 		  .m_endn		(m_endn),
 		  .m_dst_last		(m_dst_last),
+		  .out_data		(out_data[15:0]),
+		  .out_valid		(out_valid),
+		  .out_done		(out_done),
 		  // Inputs
 		  .clk			(clk),
 		  .rst			(rst),

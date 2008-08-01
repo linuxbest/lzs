@@ -13,7 +13,8 @@
  *****************************************************************************/
 module encode_out(/*AUTOARG*/
    // Outputs
-   m_dst_putn, m_dst, m_endn, m_dst_last,
+   m_dst_putn, m_dst, m_endn, m_dst_last, out_data,
+   out_valid, out_done,
    // Inputs
    clk, rst, ce, cnt_output_enable, cnt_finish, cnt_output,
    cnt_len
@@ -31,6 +32,12 @@ module encode_out(/*AUTOARG*/
    output 	 m_dst_last;
    
    /*AUTOREG*/
+   // Beginning of automatic regs (for this module's undeclared outputs)
+   reg [63:0]		m_dst;
+   reg			m_dst_last;
+   reg			m_dst_putn;
+   reg			m_endn;
+   // End of automatics
    
    reg 		 m_endn_reg;
    reg 		 m_dst_putn_reg;
@@ -84,80 +91,27 @@ module encode_out(/*AUTOARG*/
      end // always @ (...
 
    /* output */
-   reg [15:0] do;
-   always @(/*AS*/cnt or sreg)
+   output [15:0] out_data;
+   output 	 out_valid;
+   output 	 out_done;
+   
+   reg [15:0] out_data;
+   always @(posedge clk)
      begin
-	do = sreg >> cnt;
+	out_data <= #1 sreg >> cnt;
      end
    
-   reg doe;
-   always @(/*AS*/state)
-     doe = state;
+   reg out_valid;
+   always @(posedge clk)
+     out_valid <= #1 state;
 
-   /* 16 -> 64 */
-   reg [1:0] dcnt;
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  dst_reg <= #1 0;
-	else if (doe) 
-	  dst_reg <= #1 {do[07:00], do[15:08], dst_reg[63:16]};
-     end // always @ (posedge clk or posedge rst)
+   reg out_done;
+   always @(posedge clk)
+     if (cnt_finish && state == 0 && state == 0)
+       out_done <= #1 1'b1;
+     else
+       out_done <= #1 1'b0;
    
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  dcnt <= #1 0;
-	else if (doe)
-	  dcnt <= #1 dcnt + 1;
-     end
-   
-   reg m_dst_last_reg;   
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  m_dst_putn_reg <= #1 1;
-	else if (doe && (&dcnt) && m_endn_reg)
-	  m_dst_putn_reg <= #1 0;
-	else if (m_endn_reg == 0 && m_dst_last_reg == 0)
-	  m_dst_putn_reg <= #1 0;
-	else
-	  m_dst_putn_reg <= #1 1;
-     end
-
-   /* I not sure using this way is safed */
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  m_endn_reg <= #1 1;
-	else if (cnt_finish && state == 0 && doe == 0) /* all not busy */
-	  m_endn_reg <= #1 0;
-     end
-
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  m_dst_last_reg <= #1 0;
-	else if (m_endn_reg == 0)
-	  m_dst_last_reg <= #1 1;
-     end
-   
-   /* output tri-buffer */
-   assign 		m_endn     = ce ? m_endn_reg     : 1'bz;
-   assign 		m_dst_putn = ce ? m_dst_putn_reg : 1'bz;
-   assign 		m_dst      = ce ? dst_reg        : 64'bz;
-   assign 		m_dst_last = ce ? m_dst_last_reg : 1'bz;
-   
-   // synopsys translate_off
-   reg [19:0] 		tcnt;
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  tcnt <= #1 0;
-	else if (!m_dst_putn_reg)
-	  tcnt <= #1 tcnt + 2;
-     end
-   // synopsys translate_on
 endmodule // encode_out
 
 // Local Variables:

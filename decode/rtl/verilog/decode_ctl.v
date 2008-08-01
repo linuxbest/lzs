@@ -12,7 +12,7 @@
  *****************************************************************************/
 module decode_ctl (/*AUTOARG*/
    // Outputs
-   stream_width, stream_ack, out_data, out_valid, all_end,
+   stream_width, stream_ack, out_data, out_valid, out_done,
    // Inputs
    clk, rst, fo_full, stream_data, stream_valid
    );
@@ -28,7 +28,7 @@ module decode_ctl (/*AUTOARG*/
    
    output [7:0] out_data;
    output 	out_valid;
-   output 	all_end;
+   output 	out_done;
 
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
@@ -242,7 +242,7 @@ module decode_ctl (/*AUTOARG*/
 	  raddr <= #1 raddr + 1'b1;
      end
 
-   assign all_end   = state == S_END;
+   assign out_done  = state == S_END;
    assign out_data  = out_valid_r ? out_data_r : hdata;
    assign out_valid = out_valid_r | hwe;
    
