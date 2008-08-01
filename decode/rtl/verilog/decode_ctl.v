@@ -61,7 +61,7 @@ module decode_ctl (/*AUTOARG*/
    reg 	      out_valid_n;
    reg [7:0]  out_data_n;
    
-   always @(/*AS*/cnt or state or stream_data
+   always @(/*AS*/cnt or fo_full or state or stream_data
 	    or stream_valid)
      begin
 	stream_width = 4'h0;
@@ -145,7 +145,7 @@ module decode_ctl (/*AUTOARG*/
 	  end
 
 	  S_COPY: begin
-	     if (cnt != 0) begin
+	     if (|cnt && ~fo_full) begin
 		cnt_dec = 1'b1;
 	     end else begin
 		state_n = S_LEN3;
@@ -167,7 +167,7 @@ module decode_ctl (/*AUTOARG*/
 	  end // case: S_LEN3
 	  
 	  S_WAIT: begin
-	     if (cnt != 0) begin
+	     if (|cnt && ~fo_full) begin
 		cnt_dec = 1'b1;
 	     end else begin
 		state_n = S_PROC;
@@ -243,7 +243,7 @@ module decode_ctl (/*AUTOARG*/
      end
 
    assign all_end   = state == S_END;
-   assign out_data  = out_data_r  | hdata;
+   assign out_data  = out_valid_r ? out_data_r : hdata;
    assign out_valid = out_valid_r | hwe;
    
 endmodule // decode_ctl
