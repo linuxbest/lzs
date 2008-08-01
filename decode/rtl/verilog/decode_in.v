@@ -106,6 +106,6 @@ module decode_in (/*AUTOARG*/
      end // always @ (...
    
    assign stream_data = sreg[31:19];
-   assign stream_valid= |{left[5:4]};
+   assign stream_valid= |{left[5:4]} && ~src_empty;
    
 endmodule // decode_in
