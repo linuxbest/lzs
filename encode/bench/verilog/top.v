@@ -20,7 +20,7 @@
 
 module top(/*AUTOARG*/
    // Outputs
-   out_valid, out_done, out_data, fi_cnt,
+   valid_o, fi_cnt, done_o, data_o,
    // Inputs
    m_endn
    );
@@ -32,10 +32,10 @@ module top(/*AUTOARG*/
    // End of automatics
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
+   output [15:0]	data_o;			// From encode of encode.v
+   output		done_o;			// From encode of encode.v
    output [LZF_WIDTH-1:0]fi_cnt;		// From data of data.v
-   output [15:0]	out_data;		// From encode of encode.v
-   output		out_done;		// From encode of encode.v
-   output		out_valid;		// From encode of encode.v
+   output		valid_o;		// From encode of encode.v
    // End of automatics
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
@@ -80,10 +80,10 @@ module top(/*AUTOARG*/
 
    encode encode(/*AUTOINST*/
 		 // Outputs
+		 .data_o		(data_o[15:0]),
+		 .done_o		(done_o),
 		 .m_src_getn		(m_src_getn),
-		 .out_data		(out_data[15:0]),
-		 .out_done		(out_done),
-		 .out_valid		(out_valid),
+		 .valid_o		(valid_o),
 		 // Inputs
 		 .ce			(ce),
 		 .clk			(clk),
@@ -117,29 +117,29 @@ module top(/*AUTOARG*/
 	   f = $fopen(OUT_FILE, "w");
 	   c = $fopen(CHECK_FILE, "r");
 	   cnt = 0;
-	end else if (encode.out.out_valid) begin
+	end else if (encode.out.valid_o) begin
 	   data = $fgetc(c);
 	   /*if (data == encode.out.do[15:08])
 	     $write("cnt %h: high right %h\n", cnt, encode.out.do[15:08]);*/
-	   if (data != encode.out.out_data[15:08]) begin
+	   if (data != encode.out.data_o[15:08]) begin
 	      $write("cnt %h: right/current %h/%h\n", 
-		     cnt, data, encode.out.out_data[15:08]);
+		     cnt, data, encode.out.data_o[15:08]);
 	      $dumpflush(".");
 	      $stop;
 	   end
-	   $fputc(f, encode.out.out_data[15:08]);
+	   $fputc(f, encode.out.data_o[15:08]);
 	   cnt = cnt + 1;
 
 	   data = $fgetc(c);
 	   /*if (data == encode.out.do[07:00])
 	     $write("cnt %h: low  right %h\n", cnt, encode.out.do[07:00]);*/
-	   if (data != encode.out.out_data[07:00]) begin
+	   if (data != encode.out.data_o[07:00]) begin
 	      $write("cnt %h: right/current %h/%h\n", 
-		     cnt, data, encode.out.out_data[07:00]);
+		     cnt, data, encode.out.data_o[07:00]);
 	      $dumpflush(".");
 	      $stop;
 	   end
-	   $fputc(f, encode.out.out_data[07:00]);
+	   $fputc(f, encode.out.data_o[07:00]);
 	   cnt = cnt + 1;
 	end
      end // always @ (posedge clk)
