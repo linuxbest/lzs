@@ -144,13 +144,18 @@ int main(int argc, char *argv[])
         for (i = 0; i < len+0x10; i ++) {
                 dst[i] = 0xff - i;
         }
-        lzsCompress(src, len, t, len);
+        int clen = lzsCompress(src, len, t, len);
+        if (clen % 16)
+                clen += (16 - (clen % 16));
         do {
                 sio.ops  = op;
-                if (op == 4)
+                if (op == 4) {
                         sio.src = t;
-                else
+                        //sio.slen = clen;
+                } else {
                         sio.src = src;
+                        //sio.slen = len;
+                }
                 sio.slen = len;
                 sio.dst  = dst;
                 sio.dlen = dlen;
