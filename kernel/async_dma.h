@@ -30,6 +30,17 @@ int async_submit(sgbuf_t *src, /* source data buffer */
 
 /* for debug */
 void async_dump_register(void);
+/* geting device cap */
+/* bit 0 Reserved
+ * bit 1 Reserved
+ * bit 2 Reserved
+ * bit 3 Reserved
+ * bit 4 memory copy
+ * bit 5 encode 
+ * bit 6 decode 
+ * bit 7 Reserved
+ */
+int  async_device_cap(void);
 #endif
 /* user space ioctl interface */
 typedef struct {

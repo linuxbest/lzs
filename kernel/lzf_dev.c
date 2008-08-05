@@ -75,6 +75,7 @@ struct lzf_device {
         atomic_t queue, intr;
 
         uint8_t cookie;
+        uint8_t cap;
 
         atomic_t mem_free;
         struct list_head mem_head;
@@ -88,11 +89,20 @@ void async_dump_register(void)
         for (j = 0; j < 8; j ++) {
                 printk("%02x: ", j*4);
                 for (i = 0; i < 4; i ++) {
-                        printk(" %08X ", readl(first_ioc->mmr_base + off + 0x400));
+                        uint32_t val = 
+                                readl(first_ioc->mmr_base + off + 0x400);
+                        printk(" %08X ", val);
                         off += 4;
                 }
                 printk("\n");
         }
+}
+
+int async_device_cap(void)
+{
+        if (first_ioc == NULL)
+                return 0;
+        return first_ioc->cap;
 }
 
 typedef struct {
@@ -429,7 +439,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
         d->cb = cb;
         d->priv = p;
         d->cookie = ioc->cookie | 1<<31;
-        d->cookie ++;
+        ioc->cookie ++;
 
         spin_lock_bh(&ioc->desc_lock);
         prev = container_of(ioc->used_head.prev, job_entry_t, entry);
@@ -448,6 +458,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
 }
 EXPORT_SYMBOL(async_submit);
 EXPORT_SYMBOL(async_dump_register);
+EXPORT_SYMBOL(async_device_cap);
 
 /* 
  * Psuedo code:
@@ -650,6 +661,18 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         spin_lock_init(&ioc->desc_lock);
         atomic_set(&ioc->queue, 0);
         atomic_set(&ioc->intr, 0);
+
+        ioc->cap = readl(ioc->mmr_base + 0x1a*4 + 0x400);
+        printk("SureSave CE: Found [0]: ( %s%s%s%s)\n",
+                        ioc->cap & (1<<4) ? "memcpy "    : "",
+                        ioc->cap & (1<<5) ? "compress "  : "",
+                        ioc->cap & (1<<6) ? "uncompress ": "",
+                        ioc->cap & (1<<7) ? "hash "      : "");
+        printk("SureSave CE: Found [1]: ( %s%s%s%s)\n",
+                        ioc->cap & (1<<4) ? "memcpy "    : "",
+                        ioc->cap & (1<<5) ? "compress "  : "",
+                        ioc->cap & (1<<6) ? "uncompress ": "",
+                        ioc->cap & (1<<7) ? "hash "      : "");
 
         start_null_desc(ioc);
         first_ioc = ioc;
