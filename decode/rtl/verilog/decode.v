@@ -27,7 +27,7 @@ module decode(/*AUTOARG*/
    // End of automatics
    /*AUTOINPUT*/
    // Beginning of automatic inputs (from unused autoinst inputs)
-   input		ce;			// To decode_in of decode_in.v
+   input		ce;			// To decode_in of decode_in.v, ...
    input		clk;			// To decode_in of decode_in.v, ...
    input [63:0]		fi;			// To decode_in of decode_in.v
    input		fo_full;		// To decode_in of decode_in.v, ...
@@ -73,6 +73,7 @@ module decode(/*AUTOARG*/
 			  // Inputs
 			  .clk			(clk),
 			  .rst			(rst),
+			  .ce			(ce),
 			  .fo_full		(fo_full),
 			  .stream_data		(stream_data[12:0]),
 			  .stream_valid		(stream_valid));

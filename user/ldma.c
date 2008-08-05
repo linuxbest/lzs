@@ -9,6 +9,8 @@
 
 #include "async_dma.h"
 
+#include "../liblzs.c"
+
 static void hexdump(char *data, unsigned size)
 {
         char *start = data;
@@ -46,22 +48,62 @@ usage(char *name)
         exit (0);
 }
 
+static int dst_check(unsigned char *src, int len, 
+                unsigned char *dst, int dlen, int opt)
+{
+        unsigned char *t = malloc(dlen), *c = NULL;
+        int o = 0, oc = 0;
+        int i, err = 0;
+
+        if (opt == 3) { /* compress operation */
+                o = lzsCompress(src, len, t, dlen);
+                c  = t;
+                oc = o;
+        } else if (opt == 4) { /* uncompress */
+                c = src;
+                oc = len;
+        }
+
+        printf("dlen %x, o %x\n", dlen, oc);
+        for (i = 0; i < oc; i ++) {
+                if (dst[i] != c[i]) 
+                        err ++;
+        }
+        if (err) {
+                hexdump(c, oc);
+                hexdump(dst, oc);
+        }
+
+        return 0;
+}
+
 int main(int argc, char *argv[])
 {
         char *src;
-        char *dst;
+        char *dst, *t;
         int len = 0x80;
+        int dlen = len;
         sioctl_t sio;
-        int fd, res = 0, opt, op = 0, i = 0, verbose = 0, debug = 0, loop = 0;
+        int fd, res = 0, opt, op = 0, i = 0, 
+            verbose = 0, 
+            debug = 0, 
+            loop = 0,
+            check = 0;
         char *op_name;
 
-        while ((opt = getopt(argc, argv, "s:o:v:dl:")) != -1) {
+        while ((opt = getopt(argc, argv, "s:o:v:d:l:cD")) != -1) {
                 switch (opt) {
+                        case 'D':
+                                debug = 1;
+                                break;
+                        case 'c': 
+                                check = 1;
+                                break;
                         case 'l': 
                                 loop = atoi(optarg);
                                 break;
                         case 'd':
-                                debug = 1;
+                                dlen = atoi(optarg);
                                 break;
                         case 'v':
                                 verbose = atoi(optarg);
@@ -90,21 +132,28 @@ int main(int argc, char *argv[])
                 perror("open");
                 return -1;
         }
-
-        src = memalign(64, len+0x10);
+        t = memalign(4096, len+0x10);
+        for (i = 0; i < len+0x10; i ++) {
+                t[i] = i;
+        }
+        src = memalign(4096, len+0x10);
         for (i = 0; i < len+0x10; i ++) {
                 src[i] = i;
         }
-        dst = memalign(64, len+0x10);
+        dst = memalign(4096, len+0x10);
         for (i = 0; i < len+0x10; i ++) {
                 dst[i] = 0xff - i;
         }
+        lzsCompress(src, len, t, len);
         do {
                 sio.ops  = op;
-                sio.src  = src;
+                if (op == 4)
+                        sio.src = t;
+                else
+                        sio.src = src;
                 sio.slen = len;
                 sio.dst  = dst;
-                sio.dlen = len;
+                sio.dlen = dlen;
                 sio.err  = 0;
                 sio.osize= 0;
                 sio.done = 0;
@@ -116,10 +165,13 @@ int main(int argc, char *argv[])
 
                 if (sio.done == 0 || verbose) {
                         if (verbose == 2)
-                                hexdump(dst, len+0x10);
-                        printf("res %d, err %d, osize %x, done %d\n", 
-                                        res, sio.err, sio.osize, sio.done);
+                                hexdump(dst, dlen+0x10);
+                        printf("res %d, err %d, osize %x, done %d, dlen %x\n", 
+                                        res, sio.err, sio.osize, sio.done, 
+                                        dlen);
                 }
+                if (check) 
+                        dst_check(src, len, dst, dlen, op);
                 loop --;
         } while (res == 0 && loop > 0);
 

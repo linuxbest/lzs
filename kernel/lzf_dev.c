@@ -88,7 +88,7 @@ void async_dump_register(void)
         for (j = 0; j < 8; j ++) {
                 printk("%02x: ", j*4);
                 for (i = 0; i < 4; i ++) {
-                        printk(" %08X ", readl(first_ioc->mmr_base + off));
+                        printk(" %08X ", readl(first_ioc->mmr_base + off + 0x400));
                         off += 4;
                 }
                 printk("\n");
@@ -392,7 +392,7 @@ static int dc_ay[] = {
         [OP_FILL]       = DC_FILL,
         [OP_MEMCPY]     = DC_MEMCPY,
         [OP_COMPRESS]   = DC_COMPRESS,
-        [DC_UNCOMPRESS] = OP_UNCOMPRESS, 
+        [OP_UNCOMPRESS] = DC_UNCOMPRESS, 
 };
 
 int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, 
@@ -572,8 +572,8 @@ static void start_null_desc(struct lzf_device *ioc)
        
         /* data path check */
         wait_event(ioc->wait, atomic_read(&ioc->intr));
-        next_desc = readl(ioc->mmr_base + 0x14*4);
-        ctl_addr  = readl(ioc->mmr_base + 0x16*4);
+        next_desc = readl(ioc->mmr_base + 0x14*4 + 0x400);
+        ctl_addr  = readl(ioc->mmr_base + 0x16*4 + 0x400);
         /* next_desc  must = 0x200
          * ctl_addr   must = 0x300
          */
@@ -591,8 +591,8 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         if (pci_enable_device(pdev))
                 return res;
         ioc = kmalloc(sizeof(*ioc), GFP_KERNEL);
-        ioc->bases = pci_resource_start(pdev, 1);
-        ioc->base_size = pci_resource_len(pdev, 1);
+        ioc->bases = pci_resource_start(pdev, 0);
+        ioc->base_size = pci_resource_len(pdev, 0);
         ioc->dev = pdev;
         ioc->irq = pdev->irq;
 
@@ -619,10 +619,10 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
                 return res;
         }
         ioc->mmr_base = ioremap(ioc->bases, ioc->base_size);
-        ioc->R.CCR.address  = ioc->mmr_base + OFS_CCR;
-        ioc->R.CSR.address  = ioc->mmr_base + OFS_CSR;
-        ioc->R.DAR.address  = ioc->mmr_base + OFS_DAR;
-        ioc->R.NDAR.address = ioc->mmr_base + OFS_NDAR;
+        ioc->R.CCR.address  = ioc->mmr_base + OFS_CCR + 0x400;
+        ioc->R.CSR.address  = ioc->mmr_base + OFS_CSR + 0x400;
+        ioc->R.DAR.address  = ioc->mmr_base + OFS_DAR + 0x400;
+        ioc->R.NDAR.address = ioc->mmr_base + OFS_NDAR+ 0x400;
 
         res = request_irq(pdev->irq, lzf_intr_handler, SA_SHIRQ, MYNAM, ioc);
         if (res) {
