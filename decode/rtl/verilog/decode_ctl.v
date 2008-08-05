@@ -56,7 +56,8 @@ module decode_ctl (/*AUTOARG*/
 	else
 	  state <= #1 state_n;
      end
-   reg [3:0] cnt, cnt_n, cnt_load, cnt_dec;
+   reg [3:0] cnt, cnt_n;
+   reg cnt_load, cnt_dec;
    reg [10:0] off, off_n;
    reg 	      off_load, off_load_n;
    reg 	      out_valid_n;
