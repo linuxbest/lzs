@@ -239,6 +239,8 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
         
         BUG_ON(in_irq());
         dprintk(MYNAM ": queue %x\n", atomic_read(&ioc->queue));
+        if (atomic_read(&ioc->queue) == MAX_QUEUE)
+                async_dump_register(); 
         wait_event(ioc->wait, atomic_read(&ioc->queue) < MIN_QUEUE);
 
         spin_lock_bh(&ioc->desc_lock);

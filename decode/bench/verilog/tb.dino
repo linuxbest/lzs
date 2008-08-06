@@ -28,12 +28,15 @@ signal_add tb.decode_ctl.raddr
 signal_add tb.decode_ctl.waddr
 signal_add tb.decode_ctl.busy
 signal_add tb.decode_ctl.cnt
+signal_add tb.decode_ctl.off
+signal_add tb.decode_ctl.same
 signal_highlight tb.decode_ctl.cnt 8
 
 signal_add tb.decode_ctl.hdata
 signal_add tb.decode_ctl.hwe
 signal_highlight tb.decode_ctl.hwe 8 
 
+signal_add tb.decode_ctl.out_data_r
 signal_add tb.decode_ctl.out_data
 signal_add tb.decode_ctl.out_valid
 signal_add tb.decode_ctl.all_end

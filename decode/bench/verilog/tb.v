@@ -97,9 +97,9 @@ module tb(/*AUTOARG*/
 	      .m_src_getn		(m_src_getn),
 	      .m_endn			(m_endn));
    defparam    data.LZF_FILE = "/tmp/decode.src";
-   defparam    data.LZF_DEBUG = 1;
-   defparam    data.LZF_DELAY = 0;
-   defparam    data.LZF_FIFO_AW = 15;
+   defparam    data.LZF_DEBUG = 0;
+   defparam    data.LZF_DELAY = 4;
+   defparam    data.LZF_FIFO_AW = 5;
    
    decode_in decode_in(/*AUTOINST*/
 		       // Outputs
@@ -127,7 +127,8 @@ module tb(/*AUTOARG*/
 	o = $fopen(OUT_FILE, "w");
         cnt = 0;
 
-	#10000;
+        @(posedge out_done);
+
 	$finish;
      end
    
@@ -142,6 +143,7 @@ module tb(/*AUTOARG*/
 			 // Inputs
 			 .clk			(clk),
 			 .rst			(rst),
+			 .ce			(ce),
 			 .fo_full		(fo_full),
 			 .stream_data		(stream_data[12:0]),
 			 .stream_valid		(stream_valid));
@@ -152,13 +154,14 @@ module tb(/*AUTOARG*/
 	if (out_valid) begin
 	   $fputc(o, out_data);
 	   s_data = $fgetc(c);
-	   if (s_data != out_data) begin
+	   if (s_data === out_data) begin
+	     $write("cnt %h: right %h \n", cnt, out_data);
+           end else begin
 	      $write("cnt %h: right/current %h/%h\n", 
 		     cnt, s_data, out_data);
 	      $dumpflush(".");
 	      $stop;
-	   end else
-	     $write("cnt %h: right %h \n", cnt, out_data);
+	   end 
 	   cnt = cnt + 1;
 	end
      end

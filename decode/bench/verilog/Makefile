@@ -17,7 +17,7 @@ trun: tb ${D_SRC} ${C_FILE}
 	cp /tmp/lzs.out $@
 
 /tmp/decode.chk: /tmp/decode.src
-	../../../lzs -d < /tmp/decode.src
+	../../../lzs -s ${I_SIZE} < /tmp/decode.src
 	cp /tmp/lzs.out $@
 		
 clean :

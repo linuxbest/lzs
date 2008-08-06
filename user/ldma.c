@@ -55,8 +55,8 @@ static int dst_check(unsigned char *src, int len,
         int o = 0, oc = 0;
         int i, err = 0;
 
+        o = lzsCompress(src, len, t, dlen);
         if (opt == 3) { /* compress operation */
-                o = lzsCompress(src, len, t, dlen);
                 c  = t;
                 oc = o;
         } else if (opt == 4) { /* uncompress */
@@ -70,8 +70,21 @@ static int dst_check(unsigned char *src, int len,
                         err ++;
         }
         if (err) {
-                hexdump(c, oc);
-                hexdump(dst, oc);
+                FILE *fp;
+                printf("error %d\n", err);
+
+                fp = fopen("/tmp/src.dat", "w");
+                if (opt == 3)
+                        fwrite(src, len, 1, fp);
+                else
+                        fwrite(t, o, 1, fp);
+                fclose(fp);
+
+                fp = fopen("/tmp/dst.dat", "w");
+                fwrite(dst, len, 1, fp);
+                fclose(fp);
+
+                exit (1);
         }
 
         return 0;
@@ -90,9 +103,15 @@ int main(int argc, char *argv[])
             loop = 0,
             check = 0;
         char *op_name;
+        FILE *fp;
 
-        while ((opt = getopt(argc, argv, "s:o:v:d:l:cD")) != -1) {
+        while ((opt = getopt(argc, argv, "s:o:v:d:l:cDr:")) != -1) {
                 switch (opt) {
+                        case 'r':
+                                fp = fopen(optarg, "r");
+                                if (fp == NULL)
+                                        perror("fopen");
+                                break;
                         case 'D':
                                 debug = 1;
                                 break;
@@ -144,10 +163,12 @@ int main(int argc, char *argv[])
         for (i = 0; i < len+0x10; i ++) {
                 dst[i] = 0xff - i;
         }
-        int clen = lzsCompress(src, len, t, len);
-        if (clen % 16)
-                clen += (16 - (clen % 16));
         do {
+                int clen;
+                if (fp)
+                        fread(src, len, 1, fp);
+                clen = lzsCompress(src, len, t, len);
+                if (clen % 16) clen += (16 - (clen % 16));
                 sio.ops  = op;
                 if (op == 4) {
                         sio.src = t;
