@@ -191,7 +191,6 @@ module decode_ctl (/*AUTOARG*/
 	  out_valid_r <= #1 out_valid_n;
      end
    always @(posedge clk)
-     if (out_valid_n)
        out_data_r <= #1 out_data_n;
    
    wire [7:0] hdata;
@@ -236,7 +235,6 @@ module decode_ctl (/*AUTOARG*/
 	  cnt <= #1 cnt - 1'b1;
      end
 
-   reg same;
    always @(posedge clk)
      begin
 	off <= #1 off_n;
