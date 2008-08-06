@@ -14,6 +14,7 @@
 #include <asm/dma-mapping.h>
 #include <asm/scatterlist.h>
 
+#include "debugfs.h"
 #include "async_dma.h"
 #include "lzf_chip.h"
 #include "lzf_chdev.h"
@@ -733,9 +734,13 @@ static struct pci_driver lzf_driver = {
         },
 };
 
+static struct dentry *d_entry = NULL;
 
 static int __init lzf_init(void)
 {
+        d_entry = debugfs_create_u32("async_debug", S_IFREG | S_IRUGO,
+                        NULL, (uint32_t *)&debug);
+
         init_chdev();
 
         _cache = kmem_cache_create("coherent_t", 
@@ -756,6 +761,7 @@ static int __init lzf_init(void)
 
 static void __exit lzf_exit(void)
 {
+        debugfs_remove(d_entry);
         exit_chdev();
         pci_unregister_driver(&lzf_driver);
         kmem_cache_destroy(_cache);

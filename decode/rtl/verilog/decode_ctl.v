@@ -148,10 +148,14 @@ module decode_ctl (/*AUTOARG*/
 	  end
 
 	  S_COPY: begin
-	     if (|cnt && ~fo_full) begin
-		cnt_dec = 1'b1;
-	     end else begin
-		state_n = S_LEN3;
+	     if (fo_full) begin
+		state_n = S_COPY;
+	     end else begin 
+		if (|cnt) begin
+		   cnt_dec = 1'b1;
+		end else begin
+		   state_n = S_LEN3;
+		end
 	     end
 	  end
 	  
@@ -170,13 +174,16 @@ module decode_ctl (/*AUTOARG*/
 	  end // case: S_LEN3
 	  
 	  S_WAIT: begin
-	     if (|cnt && ~fo_full) begin
-		cnt_dec = 1'b1;
+	     if (fo_full) begin
+		state_n = S_WAIT;
 	     end else begin
-		state_n = S_PROC;
+		if (|cnt) begin
+		   cnt_dec = 1'b1;
+		end else begin
+		   state_n = S_PROC;
+		end
 	     end
 	  end
-	  
 	endcase
      end // always @ (...
 
