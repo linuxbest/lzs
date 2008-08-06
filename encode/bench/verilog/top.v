@@ -49,10 +49,6 @@ module top(/*AUTOARG*/
    wire			src_empty;		// From data of data.v
    // End of automatics
 
-   pullup(m_src_getn);
-   pullup(m_dst_putn);
-   pullup(m_endn);
-   
    data data(/*AUTOINST*/
 	     // Outputs
 	     .clk			(clk),

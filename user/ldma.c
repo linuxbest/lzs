@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
             loop = 0,
             check = 0;
         char *op_name;
-        FILE *fp;
+        FILE *fp = NULL;
 
         while ((opt = getopt(argc, argv, "s:o:v:d:l:cDr:")) != -1) {
                 switch (opt) {
@@ -188,6 +188,7 @@ int main(int argc, char *argv[])
                         sio.flags |= SIO_DEBUG;
 
                 res = ioctl(fd, SIOCTL_SUBMIT, &sio);
+                printf("%d\n", res);
 
                 if (sio.done == 0 || verbose) {
                         if (verbose == 2)

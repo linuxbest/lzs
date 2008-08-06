@@ -1,19 +1,18 @@
 top: top.v /tmp/encode.src /tmp/encode.chk 
 	iverilog -Wall -o top top.v -y ../../../common/
 
+I_FILE ?= "../../../files/01"
+I_SIZE ?= "512"
+
 trun: top
-	vvp top +size=${SIZE}
+	vvp top +size=${I_SIZE}
 
 clean:
-	rm -f top *.vcd
-
-
-FILE := "../../../files/01"
-SIZE := "512"
+	rm -f top *.vcd /tmp/encode.*
 
 /tmp/encode.src:
-	cp ${FILE} $@
+	cp ${I_FILE} $@
 
 /tmp/encode.chk: /tmp/encode.src
-	../../../lzs -s ${SIZE} -c < /tmp/encode.src
+	../../../lzs -s ${I_SIZE} -c < /tmp/encode.src
 	cp /tmp/lzs.out $@

@@ -293,7 +293,7 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                                 s->use_sg, dir);
         }
 
-        if (debug && s->use_sg) {
+        if (debug == 2 && s->use_sg) {
                 struct scatterlist *sg = (struct scatterlist *)s->buffer;
                 int i;
                 for (i = 0; i < s->use_sg && debug; i++, sg++) {
@@ -301,7 +301,7 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
                         print_hex_dump_bytes(pre, DUMP_PREFIX_ADDRESS, virt, 
                                         sg->length);
                 }
-        } else if (debug) {
+        } else if (debug == 2) {
                 print_hex_dump_bytes(pre, DUMP_PREFIX_ADDRESS, s->buffer, 
                                 s->bufflen);
         }

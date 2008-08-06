@@ -57,10 +57,10 @@ signal_add top.encode.out.tcnt
 signal_add top.encode.out.cnt
 signal_add top.encode.out.sreg
 
-signal_add top.encode.out.dout_out
-signal_add top.encode.out.dout_done
-signal_add top.encode.out.dout_en_out
-signal_add top.encode.out.data_flush
+signal_add top.encode.out.data_o
+signal_add top.encode.out.valid_o
+signal_add top.encode.out.done_o
+signal_add top.encode.out.ocnt
 
 # # # # Aligning to the first signal is the default.  We'll just change the color
 grid_signal 0   *

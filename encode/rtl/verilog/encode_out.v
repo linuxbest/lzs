@@ -97,7 +97,17 @@ module encode_out(/*AUTOARG*/
        done_o <= #1 1'b1;
      else
        done_o <= #1 1'b0;
-   
+
+   // synopsys translate_off
+   reg [20:0] ocnt;
+   always @(posedge clk or posedge rst)
+   begin
+      if (rst)
+	ocnt <= #1 21'h0;
+      else if (valid_o)
+	ocnt <= #1 ocnt + 2'b10;
+   end
+   // synopsys translate_on
 endmodule // encode_out
 
 // Local Variables:
