@@ -7,6 +7,7 @@ signal_add tb.rst
 signal_add tb.ce
 signal_add tb.fi
 signal_add tb.src_empty
+signal_add tb.m_last
 
 #signal_add tb.decode_in.state
 #signal_add tb.decode_in.sreg

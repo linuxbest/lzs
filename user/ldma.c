@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
                         sio.flags |= SIO_DEBUG;
 
                 res = ioctl(fd, SIOCTL_SUBMIT, &sio);
-                printf("%d\n", res);
+                printf("res: %d, loop %04d\r", res, loop);
 
                 if (sio.done == 0 || verbose) {
                         if (verbose == 2)

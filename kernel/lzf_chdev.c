@@ -175,7 +175,7 @@ static int map_sio(sioctl_t *sio)
                         WRITE, ULONG_MAX);
         dprintk("res %d\n", res);
         if (res <= 0) 
-                return -2;
+                goto out;
         sgbuf_dst.buffer = (char *)sgl_dst;
         sgbuf_dst.use_sg = res;
         sgbuf_dst.bufflen = sio->dlen;
@@ -184,7 +184,7 @@ static int map_sio(sioctl_t *sio)
         res = async_submit(&sgbuf_src, &sgbuf_dst, async_done, sio->ops, 
                         sio, 1);
         if (res)
-                return res;
+                goto out;
         wait_event_timeout(wait, sio->done, 5*HZ);
         if (sio->done == 0 || (sio->flags & SIO_DEBUG)) {
                 async_dump_register();
@@ -194,8 +194,8 @@ static int map_sio(sioctl_t *sio)
         st_unmap_user_pages(sgl_src, sgbuf_src.use_sg, 0);
         kfree(sgl_src);
         kfree(sgl_dst);
-
-        return 0;
+out:
+        return res;
 }
 
 static int apidev_open(struct inode *inode, struct file *file)

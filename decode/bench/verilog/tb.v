@@ -15,8 +15,8 @@
 
 module tb(/*AUTOARG*/
    // Outputs
-   stream_empty, out_valid, out_done, out_data, m_last,
-   fi_cnt, ce_decode,
+   stream_empty, out_valid, out_done, out_data, fi_cnt,
+   ce_decode,
    // Inputs
    m_endn
    );
@@ -30,7 +30,6 @@ module tb(/*AUTOARG*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output		ce_decode;		// From tb_data of tb_data.v
    output [LZF_WIDTH-1:0]fi_cnt;		// From data of data.v
-   output		m_last;			// From data of data.v
    output [7:0]		out_data;		// From decode_ctl of decode_ctl.v
    output		out_done;		// From decode_ctl of decode_ctl.v
    output		out_valid;		// From decode_ctl of decode_ctl.v
@@ -47,10 +46,12 @@ module tb(/*AUTOARG*/
    wire			clk;			// From tb_data of tb_data.v, ...
    wire [63:0]		fi;			// From data of data.v
    wire			fo_full;		// From tb_data of tb_data.v, ...
+   wire			m_last;			// From data of data.v
    wire			m_src_getn;		// From decode_in of decode_in.v
    wire			rst;			// From tb_data of tb_data.v, ...
    wire			src_empty;		// From data of data.v
    wire			stream_ack;		// From decode_ctl of decode_ctl.v
+   wire			stream_done;		// From decode_in of decode_in.v
    wire			stream_valid;		// From tb_data of tb_data.v, ...
    // End of automatics
 
@@ -106,10 +107,12 @@ module tb(/*AUTOARG*/
 		       .m_src_getn	(m_src_getn),
 		       .stream_data	(stream_data[12:0]),
 		       .stream_valid	(stream_valid),
+		       .stream_done	(stream_done),
 		       // Inputs
 		       .clk		(clk),
 		       .rst		(rst),
 		       .ce		(ce),
+		       .m_last		(m_last),
 		       .fo_full		(fo_full),
 		       .src_empty	(src_empty),
 		       .fi		(fi[63:0]),
@@ -146,7 +149,8 @@ module tb(/*AUTOARG*/
 			 .ce			(ce),
 			 .fo_full		(fo_full),
 			 .stream_data		(stream_data[12:0]),
-			 .stream_valid		(stream_valid));
+			 .stream_valid		(stream_valid),
+			 .stream_done		(stream_done));
    
    reg [7:0] s_data;
    always @(posedge clk)
@@ -160,7 +164,7 @@ module tb(/*AUTOARG*/
 	      $write("cnt %h: right/current %h/%h\n", 
 		     cnt, s_data, out_data);
 	      $dumpflush(".");
-	      $stop;
+	      //$stop;
 	   end 
 	   cnt = cnt + 1;
 	end

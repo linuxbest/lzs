@@ -12,14 +12,15 @@
  *****************************************************************************/
 module decode_in (/*AUTOARG*/
    // Outputs
-   m_src_getn, stream_data, stream_valid,
+   m_src_getn, stream_data, stream_valid, stream_done,
    // Inputs
-   clk, rst, ce, fo_full, src_empty, fi, stream_width,
-   stream_ack
+   clk, rst, ce, m_last, fo_full, src_empty, fi,
+   stream_width, stream_ack
    );
    input clk,
 	 rst,
 	 ce,
+	 m_last,
 	 fo_full;
    
    input src_empty;
@@ -31,7 +32,8 @@ module decode_in (/*AUTOARG*/
    
    output [12:0] stream_data;
    output 	 stream_valid;
-
+   output 	 stream_done;
+   
    /* first we split 64 bit to 16 bit */
    reg 		 pull_n;
    reg [1:0] 	 cnt;
@@ -104,8 +106,12 @@ module decode_in (/*AUTOARG*/
 	  
 	endcase // case(state)
      end // always @ (...
+
+   reg stream_done;
+   always @(posedge clk)
+     stream_done <= #1 m_last;
    
    assign stream_data = sreg[31:19];
-   assign stream_valid= |{left[5:4]} && ~src_empty;
+   assign stream_valid= |{left[5:4]} && ~src_empty && ~stream_done;
    
 endmodule // decode_in
