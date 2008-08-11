@@ -109,7 +109,7 @@ module decode_in (/*AUTOARG*/
 
    reg stream_done;
    always @(posedge clk)
-     stream_done <= #1 m_last;
+     stream_done <= #1 m_last && (&cnt);
    
    assign stream_data = sreg[31:19];
    assign stream_valid= |{left[5:4]} && ~src_empty && ~stream_done;
