@@ -81,8 +81,11 @@ struct lzf_device {
         atomic_t mem_free;
         struct list_head mem_head;
         spinlock_t mem_lock;
+
+        struct tasklet_struct run_lzf_task;
 };
 static struct lzf_device *first_ioc; /* XXX */
+static unsigned long async_c0, async_c1;
 
 void async_dump_register(void)
 {
@@ -489,6 +492,11 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
         atomic_dec(&ioc->queue);
         /*wake_up_all(&ioc->wait);*/
 
+        if (d->res->dc_fc & 1<<24) 
+                async_c1 ++;
+        else 
+                async_c0 ++;
+
         return res;
 }
 
@@ -499,8 +507,8 @@ static int do_jobs(struct lzf_device *ioc)
         LIST_HEAD(head);
         int res = 0;
 
-        /*if (!spin_trylock_bh(&ioc->desc_lock))
-                return;*/
+        if (!spin_trylock_bh(&ioc->desc_lock))
+                return;
         phys_complete = readl(ioc->R.DAR.address);
         dprintk("phys %x\n", phys_complete);
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
@@ -515,7 +523,7 @@ static int do_jobs(struct lzf_device *ioc)
                         break;
                 }
         }
-        /*spin_unlock_bh(&ioc->desc_lock);*/
+        spin_unlock_bh(&ioc->desc_lock);
 
         list_for_each_entry_safe(d, t, &head, job_entry) {
                 dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
@@ -540,16 +548,17 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
         res = IRQ_HANDLED;
 
         /* clear irq flags */
-        val = readl(ioc->R.CCR.address);
-        val |= CCR_C_INTP;
-        writel(val, ioc->R.CCR.address);
-        wmb();
+        writel(CCR_C_INTP | CCR_ENABLE, ioc->R.CCR.address);
         val = readl(ioc->R.CCR.address);
 
+        dprintk("val %x\n", val);
         atomic_inc(&ioc->intr);
         /* call the finished jobs */
+#ifndef TASKLET
         do_jobs(ioc);
-
+#else
+        tasklet_schedule(&ioc->run_lzf_task);
+#endif
 out:
         return res;
 }
@@ -675,6 +684,7 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
                         ioc->cap & (1<<6) ? "uncompress ": "",
                         ioc->cap & (1<<7) ? "hash "      : "");
 
+        tasklet_init(&ioc->run_lzf_task, do_jobs, (unsigned long)ioc);
         start_null_desc(ioc);
         first_ioc = ioc;
         ioc->cookie = 0;
@@ -732,12 +742,18 @@ static struct pci_driver lzf_driver = {
         },
 };
 
-static struct dentry *d_entry = NULL;
+static struct dentry *d_entry = NULL, *c0_entry, *c1_entry;
 
 static int __init lzf_init(void)
 {
         d_entry = debugfs_create_u32("async_debug", S_IFREG | S_IRUGO,
                         NULL, (uint32_t *)&debug);
+        c0_entry = debugfs_create_u32("async_c0", S_IFREG | S_IRUGO,
+                        NULL, (uint32_t *)&async_c0);
+        c1_entry = debugfs_create_u32("async_c1", S_IFREG | S_IRUGO,
+                        NULL, (uint32_t *)&async_c1);
+        async_c0 = 0;
+        async_c1 = 0;
 
         init_chdev();
 
@@ -760,6 +776,8 @@ static int __init lzf_init(void)
 static void __exit lzf_exit(void)
 {
         debugfs_remove(d_entry);
+        debugfs_remove(c0_entry);
+        debugfs_remove(c1_entry);
         exit_chdev();
         pci_unregister_driver(&lzf_driver);
         kmem_cache_destroy(_cache);
