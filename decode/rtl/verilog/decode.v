@@ -13,15 +13,20 @@
 
 module decode(/*AUTOARG*/
    // Outputs
-   valid_o, m_src_getn, done_o, data_o,
+   valid_o, m_src_getn, hwe, hwaddr, hraddr, hdata_o,
+   done_o, data_o,
    // Inputs
-   src_empty, rst, m_last, fo_full, fi, clk, ce
+   src_empty, rst, m_last, hdata, fo_full, fi, clk, ce
    );
    
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output [15:0]	data_o;			// From decode_out of decode_out.v
    output		done_o;			// From decode_out of decode_out.v
+   output [7:0]		hdata_o;		// From decode_ctl of decode_ctl.v
+   output [10:0]	hraddr;			// From decode_ctl of decode_ctl.v
+   output [10:0]	hwaddr;			// From decode_ctl of decode_ctl.v
+   output		hwe;			// From decode_ctl of decode_ctl.v
    output		m_src_getn;		// From decode_in of decode_in.v
    output		valid_o;		// From decode_out of decode_out.v
    // End of automatics
@@ -31,6 +36,7 @@ module decode(/*AUTOARG*/
    input		clk;			// To decode_in of decode_in.v, ...
    input [63:0]		fi;			// To decode_in of decode_in.v
    input		fo_full;		// To decode_in of decode_in.v, ...
+   input [7:0]		hdata;			// To decode_ctl of decode_ctl.v
    input		m_last;			// To decode_in of decode_in.v
    input		rst;			// To decode_in of decode_in.v, ...
    input		src_empty;		// To decode_in of decode_in.v
@@ -74,6 +80,10 @@ module decode(/*AUTOARG*/
 			  .out_data		(out_data[7:0]),
 			  .out_valid		(out_valid),
 			  .out_done		(out_done),
+			  .hwaddr		(hwaddr[10:0]),
+			  .hraddr		(hraddr[10:0]),
+			  .hwe			(hwe),
+			  .hdata_o		(hdata_o[7:0]),
 			  // Inputs
 			  .clk			(clk),
 			  .rst			(rst),
@@ -81,7 +91,8 @@ module decode(/*AUTOARG*/
 			  .fo_full		(fo_full),
 			  .stream_data		(stream_data[12:0]),
 			  .stream_valid		(stream_valid),
-			  .stream_done		(stream_done));
+			  .stream_done		(stream_done),
+			  .hdata		(hdata[7:0]));
 
    decode_out decode_out (/*AUTOINST*/
 			  // Outputs

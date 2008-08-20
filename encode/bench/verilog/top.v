@@ -43,6 +43,11 @@ module top(/*AUTOARG*/
    wire			clk;			// From data of data.v
    wire [63:0]		fi;			// From data of data.v
    wire			fo_full;		// From data of data.v
+   wire [7:0]		hdata;			// From data of data.v
+   wire [7:0]		hdata_o;		// From encode of encode.v
+   wire [10:0]		hraddr;			// From encode of encode.v
+   wire [10:0]		hwaddr;			// From encode of encode.v
+   wire			hwe;			// From encode of encode.v
    wire			m_last;			// From data of data.v
    wire			m_src_getn;		// From encode of encode.v
    wire			rst;			// From data of data.v
@@ -59,9 +64,14 @@ module top(/*AUTOARG*/
 	     .m_last			(m_last),
 	     .fi			(fi[63:0]),
 	     .fi_cnt			(fi_cnt[LZF_WIDTH-1:0]),
+	     .hdata			(hdata[7:0]),
 	     // Inputs
 	     .m_src_getn		(m_src_getn),
-	     .m_endn			(m_endn));
+	     .m_endn			(m_endn),
+	     .hwaddr			(hwaddr[10:0]),
+	     .hraddr			(hraddr[10:0]),
+	     .hwe			(hwe),
+	     .hdata_o			(hdata_o[7:0]));
    
    defparam 		
 	   data.LZF_FILE = "/tmp/encode.src";
@@ -78,6 +88,10 @@ module top(/*AUTOARG*/
 		 // Outputs
 		 .data_o		(data_o[15:0]),
 		 .done_o		(done_o),
+		 .hdata_o		(hdata_o[7:0]),
+		 .hraddr		(hraddr[10:0]),
+		 .hwaddr		(hwaddr[10:0]),
+		 .hwe			(hwe),
 		 .m_src_getn		(m_src_getn),
 		 .valid_o		(valid_o),
 		 // Inputs
@@ -85,6 +99,7 @@ module top(/*AUTOARG*/
 		 .clk			(clk),
 		 .fi			(fi[63:0]),
 		 .fo_full		(fo_full),
+		 .hdata			(hdata[7:0]),
 		 .m_last		(m_last),
 		 .rst			(rst),
 		 .src_empty		(src_empty));

@@ -15,8 +15,9 @@
 module data(/*AUTOARG*/
    // Outputs
    clk, rst, src_empty, ce, fo_full, m_last, fi, fi_cnt,
+   hdata,
    // Inputs
-   m_src_getn, m_endn
+   m_src_getn, m_endn, hwaddr, hraddr, hwe, hdata_o
    );
    parameter LZF_WIDTH = 20;
    parameter LZF_SIZE  = 512;
@@ -168,6 +169,33 @@ module data(/*AUTOARG*/
 	$finish;
    end
 
+   input [10:0] hwaddr, 
+		hraddr;
+   input 	hwe;
+   input [7:0] 	hdata_o;
+   output [7:0] hdata;
+   wire [7:0] 	hdata;
+   
+   generic_tpram mem (.clk_a(clk),
+		      .rst_a(rst),
+		      .ce_a(1'b1),
+		      .we_a(hwe),
+		      .oe_a(1'b0),
+		      .addr_a(hwaddr),
+		      .di_a(hdata_o),
+		      .do_a(),
+		      
+		      .clk_b(clk),
+		      .rst_b(rst),
+		      .ce_b(1'b1),
+		      .we_b(1'b0),
+		      .oe_b(1'b1),
+		      .addr_b(hraddr),
+		      .di_b(),
+		      .do_b(hdata));
+   defparam     mem.aw = 11;
+   defparam     mem.dw = 8;
+   
    always #7.5 clk = !clk;
 endmodule // data
 

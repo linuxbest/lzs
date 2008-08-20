@@ -13,9 +13,10 @@
  *****************************************************************************/
 module encode(/*AUTOARG*/
    // Outputs
-   valid_o, m_src_getn, done_o, data_o,
+   valid_o, m_src_getn, hwe, hwaddr, hraddr, hdata_o,
+   done_o, data_o,
    // Inputs
-   src_empty, rst, m_last, fo_full, fi, clk, ce
+   src_empty, rst, m_last, hdata, fo_full, fi, clk, ce
    );
    parameter LZF_WIDTH = 20;
 
@@ -25,6 +26,7 @@ module encode(/*AUTOARG*/
    input		clk;			// To dp of encode_dp.v, ...
    input [63:0]		fi;			// To dp of encode_dp.v
    input		fo_full;		// To dp of encode_dp.v
+   input [7:0]		hdata;			// To ctl of encode_ctl.v
    input		m_last;			// To dp of encode_dp.v
    input		rst;			// To dp of encode_dp.v, ...
    input		src_empty;		// To dp of encode_dp.v
@@ -33,6 +35,10 @@ module encode(/*AUTOARG*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output [15:0]	data_o;			// From out of encode_out.v
    output		done_o;			// From out of encode_out.v
+   output [7:0]		hdata_o;		// From dp of encode_dp.v
+   output [10:0]	hraddr;			// From ctl of encode_ctl.v
+   output [10:0]	hwaddr;			// From dp of encode_dp.v
+   output		hwe;			// From dp of encode_dp.v
    output		m_src_getn;		// From dp of encode_dp.v
    output		valid_o;		// From out of encode_out.v
    // End of automatics
@@ -52,8 +58,6 @@ module encode(/*AUTOARG*/
    wire [7:0]		hash_data1;		// From dp of encode_dp.v
    wire			hash_data_d1;		// From dp of encode_dp.v
    wire [LZF_WIDTH-1:0]	hash_ref;		// From dp of encode_dp.v
-   wire [7:0]		hdata;			// From dp of encode_dp.v
-   wire [10:0]		hraddr;			// From ctl of encode_ctl.v
    wire [LZF_WIDTH-1:0]	iidx;			// From dp of encode_dp.v
    // End of automatics
    encode_dp dp(/*AUTOINST*/
@@ -70,7 +74,9 @@ module encode(/*AUTOARG*/
 		.iidx			(iidx[LZF_WIDTH-1:0]),
 		.hash_d1		(hash_d1[7:0]),
 		.hash_data_d1		(hash_data_d1),
-		.hdata			(hdata[7:0]),
+		.hwaddr			(hwaddr[10:0]),
+		.hwe			(hwe),
+		.hdata_o		(hdata_o[7:0]),
 		// Inputs
 		.clk			(clk),
 		.rst			(rst),
@@ -78,8 +84,7 @@ module encode(/*AUTOARG*/
 		.fo_full		(fo_full),
 		.fi			(fi[63:0]),
 		.src_empty		(src_empty),
-		.m_last			(m_last),
-		.hraddr			(hraddr[10:0]));
+		.m_last			(m_last));
    encode_ctl ctl(/*AUTOINST*/
 		  // Outputs
 		  .hraddr		(hraddr[10:0]),
