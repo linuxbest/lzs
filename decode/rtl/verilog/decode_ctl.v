@@ -13,10 +13,9 @@
 module decode_ctl (/*AUTOARG*/
    // Outputs
    stream_width, stream_ack, out_data, out_valid, out_done,
-   hwaddr, hraddr, hwe, hdata_o,
    // Inputs
    clk, rst, ce, fo_full, stream_data, stream_valid,
-   stream_done, hdata
+   stream_done
    );
    input clk,
 	 rst,
@@ -211,7 +210,7 @@ module decode_ctl (/*AUTOARG*/
    always @(posedge clk)
        out_data_r <= #1 out_data_n;
    
-
+   wire [7:0] hdata;
    reg [10:0] waddr, raddr;
    always @(posedge clk or posedge rst)
      begin
@@ -221,19 +220,29 @@ module decode_ctl (/*AUTOARG*/
 	  waddr <= #1 waddr + 1'b1;
      end
 
-   output [10:0] hwaddr, hraddr;
-   output 	 hwe;
-   output [7:0]  hdata_o;
-   input [7:0] 	 hdata;
-   
-   assign 	 hwaddr = waddr;
-   assign 	 hraddr = raddr;
-   assign 	 hdata_o = out_data;
-   assign        hwe = out_valid;
+   generic_tpram history_mem (.clk_a(clk),
+		      .rst_a(rst),
+		      .ce_a(1'b1),
+		      .we_a(out_valid),
+		      .oe_a(1'b0),
+		      .addr_a(waddr),
+		      .di_a(out_data),
+		      .do_a(),
+		      
+		      .clk_b(clk),
+		      .rst_b(rst),
+		      .ce_b(1'b1),
+		      .we_b(1'b0),
+		      .oe_b(1'b1),
+		      .addr_b(raddr),
+		      .di_b(),
+		      .do_b(hdata));
+   defparam history_mem.aw = 11;
+   defparam history_mem.dw = 8;
 
-   reg 	    h_se;
+   reg 	    hwe;
    always @(posedge clk)
-     h_se <= #1 cnt_dec;
+     hwe <= #1 cnt_dec;
    
    always @(posedge clk)
      begin
@@ -265,7 +274,8 @@ module decode_ctl (/*AUTOARG*/
      end
    
    assign out_done  = state == S_END;
-   assign out_data  = out_valid_r ? out_data_r : hdata;
-   assign out_valid = out_valid_r | h_se;
+   assign out_data  = out_valid_r    ? out_data_r :
+		      waddr == raddr ? out_data_d : hdata;
+   assign out_valid = out_valid_r | hwe;
    
 endmodule // decode_ctl

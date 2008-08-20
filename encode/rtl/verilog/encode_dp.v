@@ -15,9 +15,9 @@ module encode_dp(/*AUTOARG*/
    // Outputs
    m_src_getn, data_empty, data, data_valid, hash_data,
    hash_data1, hash_ref, data_d1, data_d2, iidx, hash_d1,
-   hash_data_d1, hwaddr, hwe, hdata_o,
+   hash_data_d1, hdata,
    // Inputs
-   clk, rst, ce, fo_full, fi, src_empty, m_last
+   clk, rst, ce, fo_full, fi, src_empty, m_last, hraddr
    );
    parameter LZF_WIDTH = 20;
 
@@ -27,7 +27,7 @@ module encode_dp(/*AUTOARG*/
    
    output    m_src_getn;
    output    data_empty;
-
+   
    /*AUTOOUTPUT*/
    /*AUTOINPUT*/
    /*AUTOWIRE*/
@@ -44,7 +44,7 @@ module encode_dp(/*AUTOARG*/
 
    reg [7:0] 	   waddr;
    reg [LZF_WIDTH-1:0] hash;
-   reg 		       hash_we, hdone;
+   reg 		       hwe, hdone;
    
    reg [2:0] 
 	     state, state_next;
@@ -112,11 +112,11 @@ module encode_dp(/*AUTOARG*/
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
-	  hash_we <= #1 0;
+	  hwe <= #1 0;
 	else if (hdone == 0)
-	  hash_we <= #1 1;
+	  hwe <= #1 1;
 	else 
-	  hash_we <= #1 data_valid_next;
+	  hwe <= #1 data_valid_next;
      end
    
    always @(/*AS*/ce or fo_full or hdone or iidxL or m_last
@@ -201,7 +201,7 @@ module encode_dp(/*AUTOARG*/
 
    always @(posedge clk)
      begin
-	if (hash_we)
+	if (hwe)
 	  htab[waddr] <= #1 {data_next, data_d1, iidx};
 	if (data_valid)
 	  {hash_data1, hash_data, hash_ref} <= #1 htab[raddr];
@@ -250,19 +250,25 @@ module encode_dp(/*AUTOARG*/
 	  iidx <= #1 iidx + 1;
      end
 
-   output [10:0] hwaddr;
-   output 	 hwe;
-   output [7:0]  hdata_o;
-   
    /* history */
+   input [10:0] hraddr;
+   output [7:0] hdata;
+   reg [7:0] 	hdata_r;
    reg [10:0] 	hwaddr;
+
    always @(/*AS*/iidx)
      begin
 	hwaddr = iidx[10:0];
      end
-
-   assign hwe = data_valid;
-   assign hdata_o = data;
+   
+   reg [7:0] history[2047:0];
+   always @(posedge clk)
+     begin
+	if (data_valid)
+	  history[hwaddr] <= #1 data;
+	hdata_r <= #1 history[hraddr];
+     end
+   assign hdata = hwaddr == hraddr && data_valid ? data_d1 : hdata_r;
    
 endmodule // encode
 

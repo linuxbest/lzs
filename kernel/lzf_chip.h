@@ -97,8 +97,8 @@ enum ec_ops {
         DC_CTRL       = (1<<7),
 
         DC_HASH       = (1<<8)|DC_READ,
-        DC_CONT       = (1<<14)/*0x40*/,
-        DC_INTR_EN    = (1<<15), /* Enable Interrupt */
+        DC_CONT       = (1<<10),
+        DC_INTR_EN    = (1<<11), /* Enable Interrupt */
 };
 
 #endif

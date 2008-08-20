@@ -1,5 +1,5 @@
 top: top.v /tmp/encode.src /tmp/encode.chk 
-	iverilog -Wall -o top top.v -y ../../../common/ -y ../../../decode/rtl/verilog/
+	iverilog -Wall -o top top.v -y ../../../common/
 
 I_FILE ?= "../../../files/01"
 I_SIZE ?= "512"
