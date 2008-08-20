@@ -108,6 +108,10 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
                 if (sio.done == 0) { /* hardware not finished */
                 //        return -3;
                 }
+                if (cz == -1) { 
+                        idx ++; 
+                        continue; 
+                }
                 if (memcmp(t1, z, o) != 0) {
                         c_error --;
                         c_err = 1;
@@ -146,12 +150,20 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
                 }
                 printf("idx c_err d_err: %05d %02d %02d\r", 
                                 idx, c_error, d_error);
-                idx ++;
                 if (sio.done == 0 || sio2.done == 0)
                         return  -90;
+                idx ++;
         } while (idx < cnt && c_error && d_error);
         printf("\n");
+        printf("idx c_err d_err: %05d %02d %02d\r", 
+                        idx, c_error, d_error);
 
+        return 0;
+}
+static int
+usage(const char *name)
+{
+        printf("%s: -d device -s size -c loop cnt -D \n", name);
         return 0;
 }
 
@@ -162,7 +174,7 @@ main(int argc, char *argv[])
         char *dev = NULL;
         int fd, res = 0;
 
-        while ((opt = getopt(argc, argv, "d:s:c:D")) != -1) {
+        while ((opt = getopt(argc, argv, "d:s:c:D?")) != -1) {
                 switch (opt) {
                 case 'd':
                         dev = strdup(optarg);
@@ -176,6 +188,8 @@ main(int argc, char *argv[])
                 case 'D':
                         debug = 1;
                         break;
+                case '?':
+                        return usage(argv[0]);
                 }
         }
 
@@ -188,7 +202,7 @@ main(int argc, char *argv[])
 
         if (dev) {
                 res = lzs_test(fd, dev, sz, cnt, debug);
-                printf("lzs_test res %d\n", res);
+                printf("\nlzs_test res %d\n", res);
         }
 
         return 0;
