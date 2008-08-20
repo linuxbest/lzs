@@ -229,10 +229,11 @@ module decode_ctl (/*AUTOARG*/
    assign 	 hwaddr = waddr;
    assign 	 hraddr = raddr;
    assign 	 hdata_o = out_data;
-   
-   reg 	    hwe;
+   assign        hwe = out_valid;
+
+   reg 	    h_se;
    always @(posedge clk)
-     hwe <= #1 cnt_dec;
+     h_se <= #1 cnt_dec;
    
    always @(posedge clk)
      begin
@@ -265,6 +266,6 @@ module decode_ctl (/*AUTOARG*/
    
    assign out_done  = state == S_END;
    assign out_data  = out_valid_r ? out_data_r : hdata;
-   assign out_valid = out_valid_r | hwe;
+   assign out_valid = out_valid_r | h_se;
    
 endmodule // decode_ctl
