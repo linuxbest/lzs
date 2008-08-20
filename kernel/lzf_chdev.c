@@ -17,7 +17,7 @@
         do { \
                 if (debug) printk("%s:%d "format, __FUNCTION__, __LINE__, ##a);\
         } while (0)
-static int debug = 0;
+extern int debug;
 static int apidev_major = 0;
 
 /* vvvvvvvv  following code borrowed from st driver's direct IO vvvvvvvvv */
@@ -53,6 +53,7 @@ st_map_user_pages(struct scatterlist *sgl, const unsigned int max_pages,
 
 	if ((pages = kmalloc(max_pages * sizeof(*pages), GFP_ATOMIC)) == NULL)
 		return -ENOMEM;
+        memset(pages, 0, max_pages * sizeof(*pages));
 
         /* Try to fault in all of the necessary pages */
 	down_read(&current->mm->mmap_sem);
@@ -88,7 +89,8 @@ st_map_user_pages(struct scatterlist *sgl, const unsigned int max_pages,
 	/* Populate the scatter/gather list */
 	sgl[0].page = pages[0]; 
 	sgl[0].offset = uaddr & ~PAGE_MASK;
-        dprintk("page %d:%p, %08x\n", 0, sgl[0].page, sgl[0].offset);
+        dprintk("page %d:%p, %08x, nr %d\n", 0, sgl[0].page, sgl[0].offset, 
+                        nr_pages);
 	if (nr_pages > 1) {
 		sgl[0].length = PAGE_SIZE - sgl[0].offset;
 		count -= sgl[0].length;
@@ -97,8 +99,9 @@ st_map_user_pages(struct scatterlist *sgl, const unsigned int max_pages,
 			sgl[i].page = pages[i]; 
 			sgl[i].length = count < PAGE_SIZE ? count : PAGE_SIZE;
 			count -= PAGE_SIZE;
-		}
-                dprintk("page %d:%p, %08x\n", i, sgl[i].page, sgl[i].offset);
+                        dprintk("page %02d:%p, %08x\n", i, sgl[i].page, 
+                                        sgl[i].offset);
+                }
         }
 	else {
 		sgl[0].length = count;

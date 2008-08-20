@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 
 #include <fcntl.h>
 #include <getopt.h>
@@ -68,6 +69,9 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
         t1= (char *)memalign(64, sz+0x10);
         t2= (char *)memalign(64, sz+0x10);
         z = (char *)memalign(64, sz+0x10);
+        /*mlockall(MCL_CURRENT);*/
+        memset(t1, 0, sz+0x10);
+        memset(t2, 0, sz+0x10);
 
         fp = fopen(dev, "r");
         if (fp == NULL) {
@@ -109,10 +113,11 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
                         c_err = 1;
                 }
 
+                res = o;
                 if (o % 8)
                         res += (8 - (o%8));
-                else
-                        res = o;
+                //printf("%d, %d\n", o, res);
+
                 sio2.ops = OP_UNCOMPRESS;
                 sio2.src = (uint32_t)z;
                 sio2.slen= res;
