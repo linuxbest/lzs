@@ -64,17 +64,16 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
         FILE *fp;
         int c_error = 10, d_error = 10, idx = 0;
 
-        s = (char *)memalign(4096, sz+0x10);
-        z = (char *)memalign(4096, sz+0x10);
-        t1= (char *)memalign(4096, sz+0x10);
-        t2= (char *)memalign(4096, sz+0x10);
+        s = (char *)memalign(64, sz+0x10);
+        t1= (char *)memalign(64, sz+0x10);
+        t2= (char *)memalign(64, sz+0x10);
+        z = (char *)memalign(64, sz+0x10);
 
         fp = fopen(dev, "r");
         if (fp == NULL) {
                 perror("fopen");
                 return 0;
         }
-        printf("s %p, z %p, t1 %p, t2 %p\n", s, z, t1, t2);
 
         do {
                 int o, res = 0, cz;

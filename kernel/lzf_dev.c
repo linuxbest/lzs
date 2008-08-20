@@ -318,15 +318,15 @@ static int unmap_bufs(struct lzf_device *ioc, buf_desc_t *d, int dir,
 static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir, 
                 int *c)
 {
-        int bytes_to_go = s->bufflen;
+        int bytes_to_go = s->bufflen, res = 0;
         buf_desc_t *b = NULL, *prev = NULL, *h = NULL;
         dma_addr_t addr = 0;
         struct scatterlist *sgl = NULL;
         dma_addr_t hw_addr = 0;
 
         if (s->use_sg == 0) {
-                dprintk("bytes_to_go %x, %x\n", 
-                                bytes_to_go, LZF_MAX_SG_ELEM_LEN);
+                dprintk("bytes_to_go %x, %x, %p\n", 
+                                bytes_to_go, LZF_MAX_SG_ELEM_LEN, s->buffer);
                 s->addr = addr = 
                         pci_map_single(ioc->dev, s->buffer, s->bufflen, dir);
                 if (bytes_to_go <= LZF_MAX_SG_ELEM_LEN) {
@@ -351,11 +351,11 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                 }
         } else {
                 sgl = (struct scatterlist *)s->buffer;
-                pci_map_sg(ioc->dev, sgl, s->use_sg, dir);
+                res = pci_map_sg(ioc->dev, sgl, s->use_sg, dir);
         }
 
-        dprintk("bytes_to_go %x, %x, %x\n", bytes_to_go, LZF_MAX_SG_ELEM_LEN, 
-                        s->use_sg);
+        dprintk("bytes_to_go %x, %x, %x, sgl %p, res %d\n", bytes_to_go, LZF_MAX_SG_ELEM_LEN, 
+                        s->use_sg, sgl, res);
         while (bytes_to_go > 0) {
                 int this_mapping_len = sgl ? sg_dma_len(sgl) : bytes_to_go;
                 int offset = 0;
@@ -364,7 +364,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         coherent_t *q = coherent_alloc(ioc);
                         int this_len = min_t(int, LZF_MAX_SG_ELEM_LEN, 
                                         this_mapping_len);
-                        dprintk("this_len %x\n", this_len);
+                        dprintk("this_len %x, %p\n", this_len, sgl ? sgl->dma_address: 0);
                         b = q->virt;
                         hw_addr = q->addr;
                         BUG_ON(hw_addr & 0x7);
@@ -508,7 +508,7 @@ static int do_jobs(struct lzf_device *ioc)
         int res = 0;
 
         if (!spin_trylock_bh(&ioc->desc_lock))
-                return;
+                return 0;
         phys_complete = readl(ioc->R.DAR.address);
         dprintk("phys %x\n", phys_complete);
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {

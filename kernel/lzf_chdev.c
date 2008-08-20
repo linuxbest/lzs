@@ -71,6 +71,7 @@ st_map_user_pages(struct scatterlist *sgl, const unsigned int max_pages,
 	/* Errors and no page mapped should return here */
 	if (res < nr_pages)
 		goto out_unmap;
+        dprintk("res %d, nr_pages %d\n", res, nr_pages);
 
         for (i=0; i < nr_pages; i++) {
                 /* FIXME: flush superflous for rw==READ,
@@ -87,6 +88,7 @@ st_map_user_pages(struct scatterlist *sgl, const unsigned int max_pages,
 	/* Populate the scatter/gather list */
 	sgl[0].page = pages[0]; 
 	sgl[0].offset = uaddr & ~PAGE_MASK;
+        dprintk("page %d:%p, %08x\n", 0, sgl[0].page, sgl[0].offset);
 	if (nr_pages > 1) {
 		sgl[0].length = PAGE_SIZE - sgl[0].offset;
 		count -= sgl[0].length;
@@ -96,7 +98,8 @@ st_map_user_pages(struct scatterlist *sgl, const unsigned int max_pages,
 			sgl[i].length = count < PAGE_SIZE ? count : PAGE_SIZE;
 			count -= PAGE_SIZE;
 		}
-	}
+                dprintk("page %d:%p, %08x\n", i, sgl[i].page, sgl[i].offset);
+        }
 	else {
 		sgl[0].length = count;
 	}
@@ -161,7 +164,8 @@ static int map_sio(sioctl_t *sio)
 
         sgl_src = kmalloc(sizeof(struct scatterlist) * max_sg, GFP_KERNEL);
         sgl_dst = kmalloc(sizeof(struct scatterlist) * max_sg, GFP_KERNEL);
-        dprintk("src %p, dst %p\n", sgl_src, sgl_dst);
+        dprintk("src %p, dst %p, %08x/%d, %08x/%d\n", 
+                        sgl_src, sgl_dst, sio->src, sio->slen, sio->dst, sio->dlen);
         res = st_map_user_pages(sgl_src, max_sg, sio->src, sio->slen,
                         READ, ULONG_MAX);
         dprintk("res %d\n", res);
