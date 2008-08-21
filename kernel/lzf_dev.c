@@ -257,7 +257,13 @@ static job_entry_t *get_job_entry(struct lzf_device *ioc)
 
         BUG_ON(in_irq());
         dprintk(MYNAM ": queue %x\n", atomic_read(&ioc->queue));
-        wait_event(ioc->wait, atomic_read(&ioc->queue) < MIN_QUEUE);
+        do {
+                wait_event_timeout(ioc->wait, 
+                                atomic_read(&ioc->queue) < MIN_QUEUE, 5*HZ);
+                if (atomic_read(&ioc->queue) < MIN_QUEUE) 
+                        break;
+                async_dump_register();
+        } while (1);
 
         spin_lock_irqsave(&ioc->desc_lock, flags);
         if (!list_empty(&ioc->free_head)) {
@@ -488,6 +494,7 @@ EXPORT_SYMBOL(async_device_cap);
 static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
 {
         int res = 0;
+        int debug_level = debug;
 
         /* unmap result data */
         if (d->src)
@@ -497,16 +504,25 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
                 unmap_bufs(ioc, d->dst, PCI_DMA_FROMDEVICE, d->dst_buf, 
                                 d->d_cnt, "dst ");
 
+        /* if the result not update, that mean the job not finished
+         * so we need double check.
+         */
+        if (((d->res->dc_fc & 0x1ff) != (d->desc->dc_fc & 0x1ff)) ||
+                        (d->res->ocnt == 0)) {
+                debug = 1;
+                dprintk("res->dc_fc %x/%x, ocnt %x, cookie %x\n",
+                                d->res->dc_fc, d->desc->dc_fc, d->res->ocnt, 
+                                d->cookie);
+                /* TODO the ocnt must not be zero */
+                /*async_dump_register();*/
+        }
+
         if (debug)
                 print_hex_dump_bytes("res ", DUMP_PREFIX_ADDRESS, 
                                 d->res, 32);
         dprintk("cb %p,%p, err %x, ocnt %x, %x/%x\n", 
                         d->cb, d->priv, d->res->err, d->res->ocnt, 
                         d->res->dc_fc, d->desc->dc_fc);
-        if (((d->res->dc_fc & 0x1ff) != (d->desc->dc_fc & 0x1ff)) ||
-                        (d->res->ocnt == 0)) {
-                async_dump_register();
-        }
         d->cb(d->priv, d->res->err, d->res->ocnt);
 
         atomic_dec(&ioc->queue);
@@ -516,27 +532,24 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
                 async_c1 ++;
         else 
                 async_c0 ++;
-        d->res->dc_fc = 0xffffffff;
+        memset(d->res, 0x02, sizeof(*d->res));
+        consistent_sync(d->res, sizeof(*d->res), PCI_DMA_BIDIRECTIONAL);
+        debug = debug_level;
 
         return res;
 }
 
-static int do_jobs(struct lzf_device *ioc)
+static int do_jobs(struct lzf_device *ioc, uint32_t phys_complete)
 {
         job_entry_t *d, *t;
-        uint32_t phys_complete;
-        LIST_HEAD(head);
         int res = 0;
         unsigned long flags;
 
         spin_lock_irqsave(&ioc->desc_lock, flags);
-        phys_complete = readl(ioc->R.DAR.address);
-        BUG_ON(phys_complete == 0xFFFFFFFF);
-        dprintk("phys %x\n", phys_complete);
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
                 dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
                 if (d->cookie)
-                        list_add_tail(&d->job_entry, &head);
+                        do_job_one(ioc, d);
                 if (d->addr != phys_complete) {
                         list_del(&d->entry);
                         list_add_tail(&d->entry, &ioc->free_head);
@@ -544,11 +557,6 @@ static int do_jobs(struct lzf_device *ioc)
                         d->cookie = 0;
                         break;
                 }
-        }
-        list_for_each_entry_safe(d, t, &head, job_entry) {
-                dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
-                do_job_one(ioc, d);
-                list_del(&d->job_entry);
         }
         spin_unlock_irqrestore(&ioc->desc_lock, flags);
 
@@ -562,6 +570,7 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
         uint32_t val = 0;
         int res = IRQ_NONE;
         struct lzf_device *ioc = p;
+        uint32_t phys_complete;
 
         val = readl(ioc->R.CSR.address);
         if ((val & CSR_INTP) == 0) { /* interrupt pending */
@@ -569,6 +578,8 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
                 goto out;
         }
         res = IRQ_HANDLED;
+        phys_complete = readl(ioc->R.DAR.address);
+        BUG_ON(phys_complete == 0xFFFFFFFF);
 
         /* clear irq flags */
         val = readl(ioc->R.CCR.address);
@@ -577,10 +588,10 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
         wmb();
         val = readl(ioc->R.CCR.address);
 
-        dprintk("val %x\n", val);
+        dprintk("val %x, %x\n", val, phys_complete);
         atomic_inc(&ioc->intr);
         /* call the finished jobs */
-        do_jobs(ioc);
+        do_jobs(ioc, phys_complete);
 out:
         return res;
 }
