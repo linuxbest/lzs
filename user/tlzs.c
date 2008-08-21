@@ -56,28 +56,30 @@ write_file(char *s1, int sz1, char *append, int idx)
 }
 
 static int
-lzs_test(int fd, char *dev, int sz, int cnt, int debug)
+lzs_test(int fd, char *dev, int sz, int cnt, int debug, long start)
 {
         char *s, /* origin buffer */
              *z, /* software compress buffer */
              *t1,/* temp1 buffer */
              *t2;/* temp2 buffer */
         FILE *fp;
-        int c_error = 10, d_error = 10, idx = 0;
+        int c_error = 10, d_error = 10, idx = 0, skip = 0;
+        long off;
 
         s = (char *)memalign(64, sz+0x10);
         t1= (char *)memalign(64, sz+0x10);
         t2= (char *)memalign(64, sz+0x10);
         z = (char *)memalign(64, sz+0x10);
-        /*mlockall(MCL_CURRENT);*/
-        memset(t1, 0, sz+0x10);
-        memset(t2, 0, sz+0x10);
+        mlockall(MCL_CURRENT);
+        /*memset(t1, 0, sz+0x10);
+        memset(t2, 0, sz+0x10);*/
 
         fp = fopen(dev, "r");
         if (fp == NULL) {
                 perror("fopen");
                 return 0;
         }
+        fseek(fp, start, SEEK_SET);
 
         do {
                 int o, res = 0, cz;
@@ -89,6 +91,8 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
                 if (fread(s, sz, 1, fp) != 1) {
                         return -1;
                 }
+                off = ftell(fp);
+
                 /* call software compress */
                 cz = o = lzsCompress(s, sz, z, sz);
                 /* call hardare compress */
@@ -110,8 +114,9 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
                         goto done;
                 }
                 if (cz == -1) { 
-                        idx ++; 
-                        continue; 
+                        skip ++;
+                        //printf("osize %d, err %d\n", sio.osize, sio.err);
+                        goto done;
                 }
                 if (memcmp(t1, z, o) != 0) {
                         c_error --;
@@ -150,10 +155,13 @@ done:
                         write_file(t1, sio.osize, "t1", idx);
                         write_file(t2, sio2.osize, "t2", idx);
                 }
-                printf("idx c_err d_err: %05d %02d %02d\r", 
-                                idx, c_error, d_error);
-                if (sio.done == 0 || sio2.done == 0)
-                        return  -90;
+                printf("idx c_err d_err: %05d %02d %02d %04d %08ld %04d\r", 
+                                idx, c_error, d_error, skip, off, sz);
+                fflush(stdout);
+                if (cz != -1) {
+                        if (sio.done == 0 || sio2.done == 0)
+                                return  -90;
+                }
                 idx ++;
         } while (idx < cnt && c_error && d_error);
         printf("\n");
@@ -175,8 +183,9 @@ main(int argc, char *argv[])
         int opt, sz = 65536, cnt = 1, debug = 0;
         char *dev = NULL;
         int fd, res = 0;
+        long off = 0;
 
-        while ((opt = getopt(argc, argv, "d:s:c:D?")) != -1) {
+        while ((opt = getopt(argc, argv, "d:s:c:D?o:")) != -1) {
                 switch (opt) {
                 case 'd':
                         dev = strdup(optarg);
@@ -189,6 +198,9 @@ main(int argc, char *argv[])
                         break;
                 case 'D':
                         debug = 1;
+                        break;
+                case 'o':
+                        off = atoi(optarg);
                         break;
                 case '?':
                         return usage(argv[0]);
@@ -203,7 +215,7 @@ main(int argc, char *argv[])
         }
 
         if (dev) {
-                res = lzs_test(fd, dev, sz, cnt, debug);
+                res = lzs_test(fd, dev, sz, cnt, debug, off);
                 printf("\nlzs_test res %d\n", res);
         }
 
