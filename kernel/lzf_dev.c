@@ -85,21 +85,6 @@ struct lzf_device {
 static struct lzf_device *first_ioc; /* XXX */
 static unsigned long async_c0, async_c1;
 
-void async_dump_register(void)
-{
-        int i = 0, j = 0, off = 0;
-        for (j = 0; j < 8; j ++) {
-                printk("%02x: ", j*4);
-                for (i = 0; i < 4; i ++) {
-                        uint32_t val = 
-                                readl(first_ioc->mmr_base + off + 0x400);
-                        printk(" %08X ", val);
-                        off += 4;
-                }
-                printk("\n");
-        }
-}
-
 int async_device_cap(void)
 {
         if (first_ioc == NULL)
@@ -120,13 +105,14 @@ static coherent_t *
 coherent_alloc(struct lzf_device *ioc) 
 {
         coherent_t *p = NULL;
+        unsigned long flags;
 
-        spin_lock_bh(&ioc->mem_lock);
+        spin_lock_irqsave(&ioc->mem_lock, flags);
         if (!list_empty(&ioc->mem_head)) {
                 p = container_of(ioc->mem_head.next, coherent_t, entry);
                 list_del(&p->entry);
         }
-        spin_unlock_bh(&ioc->mem_lock);
+        spin_unlock_irqrestore(&ioc->mem_lock, flags);
         atomic_dec(&ioc->mem_free);
         dprintk("p %p, %d\n", p, atomic_read(&ioc->mem_free));
 
@@ -136,10 +122,11 @@ coherent_alloc(struct lzf_device *ioc)
 static void 
 coherent_free(struct lzf_device *ioc, coherent_t *p)
 {
+        unsigned long flags;
         dprintk("p %p, %d\n", p, atomic_read(&ioc->mem_free));
-        spin_lock_bh(&ioc->mem_lock);
+        spin_lock_irqsave(&ioc->mem_lock, flags);
         list_add_tail(&p->entry, &ioc->mem_head);
-        spin_unlock_bh(&ioc->mem_lock);
+        spin_unlock_irqrestore(&ioc->mem_lock, flags);
         atomic_inc(&ioc->mem_free);
 }
 
@@ -210,6 +197,34 @@ typedef struct {
         coherent_t *q1, *q2;
 } job_entry_t;
 
+void async_dump_register(void)
+{
+        int i = 0, j = 0, off = 0;
+        struct lzf_device *ioc = first_ioc;
+        job_entry_t *d, *t;
+
+        for (j = 0; j < 8; j ++) {
+                printk("%02x: ", j*4);
+                for (i = 0; i < 4; i ++) {
+                        uint32_t val = 
+                                readl(first_ioc->mmr_base + off + 0x400);
+                        printk(" %08x ", val);
+                        off += 4;
+                }
+                printk("\n");
+        }
+        printk("phys %08x\n", readl(ioc->R.DAR.address));
+        list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
+                printk("addr %08x, c %08x, src %08x, dst %08x, %08x, %08x\n", 
+                                d->addr, d->desc->dc_fc, d->desc->src_desc, 
+                                d->desc->dst_desc, d->cookie, 
+                                d->desc->next_desc);
+        }
+        printk("queue %d\n", atomic_read(&ioc->queue));
+        if (atomic_read(&ioc->queue)) 
+                writel(CCR_APPEND|CCR_ENABLE, ioc->R.CCR.address);
+}
+
 static job_entry_t *new_job_entry(struct lzf_device *ioc)
 {
         job_entry_t *p;
@@ -238,17 +253,18 @@ static job_entry_t *new_job_entry(struct lzf_device *ioc)
 static job_entry_t *get_job_entry(struct lzf_device *ioc)
 {
         job_entry_t *p = NULL;
-        
+        unsigned long flags;
+
         BUG_ON(in_irq());
         dprintk(MYNAM ": queue %x\n", atomic_read(&ioc->queue));
         wait_event(ioc->wait, atomic_read(&ioc->queue) < MIN_QUEUE);
 
-        spin_lock_bh(&ioc->desc_lock);
+        spin_lock_irqsave(&ioc->desc_lock, flags);
         if (!list_empty(&ioc->free_head)) {
                 p = container_of(ioc->free_head.next, job_entry_t, entry);
                 list_del(&p->entry);
         }
-        spin_unlock_bh(&ioc->desc_lock);
+        spin_unlock_irqrestore(&ioc->desc_lock, flags);
         atomic_inc(&ioc->queue);
 
         p->src = NULL;
@@ -362,7 +378,7 @@ static buf_desc_t *map_bufs(struct lzf_device *ioc, sgbuf_t *s, int dir,
                         coherent_t *q = coherent_alloc(ioc);
                         int this_len = min_t(int, LZF_MAX_SG_ELEM_LEN, 
                                         this_mapping_len);
-                        dprintk("this_len %x, %p\n", this_len, sgl ? sgl->dma_address: 0);
+                        dprintk("this_len %x, %x\n", this_len, sgl ? sgl->dma_address: 0);
                         b = q->virt;
                         hw_addr = q->addr;
                         BUG_ON(hw_addr & 0x7);
@@ -414,6 +430,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
         job_entry_t *d, *prev;
         LIST_HEAD(new_chain);
         struct lzf_device *ioc = first_ioc; /* TODO */
+        unsigned long flags;
 
         d = get_job_entry(ioc);
         if (src) {
@@ -443,7 +460,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
         d->cookie = ioc->cookie | 1<<31;
         ioc->cookie ++;
 
-        spin_lock_bh(&ioc->desc_lock);
+        spin_lock_irqsave(&ioc->desc_lock, flags);
         prev = container_of(ioc->used_head.prev, job_entry_t, entry);
         dprintk("last desc %p\n", prev);
         prev->desc->next_desc = d->addr;
@@ -454,7 +471,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
 
         if (commit)
                 writel(CCR_APPEND|CCR_ENABLE, ioc->R.CCR.address);
-        spin_unlock_bh(&ioc->desc_lock);
+        spin_unlock_irqrestore(&ioc->desc_lock, flags);
 
         return res;
 }
@@ -481,10 +498,15 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
                                 d->d_cnt, "dst ");
 
         if (debug)
-                print_hex_dump_bytes("res ", DUMP_PREFIX_ADDRESS, d->res, 32);
-        dprintk("cb %p,%p, err %x, ocnt %x\n", d->cb, d->priv, d->res->err, 
-                        d->res->ocnt);
-
+                print_hex_dump_bytes("res ", DUMP_PREFIX_ADDRESS, 
+                                d->res, 32);
+        dprintk("cb %p,%p, err %x, ocnt %x, %x/%x\n", 
+                        d->cb, d->priv, d->res->err, d->res->ocnt, 
+                        d->res->dc_fc, d->desc->dc_fc);
+        if (((d->res->dc_fc & 0x1ff) != (d->desc->dc_fc & 0x1ff)) ||
+                        (d->res->ocnt == 0)) {
+                async_dump_register();
+        }
         d->cb(d->priv, d->res->err, d->res->ocnt);
 
         atomic_dec(&ioc->queue);
@@ -494,6 +516,7 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
                 async_c1 ++;
         else 
                 async_c0 ++;
+        d->res->dc_fc = 0xffffffff;
 
         return res;
 }
@@ -504,10 +527,11 @@ static int do_jobs(struct lzf_device *ioc)
         uint32_t phys_complete;
         LIST_HEAD(head);
         int res = 0;
+        unsigned long flags;
 
-        /*if (!spin_trylock_bh(&ioc->desc_lock))
-                return 0;*/
+        spin_lock_irqsave(&ioc->desc_lock, flags);
         phys_complete = readl(ioc->R.DAR.address);
+        BUG_ON(phys_complete == 0xFFFFFFFF);
         dprintk("phys %x\n", phys_complete);
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
                 dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
@@ -521,13 +545,13 @@ static int do_jobs(struct lzf_device *ioc)
                         break;
                 }
         }
-        /*spin_unlock_bh(&ioc->desc_lock);*/
-
         list_for_each_entry_safe(d, t, &head, job_entry) {
                 dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
                 do_job_one(ioc, d);
                 list_del(&d->job_entry);
         }
+        spin_unlock_irqrestore(&ioc->desc_lock, flags);
+
         wake_up_all(&ioc->wait);
 
         return res;
@@ -541,6 +565,7 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
 
         val = readl(ioc->R.CSR.address);
         if ((val & CSR_INTP) == 0) { /* interrupt pending */
+                BUG_ON(val == 0xFFFFFFFF);
                 goto out;
         }
         res = IRQ_HANDLED;
@@ -563,7 +588,8 @@ out:
 static void start_null_desc(struct lzf_device *ioc)
 {
         job_entry_t *d;
-        uint32_t next_desc, ctl_addr;
+        uint32_t next_desc, ctl_addr, old_addr;
+        unsigned long flags;
 
         /*val = readl(ioc->mmr_base + 0x7C);
         printk("MAGIC: %08X\n", val);
@@ -574,16 +600,17 @@ static void start_null_desc(struct lzf_device *ioc)
 
         d = get_job_entry(ioc);
         d->desc->next_desc = 0x300;
+        old_addr = d->desc->ctl_addr;
         d->desc->ctl_addr  = 0x200;
         d->desc->dc_fc     = DC_NULL|DC_INTR_EN;
         dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 
                         d->addr, d->desc->dc_fc, d->desc->src_desc, 
                         d->desc->dst_desc, d);
 
-        spin_lock_bh(&ioc->desc_lock);
+        spin_lock_irqsave(&ioc->desc_lock, flags);
         d->cookie = 0;
         list_add_tail(&d->entry, &ioc->used_head);
-        spin_unlock_bh(&ioc->desc_lock);
+        spin_unlock_irqrestore(&ioc->desc_lock, flags);
 
         writel(d->addr, ioc->R.NDAR.address);
         writel(CCR_ENABLE, ioc->R.CCR.address);
@@ -596,6 +623,7 @@ static void start_null_desc(struct lzf_device *ioc)
          * ctl_addr   must = 0x300
          */
         dprintk("next desc %08x, ctrl_addr %08x\n", next_desc, ctl_addr);
+        d->desc->ctl_addr = old_addr;
 }
 
 static int __devinit lzf_probe(struct pci_dev *pdev, 

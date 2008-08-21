@@ -92,8 +92,8 @@ enum ec_ops {
         DC_WRITE      = (1<<2)/*0x4*/,
         DC_FILL       = (1<<3)|DC_WRITE/*0x0c*/,
         DC_MEMCPY     = (1<<4)|DC_READ|DC_WRITE/*0x16*/,
-        DC_COMPRESS   = (1<<5)|DC_READ|DC_WRITE,
-        DC_UNCOMPRESS = (1<<6)|DC_READ|DC_WRITE,
+        DC_COMPRESS   = (1<<5)|DC_READ|DC_WRITE/*0xa6*/,
+        DC_UNCOMPRESS = (1<<6)|DC_READ|DC_WRITE/*0xc6*/,
         DC_CTRL       = (1<<7),
 
         DC_HASH       = (1<<8)|DC_READ,
