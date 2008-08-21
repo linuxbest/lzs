@@ -228,10 +228,12 @@ module encode_dp(/*AUTOARG*/
    
    output hash_data_d1;
    reg    hash_data_d1;
-   always @(posedge clk)
+   always @(/*AS*/data_d1 or data_valid or hash_d1)
      begin
-	if (data_valid_next) 
-	  hash_data_d1 <= #1 data == hash_data1;
+	if (data_valid) 
+	  hash_data_d1 = data_d1 == hash_d1;
+	else
+	  hash_data_d1 = 1'b0;
      end
    
    always @(posedge clk or posedge rst)
@@ -253,7 +255,7 @@ module encode_dp(/*AUTOARG*/
    /* history */
    input [10:0] hraddr;
    output [7:0] hdata;
-   reg [7:0] 	hdata_r;
+   reg [7:0] 	hdata;
    reg [10:0] 	hwaddr;
 
    always @(/*AS*/iidx)
@@ -266,10 +268,8 @@ module encode_dp(/*AUTOARG*/
      begin
 	if (data_valid)
 	  history[hwaddr] <= #1 data;
-	hdata_r <= #1 history[hraddr];
+	hdata <= #1 history[hraddr];
      end
-   assign hdata = hwaddr == hraddr && data_valid ? data_d1 : hdata_r;
-   
 endmodule // encode
 
 // Local Variables:

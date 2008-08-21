@@ -106,7 +106,8 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
                         return -2;
                 }
                 if (sio.done == 0) { /* hardware not finished */
-                //        return -3;
+                        c_err = 1;
+                        goto done;
                 }
                 if (cz == -1) { 
                         idx ++; 
@@ -135,13 +136,14 @@ lzs_test(int fd, char *dev, int sz, int cnt, int debug)
                         return -4;
                 }
                 if (sio.done == 0) {
-                //        return -5;
+                        d_err = 1;
+                        goto done;
                 }
                 if (memcmp(t2, s, sz) != 0) {
                         d_err = 1;
                         d_error --;
                 }
-
+done:
                 if (d_err || c_err) {/* s, z, t1, t2 */
                         write_file(s, sz, "s", idx);
                         write_file(z, cz, "z", idx);
