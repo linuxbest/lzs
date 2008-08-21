@@ -81,8 +81,6 @@ struct lzf_device {
         atomic_t mem_free;
         struct list_head mem_head;
         spinlock_t mem_lock;
-
-        struct tasklet_struct run_lzf_task;
 };
 static struct lzf_device *first_ioc; /* XXX */
 static unsigned long async_c0, async_c1;
@@ -507,8 +505,8 @@ static int do_jobs(struct lzf_device *ioc)
         LIST_HEAD(head);
         int res = 0;
 
-        if (!spin_trylock_bh(&ioc->desc_lock))
-                return 0;
+        /*if (!spin_trylock_bh(&ioc->desc_lock))
+                return 0;*/
         phys_complete = readl(ioc->R.DAR.address);
         dprintk("phys %x\n", phys_complete);
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
@@ -523,7 +521,7 @@ static int do_jobs(struct lzf_device *ioc)
                         break;
                 }
         }
-        spin_unlock_bh(&ioc->desc_lock);
+        /*spin_unlock_bh(&ioc->desc_lock);*/
 
         list_for_each_entry_safe(d, t, &head, job_entry) {
                 dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
@@ -548,17 +546,16 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
         res = IRQ_HANDLED;
 
         /* clear irq flags */
-        writel(CCR_C_INTP | CCR_ENABLE, ioc->R.CCR.address);
+        val = readl(ioc->R.CCR.address);
+        val |= CCR_C_INTP;
+        writel(val, ioc->R.CCR.address);
+        wmb();
         val = readl(ioc->R.CCR.address);
 
         dprintk("val %x\n", val);
         atomic_inc(&ioc->intr);
         /* call the finished jobs */
-#ifndef TASKLET
         do_jobs(ioc);
-#else
-        tasklet_schedule(&ioc->run_lzf_task);
-#endif
 out:
         return res;
 }
@@ -684,7 +681,6 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
                         ioc->cap & (1<<6) ? "uncompress ": "",
                         ioc->cap & (1<<7) ? "hash "      : "");
 
-        tasklet_init(&ioc->run_lzf_task, do_jobs, (unsigned long)ioc);
         start_null_desc(ioc);
         first_ioc = ioc;
         ioc->cookie = 0;
