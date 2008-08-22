@@ -491,7 +491,7 @@ EXPORT_SYMBOL(async_device_cap);
  *  doing callback.
  *  freeing the resource.
  */
-static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
+static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
 {
         int res = 0;
         int debug_level = debug;
@@ -510,9 +510,9 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
         if (((d->res->dc_fc & 0x1ff) != (d->desc->dc_fc & 0x1ff)) ||
                         (d->res->ocnt == 0)) {
                 debug = 1;
-                dprintk("res->dc_fc %x/%x, ocnt %x, cookie %x\n",
+                dprintk("res->dc_fc %x/%x, ocnt %x, cookie %x, idle %x\n",
                                 d->res->dc_fc, d->desc->dc_fc, d->res->ocnt, 
-                                d->cookie);
+                                d->cookie, idle);
                 /* TODO the ocnt must not be zero */
                 /*async_dump_register();*/
         }
@@ -532,14 +532,14 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
                 async_c1 ++;
         else 
                 async_c0 ++;
-        memset(d->res, 0x02, sizeof(*d->res));
-        consistent_sync(d->res, sizeof(*d->res), PCI_DMA_BIDIRECTIONAL);
+        /*memset(d->res, 0x02, sizeof(*d->res));
+        consistent_sync(d->res, sizeof(*d->res), PCI_DMA_BIDIRECTIONAL);*/
         debug = debug_level;
 
         return res;
 }
 
-static int do_jobs(struct lzf_device *ioc, uint32_t phys_complete)
+static int do_jobs(struct lzf_device *ioc, uint32_t phys_complete, int idle)
 {
         job_entry_t *d, *t;
         int res = 0;
@@ -547,13 +547,20 @@ static int do_jobs(struct lzf_device *ioc, uint32_t phys_complete)
 
         spin_lock_irqsave(&ioc->desc_lock, flags);
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
-                dprintk("addr %x, cookie %x\n", d->addr, d->cookie);
+                dprintk("addr %x, cookie %x, idle %x\n", 
+                                d->addr, d->cookie, idle);
                 if (d->cookie)
-                        do_job_one(ioc, d);
+                        do_job_one(ioc, d, idle);
                 if (d->addr != phys_complete) {
+                        /* a complete entry, but not last so clean 
+                         * up if the client is done with the desc */
                         list_del(&d->entry);
                         list_add_tail(&d->entry, &ioc->free_head);
                 } else {
+                        /* last used desc. Do not remove, so we can
+                         * append from it, but don't look at it next
+                         * time, either
+                         */
                         d->cookie = 0;
                         break;
                 }
@@ -574,24 +581,23 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
 
         val = readl(ioc->R.CSR.address);
         if ((val & CSR_INTP) == 0) { /* interrupt pending */
-                BUG_ON(val == 0xFFFFFFFF);
+                WARN_ON(val == 0xFFFFFFFF);
                 goto out;
         }
         res = IRQ_HANDLED;
         phys_complete = readl(ioc->R.DAR.address);
-        BUG_ON(phys_complete == 0xFFFFFFFF);
+        WARN_ON(phys_complete == 0xFFFFFFFF);
 
         /* clear irq flags */
         val = readl(ioc->R.CCR.address);
         val |= CCR_C_INTP;
         writel(val, ioc->R.CCR.address);
-        wmb();
-        val = readl(ioc->R.CCR.address);
+        val = readl(ioc->R.CSR.address);
 
         dprintk("val %x, %x\n", val, phys_complete);
         atomic_inc(&ioc->intr);
         /* call the finished jobs */
-        do_jobs(ioc, phys_complete);
+        do_jobs(ioc, phys_complete, val & CSR_BUSY);
 out:
         return res;
 }
