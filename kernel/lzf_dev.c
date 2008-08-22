@@ -532,8 +532,8 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
                 async_c1 ++;
         else 
                 async_c0 ++;
-        /*memset(d->res, 0x02, sizeof(*d->res));
-        consistent_sync(d->res, sizeof(*d->res), PCI_DMA_BIDIRECTIONAL);*/
+        memset(d->res, 0x02, sizeof(*d->res));
+        consistent_sync(d->res, sizeof(*d->res), PCI_DMA_BIDIRECTIONAL);
         debug = debug_level;
 
         return res;
