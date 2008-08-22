@@ -585,14 +585,14 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
                 goto out;
         }
         res = IRQ_HANDLED;
-        phys_complete = readl(ioc->R.DAR.address);
-        WARN_ON(phys_complete == 0xFFFFFFFF);
 
         /* clear irq flags */
         val = readl(ioc->R.CCR.address);
         val |= CCR_C_INTP;
         writel(val, ioc->R.CCR.address);
         val = readl(ioc->R.CSR.address);
+        phys_complete = readl(ioc->R.DAR.address);
+        WARN_ON(phys_complete == 0xFFFFFFFF);
 
         dprintk("val %x, %x\n", val, phys_complete);
         atomic_inc(&ioc->intr);
