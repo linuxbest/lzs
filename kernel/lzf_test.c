@@ -101,7 +101,7 @@ init_queue(void)
 static atomic_t job;
 static wait_queue_head_t wait;
 
-static int async_done(void *priv, int err, int osize)
+static int async_done(void *priv, int err, uint32_t osize)
 {
         atomic_dec(&job);
         dprintk("%p, %d, %d, %d\n", priv, err, osize, atomic_read(&job));

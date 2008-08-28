@@ -7,12 +7,14 @@ enum ops_enum {
         OP_MEMCPY     = 2,
         OP_COMPRESS   = 3,
         OP_UNCOMPRESS = 4,
+        OP_HASH       = 5,
+        OP_COMPARE    = 6,
 };
 #ifdef __KERNEL__
 /* 
  * this callback runing at interrupt level 
  */
-typedef int (*async_cb_t)(void *priv, int err, int osize);
+typedef int (*async_cb_t)(void *priv, int err, uint32_t osize);
 
 typedef struct {
         char   *buffer;
