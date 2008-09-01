@@ -13,7 +13,7 @@
  *****************************************************************************/
 module jhash_core(/*AUTOARG*/
    // Outputs
-   stream_ack, OC,
+   stream_ack, hash_out, hash_done,
    // Inputs
    clk, rst, stream_data0, stream_data1, stream_data2,
    stream_valid, stream_done, stream_left
@@ -29,16 +29,20 @@ module jhash_core(/*AUTOARG*/
    
    output 	stream_ack;
 
-   output [31:0] OC;
+   output [31:0] hash_out;
+   output 	 hash_done;
    
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
+   reg			hash_done;
+   reg [31:0]		hash_out;
    reg			stream_ack;
    // End of automatics
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
    wire [31:0]		OA;			// From mix of mix.v
    wire [31:0]		OB;			// From mix of mix.v
+   wire [31:0]		OC;			// From mix of mix.v
    // End of automatics
    
    parameter [1:0]
@@ -58,10 +62,11 @@ module jhash_core(/*AUTOARG*/
      end
    
    reg [2:0] round;
+   reg 	     round_rst, round_inc;
    always @(posedge clk)
-     if (rst)
-       round <= #1 0;
-     else if (state == S_RUN)
+     if (round_rst)
+       round <= #1 3'b000;
+     else if (round_inc)
        round <= #1 round + 1'b1;
 
    reg [31:0] a, a_n,
@@ -91,7 +96,8 @@ module jhash_core(/*AUTOARG*/
    
    always @(/*AS*/OA or OB or OC or a or b or c or round
 	    or shift or state or stream_data0
-	    or stream_data1 or stream_data2 or stream_valid)
+	    or stream_data1 or stream_data2 or stream_done
+	    or stream_left or stream_valid)
      begin
 	a_n = a;
 	b_n = b;
@@ -99,6 +105,8 @@ module jhash_core(/*AUTOARG*/
 	state_n = state;
 	stream_ack = 1'b0;
 	shift_n = shift;
+	round_inc = 1'b0;
+	round_rst = 1'b0;
 	
 	case (state)
 	  S_IDLE: begin
@@ -118,14 +126,37 @@ module jhash_core(/*AUTOARG*/
 	     state_n = S_RUN;
 	     shift_n = 4;
 	     stream_ack = 1'b1;
-	  end
+	     round_rst  = 1'b1;
+	  end else if (stream_done) begin
+	     /* a -= c;  a ^= rot(c, 4);  c += b; */
+	     round_rst  = 1'b1;
+	     shift_n = 4;
+	     state_n = S_RUN;
+	     case (stream_left)
+	       2'b00: state_n = S_DONE;
+	       2'b01: begin
+		  a_n = a + stream_data0;
+	       end
+	       2'b10: begin
+		  a_n = a + stream_data0;
+		  b_n = b + stream_data1;
+	       end
+	       2'b11: begin
+		  a_n = a + stream_data0;
+		  b_n = b + stream_data1;
+		  c_n = c + stream_data2;
+	       end
+	     endcase // case(stream_left)
+	  end // if (stream_done)
 	  
 	  S_RUN: begin
 	     a_n = OB;
 	     b_n = OC;
 	     c_n = OA;
+	     round_inc = 1'b1;
+	     
 	     case (round)
-	       3'b000:      /* b -= a;   b ^= rot(a, 6);  a += c; */
+	       3'b000:       /* b -= a;  b ^= rot(a, 6);  a += c; */
 		 shift_n = 6;
 	       3'b001:       /* c -= b;  c ^= rot(b, 8);  b += a; */
 		 shift_n = 8;
@@ -133,13 +164,25 @@ module jhash_core(/*AUTOARG*/
 		 shift_n = 16;
 	       3'b011:       /* b -= a;  b ^= rot(a,19);  a += c */
 		 shift_n = 19;
-	       3'b100: begin /* c -= b;  c ^= rot(b, 4);  b += a; */
+	       3'b100:       /* c -= b;  c ^= rot(b, 4);  b += a; */
 		  shift_n = 4;
-		  state_n = S_LOAD;
+	       3'b101: begin
+		  if (stream_done)
+		    state_n = S_DONE;
+		  else
+		    state_n = S_LOAD;
 	       end
 	     endcase // case(round)
-	  end
-	endcase
-     end
+	  end // case: S_RUN
+
+	  S_DONE: ;
+	endcase // case(state)
+     end // always @ (...
+
+   always @(posedge clk)
+     hash_out <= #1 OA;
+   
+   always @(posedge clk)
+     hash_done <= state == S_DONE;
    
 endmodule // jhash_core

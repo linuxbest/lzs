@@ -19,6 +19,13 @@ tin_run: tb_in ${D_SRC} ${C_FILE}
 /tmp/decode.chk: /tmp/decode.src
 	../../../lzs -s ${I_SIZE} < /tmp/decode.src
 	cp /tmp/lzs.out $@
-		
+tb_hash: 
+	iverilog -o tb_hash tb_hash.v -y ../../rtl/verilog/
+	./tb_hash
+tb : tb.v ${OBJS} ${D_SRC} 
+	iverilog -o $@ tb.v ${OBJS} -y../../rtl/verilog/ -y ../../../common/ -y../../../encode/bench/verilog/
+
+trun: tb ${D_SRC} ${C_FILE}
+	vvp tb +LZS_FILE=${D_SRC} +SRC_FILE=${C_FILE} +size=${I_SIZE}
 clean :
-	rm -f tb *.mem *.vcd /tmp/decode.*
+	rm -f tb *.mem *.vcd /tmp/decode.* tb_hash

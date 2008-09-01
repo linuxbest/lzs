@@ -22,6 +22,7 @@ signal_add tb.jhash_in.stream_data0
 signal_add tb.jhash_in.stream_data1
 signal_add tb.jhash_in.stream_data2
 signal_add tb.jhash_in.stream_valid
+signal_add tb.jhash_in.state
 signal_add tb.jhash_in.stream_ack
 signal_highlight tb.jhash_in.stream_ack 8
 

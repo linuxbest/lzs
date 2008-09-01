@@ -61,7 +61,7 @@ module tb(/*AUTOARG*/
 	     .m_src_getn		(m_src_getn),
 	     .m_endn			(m_endn));
 
-   defparam    data.LZF_FILE = "/tmp/decode.src";
+   defparam    data.LZF_FILE = "/tmp/decode.chk";
    defparam    data.LZF_DEBUG = 0;
    defparam    data.LZF_DELAY = 4;
    defparam    data.LZF_FIFO_AW = 5;

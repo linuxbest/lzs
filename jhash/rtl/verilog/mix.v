@@ -10,7 +10,8 @@ module mix(/*AUTOARG*/
    input         clk;
    input [4:0] 	 shift;
 
-   assign        OA = (a - c) ^ ( (c << shift) | (c >> (32 - shift)) );
+   assign        OA =  (a - c) ^ ( (c << shift) | (c >> (32 - shift)) );
    assign        OC = c + b;
    assign        OB = b;
+   
 endmodule // mix

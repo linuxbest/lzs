@@ -44,7 +44,6 @@ module jhash_in(/*AUTOARG*/
    reg [31:0]		stream_data1;
    reg [31:0]		stream_data2;
    reg			stream_done;
-   reg			stream_valid;
    // End of automatics
    
    reg 			pull_n;
@@ -65,12 +64,20 @@ module jhash_in(/*AUTOARG*/
 	  state <= #1 state_n;
      end
 
+   reg stream_valid_reg;
+   always @(posedge clk or posedge rst)
+     begin
+	if (rst)
+	  stream_valid_reg <= #1 1'b0;
+	else
+	  stream_valid_reg <= #1 stream_valid_n;
+     end
+   
    always @(posedge clk)
      begin
 	stream_data0 <= #1 stream_data0_n;
 	stream_data1 <= #1 stream_data1_n;
 	stream_data2 <= #1 stream_data2_n;
-	stream_valid <= #1 stream_valid_n;
      end
    
    always @(/*AS*/ce or fi or src_empty or state
@@ -85,31 +92,30 @@ module jhash_in(/*AUTOARG*/
 	stream_data2_n = stream_data2;
 	
 	case (state)
-	  2'b00:
-	    if ((~src_empty | stream_ack) && ce) begin
-	       stream_data0_n = {fi[07:00], fi[15:08], fi[23:16], fi[31:24]};
-	       stream_data1_n = {fi[39:32], fi[47:40], fi[55:48], fi[63:56]};
-	       pull_n  = 1'b1;
-	       state_n = 2'b10;
-	       stream_valid_n = 1'b0;
-	    end
-
+	  2'b00: if ((~src_empty && ce) | (~src_empty && stream_ack)) begin
+	     stream_data0_n = fi[31:00];
+	     stream_data1_n = fi[63:32];
+	     pull_n  = 1'b1;
+	     state_n = 2'b10;
+	     stream_valid_n = 1'b0;
+	  end
+	  
 	  2'b01: if (~src_empty) begin
-	     stream_data1_n = {fi[07:00], fi[15:08], fi[23:16], fi[31:24]};
-	     stream_data2_n = {fi[39:32], fi[47:40], fi[55:48], fi[63:56]};
-	     pull_n = 2'b1;
+	     stream_data1_n = fi[31:00];
+	     stream_data2_n = fi[63:32];
+	     //pull_n = 2'b1;
 	     state_n = 2'b00;
 	     stream_valid_n = 1'b1;
 	  end
 	  
 	  2'b10: if (~src_empty) begin
-	     stream_data2_n = {fi[07:00], fi[15:08], fi[23:16], fi[31:24]};
+	     stream_data2_n = fi[31:00];
 	     stream_valid_n = 1'b1;
 	     state_n = 2'b11;
 	  end
 	  
-	  2'b11: if (stream_ack) begin
-	     stream_data0_n = {fi[39:32], fi[47:40], fi[55:48], fi[63:56]};
+	  2'b11: if (~src_empty && stream_ack) begin
+	     stream_data0_n = fi[63:32];
 	     pull_n = 1'b1;
 	     state_n = 2'b01;
 	     stream_valid_n = 1'b0;
@@ -118,6 +124,8 @@ module jhash_in(/*AUTOARG*/
      end // always @ (...
 
    assign stream_left = state;
+   assign stream_valid= stream_valid_reg && ~src_empty;
+   
    always @(posedge clk)
      stream_done <= #1 m_last;
    

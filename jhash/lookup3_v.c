@@ -43,6 +43,13 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 # include <endian.h>    /* attempt to define endianness */
 #endif
 
+#define DEBUG
+#ifdef DEBUG
+#define dprintf printf
+#else
+#define dprintf 
+#endif
+
 /*
  * My best guess at if you are big-endian or little-endian.  This may
  * need adjustment.
@@ -114,17 +121,17 @@ rotates.
 #define mix(a,b,c) \
 { \
   a -= c;  a ^= rot(c, 4);  c += b; \
-  printf("%08x, %08x, %08x  1\n", a, b, c); \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
   b -= a;  b ^= rot(a, 6);  a += c; \
-  printf("%08x, %08x, %08x  2\n", a, b, c); \
+  dprintf("%08x, %08x, %08x  2\n", a, b, c); \
   c -= b;  c ^= rot(b, 8);  b += a; \
-  printf("%08x, %08x, %08x  3\n", a, b, c); \
+  dprintf("%08x, %08x, %08x  3\n", a, b, c); \
   a -= c;  a ^= rot(c,16);  c += b; \
-  printf("%08x, %08x, %08x  4\n", a, b, c); \
+  dprintf("%08x, %08x, %08x  4\n", a, b, c); \
   b -= a;  b ^= rot(a,19);  a += c; \
-  printf("%08x, %08x, %08x  5\n", a, b, c); \
+  dprintf("%08x, %08x, %08x  5\n", a, b, c); \
   c -= b;  c ^= rot(b, 4);  b += a; \
-  printf("%08x, %08x, %08x  6\n", a, b, c); \
+  dprintf("%08x, %08x, %08x  6\n", a, b, c); \
 }
 
 /*
@@ -155,12 +162,19 @@ and these came close:
 #define final(a,b,c) \
 { \
   c ^= b; c -= rot(b,14); \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
   a ^= c; a -= rot(c,11); \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
   b ^= a; b -= rot(a,25); \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
   c ^= b; c -= rot(b,16); \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
   a ^= c; a -= rot(c,4);  \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
   b ^= a; b -= rot(a,14); \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
   c ^= b; c -= rot(b,24); \
+  dprintf("%08x, %08x, %08x  1\n", a, b, c); \
 }
 
 /*
@@ -184,7 +198,7 @@ uint32_t        initval)         /* the previous hash, or an arbitrary value */
   uint32_t x,y,z;
 
   /* Set up the internal state */
-  x = y = z = 0xdeadbeef + (((uint32_t)length)<<2) + initval;
+  x = y = z = 0/*0xdeadbeef + (((uint32_t)length)<<2) + initval*/;
 
   /*------------------------------------------------- handle most of the key */
   while (length >= 3)
@@ -192,7 +206,8 @@ uint32_t        initval)         /* the previous hash, or an arbitrary value */
     x += k[0];
     y += k[1];
     z += k[2];
-  printf("%08x, %08x, %08x  0\n", x, y, z);
+    dprintf("%08x, %08x, %08x  0\n", x, y, z);
+    dprintf("%08x, %08x, %08x  0\n", k[0], k[1], k[2]);
     mix(x,y,z);
     length -= 3;
     k += 3;
@@ -203,7 +218,7 @@ uint32_t        initval)         /* the previous hash, or an arbitrary value */
   case 3 : z+=k[2];
   case 2 : y+=k[1];
   case 1 : x+=k[0];
-    final(x,y,z);
+    mix(x,y,z);
   case 0:     /* case 0: nothing left to add */
     break;
   }
@@ -971,15 +986,24 @@ void driver3()
     printf("%2ld  0-byte strings, hash is  %.8x\n", i, h);
   }
 }
+void driver512()
+{
+        uint8_t d[512];
+        int i = 0;
+        for (i = 0; i < 512; i++)
+                d[i] = i;
+        uint32_t h;
+        int l = sizeof(d);
+        h = hashword(d, (l-1)/4, 0);
+        printf("hash is %08x, %x, %x\n", h, l, (l-1)/4);
+}
 
 void driver5()
 {
         uint8_t d[] = "aaaabbbbcccc";
         uint32_t h;
         int l = sizeof(d);
-
         h = hashword(d, (l-1)/4, 0);
-
         printf("hash is %08x, %x, %x\n", h, l, (l-1)/4);
 }
 
@@ -991,7 +1015,8 @@ int main()
   driver3();   /* test that nothing but the key is hashed */
   driver4();   /* test hashing multiple buffers (all buffers are null) */
 #endif
-  driver5();    
+  driver5();
+  driver512();
   return 1;
 }
 
