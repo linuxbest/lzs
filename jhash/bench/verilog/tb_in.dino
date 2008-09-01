@@ -1,0 +1,37 @@
+#print on
+
+signal_delete *.*
+
+signal_add tb.clk
+signal_add tb.rst
+signal_add tb.ce
+signal_add tb.fi
+signal_add tb.src_empty
+signal_add tb.m_last
+
+#signal_add tb.decode_in.state
+#signal_add tb.decode_in.sreg
+#signal_add tb.decode_in.cnt
+#signal_add tb.decode_in.left
+#signal_add tb.decode_in.data
+#signal_add tb.decode_in.pull
+#signal_highlight tb.decode_in.pull 8
+#signal_add tb.tb_data.src_char
+
+signal_add tb.jhash_in.stream_data0
+signal_add tb.jhash_in.stream_data1
+signal_add tb.jhash_in.stream_data2
+signal_add tb.jhash_in.stream_valid
+signal_add tb.jhash_in.stream_ack
+signal_highlight tb.jhash_in.stream_ack 8
+
+
+# # # # Aligning to the first signal is the default.  We'll just change the color
+grid_signal 0   *
+grid_color  0   2
+#refreshing  auto
+
+#signal_highlight tb.seq.in_match 8
+#signal_highlight tb.seq.valid_i  7
+#signal_highlight tb.seq.htab_we  6
+#signal_highlight tb.seq.match_wire 5
