@@ -212,6 +212,7 @@ uint32_t        initval)         /* the previous hash, or an arbitrary value */
     length -= 3;
     k += 3;
   }
+  return z;
   /*------------------------------------------- handle the last 3 uint32_t's */
   switch(length)                     /* all the case statements fall through */
   { 
@@ -990,13 +991,13 @@ void driver3()
 }
 void driver512()
 {
-        uint8_t d[512];
+        int l = 512;
+        uint8_t d[4096];
         int i = 0;
-        for (i = 0; i < 512; i++)
+        for (i = 0; i < l; i++)
                 d[i] = i;
         uint32_t h;
-        int l = sizeof(d);
-        h = hashword(d, (l-1)/4, 0);
+        h = hashword(d, (l)/4, 0);
         printf("hash is %08x, %x, %x\n", h, l, (l-1)/4);
 }
 

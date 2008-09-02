@@ -173,7 +173,7 @@ module jhash_core(/*AUTOARG*/
 	       3'b100:       /* c -= b;  c ^= rot(b, 4);  b += a; */
 		  shift_n = 4;
 	       3'b101: begin
-		  if (final_r)
+		  if (/*final_r*/stream_done)
 		    state_n = S_DONE;
 		  else
 		    state_n = S_LOAD;
