@@ -14,7 +14,7 @@ enum ops_enum {
 /* 
  * this callback runing at interrupt level 
  */
-typedef int (*async_cb_t)(void *priv, int err, uint32_t osize);
+typedef int (*async_cb_t)(void *priv, int err, uint32_t osize, uint32_t hash);
 
 typedef struct {
         char   *buffer;
@@ -56,6 +56,7 @@ typedef struct {
         uint32_t err;
         uint32_t osize;
         uint32_t done;
+        uint32_t hash;
 } sioctl_t;
 
 #define SIO_DEBUG    (1<<0)

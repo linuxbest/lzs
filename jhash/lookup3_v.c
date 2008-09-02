@@ -991,7 +991,7 @@ void driver3()
 }
 void driver512()
 {
-        int l = 1024;
+        int l = 512;
         uint8_t d[4096];
         int i = 0;
         for (i = 0; i < l; i++)

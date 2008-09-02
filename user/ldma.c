@@ -38,7 +38,9 @@ op_to_name(int o)
                   o == 1 ? "FILL" :
                   o == 2 ? "COPY" :
                   o == 3 ? "ENCODE" :
-                  o == 4 ? "DECODE" : NULL;
+                  o == 4 ? "DECODE" : 
+                  o == 5 ? "HASH" :
+                  o == 6 ? "CMP"  : NULL;
 }
 
 static void 
@@ -62,6 +64,8 @@ static int dst_check(unsigned char *src, int len,
         } else if (opt == 4) { /* uncompress */
                 c = src;
                 oc = len;
+        } else if (opt == 5) {
+                return 0;
         }
 
         printf("dlen %x, o %x\n", dlen, oc);
@@ -193,9 +197,10 @@ int main(int argc, char *argv[])
                 if (sio.done == 0 || verbose) {
                         if (verbose == 2)
                                 hexdump(dst, dlen+0x10);
-                        printf("res %d, err %d, osize %x, done %d, dlen %x\n", 
+                        printf("res %d, err %d, osize %x, done %d, dlen %x, "
+                                        "hash %08x\n", 
                                         res, sio.err, sio.osize, sio.done, 
-                                        dlen);
+                                        dlen, sio.hash);
                 }
                 if (check) 
                         dst_check(src, len, dst, dlen, op);

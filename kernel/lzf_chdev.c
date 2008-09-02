@@ -145,7 +145,7 @@ st_unmap_user_pages(struct scatterlist *sgl, const unsigned int nr_pages,
 
 static wait_queue_head_t wait;
 
-static int async_done(void *priv, int err, uint32_t osize)
+static int async_done(void *priv, int err, uint32_t osize, uint32_t hash)
 {
         sioctl_t *sio = priv;
 
@@ -153,6 +153,7 @@ static int async_done(void *priv, int err, uint32_t osize)
         sio->err = err;
         sio->osize = osize;
         sio->done = 1;
+        sio->hash = hash;
         wake_up_all(&wait);
 
         return 0;

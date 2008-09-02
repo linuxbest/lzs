@@ -427,6 +427,8 @@ static int dc_ay[] = {
         [OP_MEMCPY]     = DC_MEMCPY,
         [OP_COMPRESS]   = DC_COMPRESS,
         [OP_UNCOMPRESS] = DC_UNCOMPRESS, 
+        [OP_HASH]       = DC_HASH,
+        [OP_COMPARE]    = DC_COMPARE,
 };
 
 int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, 
@@ -520,10 +522,10 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
         if (debug)
                 print_hex_dump_bytes("res ", DUMP_PREFIX_ADDRESS, 
                                 d->res, 32);
-        dprintk("cb %p,%p, err %x, ocnt %x, %x/%x\n", 
+        dprintk("cb %p,%p, err %x, ocnt %x, %x/%x, hash %08x\n", 
                         d->cb, d->priv, d->res->err, d->res->ocnt, 
-                        d->res->dc_fc, d->desc->dc_fc);
-        d->cb(d->priv, d->res->err, d->res->ocnt);
+                        d->res->dc_fc, d->desc->dc_fc, d->res->hash);
+        d->cb(d->priv, d->res->err, d->res->ocnt, d->res->hash);
 
         atomic_dec(&ioc->queue);
         /*wake_up_all(&ioc->wait);*/
@@ -633,7 +635,7 @@ static void start_null_desc(struct lzf_device *ioc)
         writel(CCR_ENABLE, ioc->R.CCR.address);
        
         /* data path check */
-        wait_event(ioc->wait, atomic_read(&ioc->intr));
+        wait_event_timeout(ioc->wait, atomic_read(&ioc->intr), 10*HZ);
         next_desc = readl(ioc->mmr_base + 0x14*4 + 0x400);
         ctl_addr  = readl(ioc->mmr_base + 0x16*4 + 0x400);
         /* next_desc  must = 0x200
@@ -719,12 +721,12 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
                         ioc->cap & (1<<4) ? "memcpy "    : "",
                         ioc->cap & (1<<5) ? "compress "  : "",
                         ioc->cap & (1<<6) ? "uncompress ": "",
-                        ioc->cap & (1<<7) ? "hash "      : "");
+                        ioc->cap & (1<<3) ? "hash "      : "");
         printk("SureSave CE: Found [1]: ( %s%s%s%s)\n",
                         ioc->cap & (1<<4) ? "memcpy "    : "",
                         ioc->cap & (1<<5) ? "compress "  : "",
                         ioc->cap & (1<<6) ? "uncompress ": "",
-                        ioc->cap & (1<<7) ? "hash "      : "");
+                        ioc->cap & (1<<3) ? "hash "      : "");
 
         start_null_desc(ioc);
         first_ioc = ioc;
