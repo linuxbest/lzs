@@ -81,7 +81,7 @@ typedef struct {
         uint32_t err;       /* 2 */
         uint32_t u1;        /* 3 */
         uint32_t cycle;     /* 4 */
-        uint32_t u2;        /* 5 */
+        uint32_t hash;      /* 5 */
         uint32_t dc_fc;     /* 6 */
         uint32_t u3;        /* 7 */
 } __attribute__ ((packed)) res_desc_t;

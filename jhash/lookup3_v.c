@@ -33,7 +33,8 @@ mixing with 12*3 instructions on 3 integers than you can with 3 instructions
 on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 -------------------------------------------------------------------------------
 */
-#define SELF_TEST 1
+//#define SELF_TEST 1
+//#define DEBUG
 
 #include <stdio.h>      /* defines printf for tests */
 #include <time.h>       /* defines time_t for timings in the test */
@@ -43,7 +44,6 @@ on 1 byte), but shoehorning those bytes into integers efficiently is messy.
 # include <endian.h>    /* attempt to define endianness */
 #endif
 
-#define DEBUG
 #ifdef DEBUG
 #define dprintf printf
 #else
@@ -991,7 +991,7 @@ void driver3()
 }
 void driver512()
 {
-        int l = 512;
+        int l = 1024;
         uint8_t d[4096];
         int i = 0;
         for (i = 0; i < l; i++)

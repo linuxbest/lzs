@@ -1,2 +1,2 @@
 lookup3: lookup3_v.c
-	gcc -O2 -o $@ $^
+	gcc -DSELF_TEST -DDEBUG -O2 -o $@ $^

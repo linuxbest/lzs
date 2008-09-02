@@ -136,7 +136,7 @@ module jhash_in(/*AUTOARG*/
      end // always @ (...
 
    assign stream_left = dstart;
-   assign stream_valid= ~state[2];
+   assign stream_valid= ~state[2] && ~src_empty;
    assign stream_data0= d0;
    assign stream_data1= state[1] ? d1      : fi[31:00];
    assign stream_data2= state[1] ? fi[31:0]: fi[63:32];

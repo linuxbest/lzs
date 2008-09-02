@@ -13,12 +13,12 @@
  *****************************************************************************/
 module jhash_core(/*AUTOARG*/
    // Outputs
-   stream_ack, hash_out, hash_done,
+   stream_ack, hash_out, hash_done, m_endn,
    // Inputs
-   clk, rst, stream_data0, stream_data1, stream_data2,
+   clk, rst, ce, stream_data0, stream_data1, stream_data2,
    stream_valid, stream_done, stream_left
    );
-   input clk, rst;
+   input clk, rst, ce;
    
    input [31:0] stream_data0,
 		stream_data1,
@@ -31,11 +31,11 @@ module jhash_core(/*AUTOARG*/
 
    output [31:0] hash_out;
    output 	 hash_done;
+   output 	 m_endn;
    
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
    reg			hash_done;
-   reg [31:0]		hash_out;
    reg			stream_ack;
    // End of automatics
    /*AUTOWIRE*/
@@ -185,10 +185,11 @@ module jhash_core(/*AUTOARG*/
 	endcase // case(state)
      end // always @ (...
 
-   always @(posedge clk)
-     hash_out <= #1 OA;
+   assign hash_out = c;
    
    always @(posedge clk)
-     hash_done <= state == S_DONE;
+     hash_done <= #1 state == S_DONE;
+
+   assign m_endn = ce ? ~hash_done : 1'bz;
    
 endmodule // jhash_core

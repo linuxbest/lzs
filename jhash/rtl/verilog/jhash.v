@@ -14,14 +14,14 @@
 
 module jhash(/*AUTOARG*/
    // Outputs
-   m_src_getn, hash_out, hash_done,
+   m_src_getn, m_endn, hash_out, hash_done,
    // Inputs
    src_empty, rst, m_last, fo_full, fi, clk, ce
    );
 
    /*AUTOINPUT*/
    // Beginning of automatic inputs (from unused autoinst inputs)
-   input		ce;			// To jhash_in of jhash_in.v
+   input		ce;			// To jhash_in of jhash_in.v, ...
    input		clk;			// To jhash_in of jhash_in.v, ...
    input [63:0]		fi;			// To jhash_in of jhash_in.v
    input		fo_full;		// To jhash_in of jhash_in.v
@@ -33,6 +33,7 @@ module jhash(/*AUTOARG*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output		hash_done;		// From jhash_core of jhash_core.v
    output [31:0]	hash_out;		// From jhash_core of jhash_core.v
+   output		m_endn;			// From jhash_core of jhash_core.v
    output		m_src_getn;		// From jhash_in of jhash_in.v
    // End of automatics
    /*AUTOWIRE*/
@@ -69,9 +70,11 @@ module jhash(/*AUTOARG*/
 			 .stream_ack		(stream_ack),
 			 .hash_out		(hash_out[31:0]),
 			 .hash_done		(hash_done),
+			 .m_endn		(m_endn),
 			 // Inputs
 			 .clk			(clk),
 			 .rst			(rst),
+			 .ce			(ce),
 			 .stream_data0		(stream_data0[31:0]),
 			 .stream_data1		(stream_data1[31:0]),
 			 .stream_data2		(stream_data2[31:0]),
