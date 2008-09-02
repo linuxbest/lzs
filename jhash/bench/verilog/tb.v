@@ -96,6 +96,11 @@ module tb(/*AUTOARG*/
 	$finish;
      end
 
+   always @(posedge clk)
+     begin
+	if (jhash_core.round == 3'b101)
+	  $write("%h, %h, %h\n", jhash_core.OA, jhash_core.OB, jhash_core.OC);
+     end
    
 endmodule // top
 

@@ -40,9 +40,6 @@ module jhash_in(/*AUTOARG*/
 
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
-   reg [31:0]		stream_data0;
-   reg [31:0]		stream_data1;
-   reg [31:0]		stream_data2;
    reg			stream_done;
    // End of automatics
    
@@ -52,81 +49,102 @@ module jhash_in(/*AUTOARG*/
    reg [31:0] stream_data0_n,
 	      stream_data1_n,
 	      stream_data2_n;
-   reg [1:0]  state,
+   reg [2:0]  state,
 	      state_n;
    reg 	      stream_valid_n;
+   parameter [2:0]
+		S_IDLE    = 3'b100,
+		S_RUN_01  = 3'b001,
+		S_RUN_01_N= 3'b101,
+		S_RUN_10  = 3'b010,
+		S_RUN_10_N= 3'b110,
+		S_DONE    = 3'b111;
    
    always @(posedge clk or posedge rst)
      begin
 	if (rst)
-	  state <= #1 2'b00;
+	  state <= #1 S_IDLE;
 	else
 	  state <= #1 state_n;
      end
 
-   reg stream_valid_reg;
-   always @(posedge clk or posedge rst)
-     begin
-	if (rst)
-	  stream_valid_reg <= #1 1'b0;
-	else
-	  stream_valid_reg <= #1 stream_valid_n;
-     end
-   
+   reg [1:0] dstart, dstart_n;
+   reg [31:0] d0, d1,
+	      d0_n, d1_n;
    always @(posedge clk)
      begin
-	stream_data0 <= #1 stream_data0_n;
-	stream_data1 <= #1 stream_data1_n;
-	stream_data2 <= #1 stream_data2_n;
+	d0 <= #1 d0_n;
+	d1 <= #1 d1_n;
+	dstart <= #1 dstart_n;
      end
-   
-   always @(/*AS*/ce or fi or src_empty or state
-	    or stream_ack or stream_data0 or stream_data1
-	    or stream_data2 or stream_valid)
+
+   always @(/*AS*/ce or d0 or d1 or dstart or fi or m_last
+	    or src_empty or state or stream_ack)
      begin
 	state_n = state;
 	pull_n  = 1'b0;
-	stream_valid_n = stream_valid;
-	stream_data0_n = stream_data0;
-	stream_data1_n = stream_data1;
-	stream_data2_n = stream_data2;
+	d0_n = d0;
+	d1_n = d1;
+	dstart_n = dstart;
 	
 	case (state)
-	  2'b00: if ((~src_empty && ce) | (~src_empty && stream_ack)) begin
-	     stream_data0_n = fi[31:00];
-	     stream_data1_n = fi[63:32];
+	  S_IDLE: if (~src_empty && ce) begin
+	     d0_n = fi[31:00];
+	     d1_n = fi[63:32];
 	     pull_n  = 1'b1;
-	     state_n = 2'b10;
-	     stream_valid_n = 1'b0;
+	     dstart_n= 2'b10;
+	     state_n = S_RUN_10;
 	  end
 	  
-	  2'b01: if (~src_empty) begin
-	     stream_data1_n = fi[31:00];
-	     stream_data2_n = fi[63:32];
-	     //pull_n = 2'b1;
-	     state_n = 2'b00;
-	     stream_valid_n = 1'b1;
+	  S_RUN_10_N: if (m_last)
+	    state_n = S_DONE;
+	  else if (~src_empty) begin
+	     d0_n = fi[31:00];
+	     d1_n = fi[63:32];
+	     pull_n  = 1'b1;
+	     dstart_n= 2'b10;
+	     state_n = S_RUN_10;
 	  end
 	  
-	  2'b10: if (~src_empty) begin
-	     stream_data2_n = fi[31:00];
-	     stream_valid_n = 1'b1;
-	     state_n = 2'b11;
+	  S_RUN_10: if (stream_ack) begin
+	     if (~src_empty && ~m_last) begin
+		d0_n = fi[63:32];
+		pull_n = 1'b1;
+		dstart_n = 2'b01;
+		state_n = S_RUN_01;
+	     end else
+	       state_n = S_RUN_01_N;
 	  end
 	  
-	  2'b11: if (~src_empty && stream_ack) begin
-	     stream_data0_n = fi[63:32];
+	  S_RUN_01_N: if (m_last) 
+	    state_n = S_DONE;
+	  else if (~src_empty) begin
+	     d0_n = fi[63:32];
 	     pull_n = 1'b1;
-	     state_n = 2'b01;
-	     stream_valid_n = 1'b0;
+	     dstart_n = 2'b01;
+	     state_n = S_RUN_01;
 	  end
+	  
+	  S_RUN_01: if (stream_ack) begin
+	     if (~src_empty && ~m_last) begin
+		state_n = S_RUN_10_N;
+		pull_n = 1'b1;
+	     end if (m_last) 
+	       state_n = S_DONE;
+	  end
+	  
+	  S_DONE: ;
+	  
 	endcase
      end // always @ (...
 
-   assign stream_left = state;
-   assign stream_valid= stream_valid_reg && ~src_empty;
+   assign stream_left = dstart;
+   assign stream_valid= ~state[2];
+   assign stream_data0= d0;
+   assign stream_data1= state[1] ? d1      : fi[31:00];
+   assign stream_data2= state[1] ? fi[31:0]: fi[63:32];
    
    always @(posedge clk)
-     stream_done <= #1 m_last;
+     stream_done <= #1 state == S_DONE;
    
 endmodule // jhash
