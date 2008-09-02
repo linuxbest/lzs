@@ -92,7 +92,8 @@ module tb(/*AUTOARG*/
 	$dumpvars(0, tb);
 	
 	@(posedge hash_done);
-
+	$write("out %h\n", hash_out);
+	
 	$finish;
      end
 

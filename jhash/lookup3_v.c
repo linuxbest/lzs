@@ -215,9 +215,11 @@ uint32_t        initval)         /* the previous hash, or an arbitrary value */
   /*------------------------------------------- handle the last 3 uint32_t's */
   switch(length)                     /* all the case statements fall through */
   { 
-  case 3 : z+=k[2];
-  case 2 : y+=k[1];
-  case 1 : x+=k[0];
+  case 2 : z+=k[2];
+  case 1 : y+=k[1];
+  case 3 : x+=k[0];
+    dprintf("%08x, %08x, %08x  0\n", x, y, z);
+    dprintf("%08x, %08x, %08x  0, %d\n", k[0], k[1], k[2], length);
     mix(x,y,z);
   case 0:     /* case 0: nothing left to add */
     break;

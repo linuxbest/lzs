@@ -39,9 +39,6 @@ module jhash_in(/*AUTOARG*/
    output [1:0] 	stream_left;
 
    /*AUTOREG*/
-   // Beginning of automatic regs (for this module's undeclared outputs)
-   reg			stream_done;
-   // End of automatics
    
    reg 			pull_n;
    assign m_src_getn = ce ? ~(pull_n) : 1'bz;
@@ -144,7 +141,5 @@ module jhash_in(/*AUTOARG*/
    assign stream_data1= state[1] ? d1      : fi[31:00];
    assign stream_data2= state[1] ? fi[31:0]: fi[63:32];
    
-   always @(posedge clk)
-     stream_done <= #1 state == S_DONE;
-   
+   assign stream_done = m_last;
 endmodule // jhash
