@@ -724,12 +724,14 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
                         ioc->cap & (1<<4) ? "memcpy "    : "",
                         ioc->cap & (1<<5) ? "compress "  : "",
                         ioc->cap & (1<<6) ? "uncompress ": "",
-                        ioc->cap & (1<<3) ? "hash "      : "");
+                        ioc->cap & (1<<3) ? "hash "      : "",
+                        ioc->cap & (1<<3) ? "cmp  "      : "");
         printk("SureSave CE: Found [1]: ( %s%s%s%s)\n",
                         ioc->cap & (1<<4) ? "memcpy "    : "",
                         ioc->cap & (1<<5) ? "compress "  : "",
                         ioc->cap & (1<<6) ? "uncompress ": "",
-                        ioc->cap & (1<<3) ? "hash "      : "");
+                        ioc->cap & (1<<3) ? "hash "      : "",
+                        ioc->cap & (1<<3) ? "cmp  "      : "");
 
         start_null_desc(ioc);
         first_ioc = ioc;
