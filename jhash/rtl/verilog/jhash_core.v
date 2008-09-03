@@ -185,11 +185,10 @@ module jhash_core(/*AUTOARG*/
 	endcase // case(state)
      end // always @ (...
 
-   assign hash_out = c;
-   
    always @(posedge clk)
      hash_done <= #1 state == S_DONE;
 
-   assign m_endn = ce ? ~hash_done : 1'bz;
+   assign m_endn   = ce ? ~hash_done : 1'bz;
+   assign hash_out = ce ? c  : 32'hz;
    
 endmodule // jhash_core

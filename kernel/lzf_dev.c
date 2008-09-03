@@ -512,8 +512,8 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
         /* if the result not update, that mean the job not finished
          * so we need double check.
          */
-        if (((d->res->dc_fc & 0x1ff) != (d->desc->dc_fc & 0x1ff)) ||
-                        (d->res->ocnt == 0)) {
+        if (((d->res->dc_fc & 0x1ff) != (d->desc->dc_fc & 0x1ff))/* ||
+                        (d->res->ocnt == 0)*/) {
                 debug = 1;
                 dprintk("res->dc_fc %x/%x, ocnt %x, cookie %x, idle %x\n",
                                 d->res->dc_fc, d->desc->dc_fc, d->res->ocnt, 
@@ -525,7 +525,7 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
         if (debug)
                 print_hex_dump_bytes("res ", DUMP_PREFIX_ADDRESS, 
                                 d->res, 32);
-        dprintk("cb %p,%p, err %x, ocnt %x, %x/%x, hash %08x\n", 
+        dprintk("cb %p,%p, err %x, ocnt %x, %08x/%08x, hash %08x\n", 
                         d->cb, d->priv, d->res->err, d->res->ocnt, 
                         d->res->dc_fc, d->desc->dc_fc, d->res->hash);
         d->cb(d->priv, d->res->err, d->res->ocnt, d->res->hash);
