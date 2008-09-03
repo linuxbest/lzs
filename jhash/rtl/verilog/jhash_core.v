@@ -122,7 +122,7 @@ module jhash_core(/*AUTOARG*/
 	     end
 	  end
 	  
-	  S_LOAD:  if (stream_done) begin
+	  S_LOAD:  if (stream_done && 1'b0) begin
 	     /* a -= c;  a ^= rot(c, 4);  c += b; */
 	     round_rst = 1'b1;
 	     shift_n = 4;

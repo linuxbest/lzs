@@ -220,9 +220,9 @@ void async_dump_register(void)
                                 d->desc->dst_desc, d->cookie, 
                                 d->desc->next_desc);
         }
-        printk("queue %d\n", atomic_read(&ioc->queue));
+        /*printk("queue %d\n", atomic_read(&ioc->queue));
         if (atomic_read(&ioc->queue)) 
-                writel(CCR_APPEND|CCR_ENABLE, ioc->R.CCR.address);
+                writel(CCR_APPEND|CCR_ENABLE, ioc->R.CCR.address);*/
 }
 
 static job_entry_t *new_job_entry(struct lzf_device *ioc)
@@ -441,6 +441,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
         unsigned long flags;
 
         d = get_job_entry(ioc);
+        dprintk("d %p, src %p, dst %p\n",d , src, dst);
         if (src) {
                 d->src_buf = src;
                 d->src = map_bufs(ioc, src, PCI_DMA_TODEVICE, &d->s_cnt);
@@ -456,8 +457,10 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
         if (commit)
                 d->desc->dc_fc |= DC_INTR_EN;
         d->desc->dc_fc |= DC_CTRL;
-        d->desc->src_desc = d->src->u[0];
-        d->desc->dst_desc = d->dst->u[0];
+        if (src)
+                d->desc->src_desc = d->src->u[0];
+        if (dst)
+                d->desc->dst_desc = d->dst->u[0];
         dprintk("job hw addr %08x, dc_fc %08x, src %08x, dst %08x, %p\n", 
                         d->addr, d->desc->dc_fc, d->desc->src_desc, 
                         d->desc->dst_desc, d);
@@ -470,7 +473,7 @@ int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops,
 
         spin_lock_irqsave(&ioc->desc_lock, flags);
         prev = container_of(ioc->used_head.prev, job_entry_t, entry);
-        dprintk("last desc %p\n", prev);
+        dprintk("last desc %p, cookie %08x\n", prev, d->cookie);
         prev->desc->next_desc = d->addr;
         prev->desc->dc_fc |= DC_CONT;
 

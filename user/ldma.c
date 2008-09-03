@@ -197,10 +197,10 @@ int main(int argc, char *argv[])
                 if (sio.done == 0 || verbose) {
                         if (verbose == 2)
                                 hexdump(dst, dlen+0x10);
-                        printf("res %d, err %d, osize %x, done %d, dlen %x, "
+                        printf("res %d, err %d, osize %x, done %d, len %x, "
                                         "hash %08x\n", 
                                         res, sio.err, sio.osize, sio.done, 
-                                        dlen, sio.hash);
+                                        len, sio.hash);
                 }
                 if (check) 
                         dst_check(src, len, dst, dlen, op);
