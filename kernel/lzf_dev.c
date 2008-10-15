@@ -720,18 +720,18 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
         atomic_set(&ioc->intr, 0);
 
         ioc->cap = readl(ioc->mmr_base + 0x1a*4 + 0x400);
-        printk("SureSave CE: Found [0]: ( %s%s%s%s)\n",
+        printk("SureSave CE: Found [0]: ( %s%s%s%s%s)\n",
                         ioc->cap & (1<<4) ? "memcpy "    : "",
                         ioc->cap & (1<<5) ? "compress "  : "",
                         ioc->cap & (1<<6) ? "uncompress ": "",
                         ioc->cap & (1<<3) ? "hash "      : "",
-                        ioc->cap & (1<<3) ? "cmp  "      : "");
-        printk("SureSave CE: Found [1]: ( %s%s%s%s)\n",
+                        ioc->cap & (1<<2) ? "cmp  "      : "");
+        printk("SureSave CE: Found [1]: ( %s%s%s%s%s)\n",
                         ioc->cap & (1<<4) ? "memcpy "    : "",
                         ioc->cap & (1<<5) ? "compress "  : "",
                         ioc->cap & (1<<6) ? "uncompress ": "",
                         ioc->cap & (1<<3) ? "hash "      : "",
-                        ioc->cap & (1<<3) ? "cmp  "      : "");
+                        ioc->cap & (1<<2) ? "cmp  "      : "");
 
         start_null_desc(ioc);
         first_ioc = ioc;

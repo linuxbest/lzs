@@ -78,7 +78,9 @@ init_queue(void)
                         for(j = 0;j < sg->length; j++)  {
                                 s[j] = j;
                         }
-                }
+                } 
+                if (ops == 6)
+                        memset(page_address(sg->page), 0xff, sg->length);
         }
         q->sgbuf_src.buffer = (char *)q->src_sg;
         q->sgbuf_src.use_sg = 64;
