@@ -81,9 +81,96 @@ struct lzf_device {
         atomic_t mem_free;
         struct list_head mem_head;
         spinlock_t mem_lock;
+
+        struct tasklet_struct run_lzf_task;
 };
 static struct lzf_device *first_ioc; /* XXX */
 static unsigned long async_c0, async_c1;
+
+/* When this chip sits underneath an Intel 31154 bridge, it is the
+ * only subordinate device and we can tweak the bridge settings to
+ * reflect that fact.
+ */
+static void cas_program_bridge(struct pci_dev *cas_pdev)
+{
+	struct pci_dev *pdev = cas_pdev->bus->self;
+	u32 val;
+
+	if (!pdev)
+		return;
+
+	if (pdev->vendor != 0x8086 || pdev->device != 0x537c)
+		return;
+        printk("%04x:%04x\n", pdev->vendor, pdev->device);
+
+	/* Clear bit 10 (Bus Parking Control) in the Secondary
+	 * Arbiter Control/Status Register which lives at offset
+	 * 0x41.  Using a 32-bit word read/modify/write at 0x40
+	 * is much simpler so that's how we do this.
+	 */
+	pci_read_config_dword(pdev, 0x40, &val);
+	val &= ~0x00040000;
+	pci_write_config_dword(pdev, 0x40, val);
+
+	/* Max out the Multi-Transaction Timer settings since
+	 * Cassini is the only device present.
+	 *
+	 * The register is 16-bit and lives at 0x50.  When the
+	 * settings are enabled, it extends the GRANT# signal
+	 * for a requestor after a transaction is complete.  This
+	 * allows the next request to run without first needing
+	 * to negotiate the GRANT# signal back.
+	 *
+	 * Bits 12:10 define the grant duration:
+	 *
+	 *	1	--	16 clocks
+	 *	2	--	32 clocks
+	 *	3	--	64 clocks
+	 *	4	--	128 clocks
+	 *	5	--	256 clocks
+	 *
+	 * All other values are illegal.
+	 *
+	 * Bits 09:00 define which REQ/GNT signal pairs get the
+	 * GRANT# signal treatment.  We set them all.
+	 */
+	pci_write_config_word(pdev, 0x50, (5 << 10) | 0x3ff);
+
+	/* The Read Prefecth Policy register is 16-bit and sits at
+	 * offset 0x52.  It enables a "smart" pre-fetch policy.  We
+	 * enable it and max out all of the settings since only one
+	 * device is sitting underneath and thus bandwidth sharing is
+	 * not an issue.
+	 *
+	 * The register has several 3 bit fields, which indicates a
+	 * multiplier applied to the base amount of prefetching the
+	 * chip would do.  These fields are at:
+	 *
+	 *	15:13	---	ReRead Primary Bus
+	 *	12:10	---	FirstRead Primary Bus
+	 *	09:07	---	ReRead Secondary Bus
+	 *	06:04	---	FirstRead Secondary Bus
+	 *
+	 * Bits 03:00 control which REQ/GNT pairs the prefetch settings
+	 * get enabled on.  Bit 3 is a grouped enabler which controls
+	 * all of the REQ/GNT pairs from [8:3].  Bits 2 to 0 control
+	 * the individual REQ/GNT pairs [2:0].
+	 */
+	pci_write_config_word(pdev, 0x52,
+			      (0x7 << 13) |
+			      (0x7 << 10) |
+			      (0x7 <<  7) |
+			      (0x7 <<  4) |
+			      (0xf <<  0));
+
+	/* Force cacheline size to 0x8 */
+	pci_write_config_byte(pdev, PCI_CACHE_LINE_SIZE, 0x08);
+
+	/* Force latency timer to maximum setting so Cassini can
+	 * sit on the bus as long as it likes.
+	 */
+	//pci_write_config_byte(pdev, PCI_LATENCY_TIMER, 0xff);
+}
 
 int async_device_cap(void)
 {
@@ -429,6 +516,7 @@ static int dc_ay[] = {
         [OP_UNCOMPRESS] = DC_UNCOMPRESS, 
         [OP_HASH]       = DC_HASH,
         [OP_COMPARE]    = DC_COMPARE,
+        [OP_READ]       = DC_NREAD,
 };
 
 int async_submit(sgbuf_t *src, sgbuf_t *dst, async_cb_t cb, int ops, 
@@ -496,7 +584,7 @@ EXPORT_SYMBOL(async_device_cap);
  *  doing callback.
  *  freeing the resource.
  */
-static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
+static int do_job_one(struct lzf_device *ioc, job_entry_t *d)
 {
         int res = 0;
         int debug_level = debug;
@@ -515,9 +603,9 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
         if (((d->res->dc_fc & 0x1ff) != (d->desc->dc_fc & 0x1ff))/* ||
                         (d->res->ocnt == 0)*/) {
                 debug = 1;
-                dprintk("res->dc_fc %x/%x, ocnt %x, cookie %x, idle %x\n",
+                dprintk("res->dc_fc %x/%x, ocnt %x, cookie %x\n",
                                 d->res->dc_fc, d->desc->dc_fc, d->res->ocnt, 
-                                d->cookie, idle);
+                                d->cookie);
                 /* TODO the ocnt must not be zero */
                 /*async_dump_register();*/
         }
@@ -544,18 +632,23 @@ static int do_job_one(struct lzf_device *ioc, job_entry_t *d, int idle)
         return res;
 }
 
-static int do_jobs(struct lzf_device *ioc, uint32_t phys_complete, int idle)
+static int do_jobs(unsigned long data) 
 {
         job_entry_t *d, *t;
         int res = 0;
         unsigned long flags;
+        struct lzf_device *ioc = (void *)data;
+        uint32_t phys_complete;
+        
+        phys_complete = readl(ioc->R.DAR.address);
+        WARN_ON(phys_complete == 0xFFFFFFFF);
 
         spin_lock_irqsave(&ioc->desc_lock, flags);
         list_for_each_entry_safe(d, t, &ioc->used_head, entry) {
-                dprintk("addr %x, cookie %x, idle %x\n", 
-                                d->addr, d->cookie, idle);
+                dprintk("addr %x, cookie %x\n", 
+                                d->addr, d->cookie);
                 if (d->cookie)
-                        do_job_one(ioc, d, idle);
+                        do_job_one(ioc, d);
                 if (d->addr != phys_complete) {
                         /* a complete entry, but not last so clean 
                          * up if the client is done with the desc */
@@ -582,7 +675,6 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
         uint32_t val = 0;
         int res = IRQ_NONE;
         struct lzf_device *ioc = p;
-        uint32_t phys_complete;
 
         val = readl(ioc->R.CSR.address);
         if ((val & CSR_INTP) == 0) { /* interrupt pending */
@@ -596,13 +688,12 @@ static int lzf_intr_handler(int irq, void *p, struct pt_regs *regs)
         val |= CCR_C_INTP;
         writel(val, ioc->R.CCR.address);
         val = readl(ioc->R.CSR.address);
-        phys_complete = readl(ioc->R.DAR.address);
-        WARN_ON(phys_complete == 0xFFFFFFFF);
 
-        dprintk("val %x, %x\n", val, phys_complete);
+        dprintk("val %x\n", val);
         atomic_inc(&ioc->intr);
         /* call the finished jobs */
-        do_jobs(ioc, phys_complete, val & CSR_BUSY);
+        /*do_jobs((unsigned long)ioc);*/
+        tasklet_schedule(&ioc->run_lzf_task);
 out:
         return res;
 }
@@ -658,6 +749,8 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
 
         if (pci_enable_device(pdev))
                 return res;
+        cas_program_bridge(pdev);
+
         ioc = kmalloc(sizeof(*ioc), GFP_KERNEL);
         ioc->bases = pci_resource_start(pdev, 0);
         ioc->base_size = pci_resource_len(pdev, 0);
@@ -733,6 +826,7 @@ static int __devinit lzf_probe(struct pci_dev *pdev,
                         ioc->cap & (1<<3) ? "hash "      : "",
                         ioc->cap & (1<<2) ? "cmp  "      : "");
 
+        tasklet_init(&ioc->run_lzf_task, (void *)do_jobs, (unsigned long)ioc);
         start_null_desc(ioc);
         first_ioc = ioc;
         ioc->cookie = 0;

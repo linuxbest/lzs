@@ -9,6 +9,7 @@ enum ops_enum {
         OP_UNCOMPRESS = 4,
         OP_HASH       = 5,
         OP_COMPARE    = 6,
+        OP_READ       = 7,
 };
 #ifdef __KERNEL__
 /* 
