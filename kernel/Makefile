@@ -2,9 +2,9 @@ ifneq ($(KERNELRELEASE),)
 #SCST_INC_DIR := /p/prod/d/scst/scst/include
 
 obj-m = async_dma.o
-obj-m += lzf_test.o
+obj-m += lzf_test.o page.o
 
-async_dma-objs = lzf_dev.o lzf_chdev.o 
+async_dma-objs = lzf_dev.o lzf_chdev.o
 
 else
 ifeq ($(KDIR),)

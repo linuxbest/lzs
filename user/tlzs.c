@@ -207,7 +207,7 @@ main(int argc, char *argv[])
                 }
         }
 
-        /*mknod("/dev/lzfdma", 0x666, MK_DEV(0x254, 0x0));*/
+        mknod("/dev/lzfdma", 0x666, MK_DEV(0x254, 0x0));
         fd = open("/dev/lzfdma", O_RDONLY);
         if (fd == -1) {
                 perror("open");

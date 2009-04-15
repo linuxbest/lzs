@@ -201,7 +201,7 @@ coherent_alloc(struct lzf_device *ioc)
         }
         spin_unlock_irqrestore(&ioc->mem_lock, flags);
         atomic_dec(&ioc->mem_free);
-        dprintk("p %p, %d\n", p, atomic_read(&ioc->mem_free));
+        /*dprintk("p %p, %d\n", p, atomic_read(&ioc->mem_free));*/
 
         return p;
 }

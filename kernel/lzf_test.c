@@ -123,6 +123,9 @@ static int __init lzf_init(void)
         unsigned long used = 0;
         unsigned long KB   = 0;
 
+        printk("%08x, %08x\n", *IOP321_TU_TRR0, *IOP321_TU_TRR1);
+        *IOP321_TU_TRR1 = 0xff;
+
         for (i = 0; i < cnt; i++) {
                 init_queue();
         }
@@ -151,8 +154,8 @@ static int __init lzf_init(void)
                 }
                 used = (e-s) >> 20;
                 KB   = (size * 500) / used;
-                printk("jiffies %ld, cycles %lld, speed %08ld KB/s \n",
-                                e_jiffies-start, e-s, KB);
+                printk("jiffies %ld, cycles %lld, speed %08ld KB/s, ops %d\n",
+                                e_jiffies-start, e-s, KB, ops);
                 loop --;
         } while (loop > 0);
 
