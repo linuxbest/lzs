@@ -871,6 +871,7 @@ static void lzf_shutdown(struct device *dev)
 
 static struct pci_device_id lzf_pci_table[] = {
         { 0x0100, 0x0003, PCI_ANY_ID, PCI_ANY_ID},
+        { 0x0100, 0x0009, PCI_ANY_ID, PCI_ANY_ID},
         { 0 },
 };
 
