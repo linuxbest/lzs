@@ -1,16 +1,16 @@
 module comp_unit(/*AUTOARG*/
    // Outputs
-   DMALLRSTENGINEACK, LLDMARXD, LLDMARXREM, LLDMARXSOFN, LLDMARXEOFN,
+   LLDMARSTENGINEREQ, LLDMARXD, LLDMARXREM, LLDMARXSOFN, LLDMARXEOFN,
    LLDMARXSOPN, LLDMARXEOPN, LLDMARXSRCRDYN, LLDMATXDSTRDYN,
    // Inputs
-   CPMDMALLCLK, LLDMARSTENGINEREQ, DMALLRXDSTRDYN, DMALLTXD,
+   CPMDMALLCLK, DMALLRSTENGINEACK, DMALLRXDSTRDYN, DMALLTXD,
    DMALLTXREM, DMALLTXSOFN, DMALLTXEOFN, DMALLTXSOPN, DMALLTXEOPN,
    DMALLTXSRCRDYN, DMATXIRQ, DMARXIRQ
    );
    // local link system singal
    input           CPMDMALLCLK;
-   input           LLDMARSTENGINEREQ;
-   output          DMALLRSTENGINEACK;
+   output          LLDMARSTENGINEREQ;
+   input           DMALLRSTENGINEACK;
    // local link RX interface
    output [31:0]   LLDMARXD;
    output [3:0]    LLDMARXREM;
@@ -72,11 +72,34 @@ module comp_unit(/*AUTOARG*/
    reg [31:0]      data0;
    reg [31:0]      data1;
    reg [3:0]       rem;
-   
+   reg             copy_start;
+   reg             copy_stop;
+   reg             copy_end;
+   wire             DMALLRSTENGINEACK;
+//   reg [2:0]       rst_cnt;
+   wire          LLDMATXDSTRDYN;
+   reg          LLDMARXSRCRDYN;
+   reg          LLDMARXSOPN;
+   reg          LLDMARXEOPN;
+   reg          LLDMARXEOFN;
+
    assign clk = CPMDMALLCLK;
-   assign rst_n = 1;
+   assign rst_n = ~DMALLRSTENGINEACK;
    assign op_copy = flag[29];
-    
+   assign LLDMATXDSTRDYN = 0;
+   assign LLDMARSTENGINEREQ = 0;
+/*
+   always @(posedge clk)
+       if(LLDMARSTENGINEREQ != 1)
+         rst_cnt <= 0;
+       else 
+         rst_cnt <= rst_cnt + 1;
+       
+   always @(posedge clk)
+     begin
+        DMALLRSTENGINEACK <= rst_cnt[2];
+     end
+*/
    always @(posedge clk)
      if (!rst_n)
        tx_state <= TX_IDLE;
@@ -85,10 +108,10 @@ module comp_unit(/*AUTOARG*/
    
    always @(*)
      begin
-        tx_state_n = 'bX;
+       // tx_state_n = 'bX;
         case (tx_state)
           TX_IDLE   : begin 
-             if (!LLDMARXSOFN)
+             if (!DMALLTXSOFN)
                tx_state_n = TX_HEAD1;
              else 
                tx_state_n = TX_IDLE;
@@ -122,24 +145,24 @@ module comp_unit(/*AUTOARG*/
           TX_PAYLOAD: begin
              if (!DMALLTXEOPN) 
                tx_state_n = TX_END;
-	     else if (DMALLTXSRCRDYN && LLDMATXDSTRDYN)
-               tx_state_n = TX_PAYLOAD1;
-             else
+	     else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN)
                tx_state_n = TX_PAYLOAD;
+             else
+               tx_state_n = TX_PAYLOAD1;
               end 
           TX_PAYLOAD1: begin
              if (!DMALLTXEOPN) 
                tx_state_n = TX_END;
-	     else if (DMALLTXSRCRDYN && LLDMATXDSTRDYN)
-               tx_state_n = TX_PAYLOAD;
-	     else
+	     else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN)
                tx_state_n = TX_PAYLOAD1;
+	     else
+               tx_state_n = TX_PAYLOAD;
           end
           TX_COPY: begin
              if (!DMALLTXEOPN) 
                tx_state_n = TX_END;
 	     else
-               tx_state_n = TX_PAYLOAD1;
+               tx_state_n = TX_COPY;
           end
           TX_END: begin 
              if (!DMALLTXEOFN)
@@ -156,6 +179,9 @@ module comp_unit(/*AUTOARG*/
         data0 <= 0;
         data1 <= 0;
         rem <= 0;
+        copy_start <= 1;
+        copy_end <= 1;
+        copy_stop <= 0;
      end else begin
         case (tx_state)
           TX_IDLE   : begin 
@@ -186,7 +212,7 @@ module comp_unit(/*AUTOARG*/
                   4'b0011 : data0 <= {DMALLTXD[31:16],16'h0};
                   4'b0111 : data0 <= {DMALLTXD[31:24],24'h0};
                 endcase
-	     end else if (DMALLTXSRCRDYN && LLDMATXDSTRDYN) begin
+	     end else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
 		data0 <= DMALLTXD;
              end
           end 
@@ -198,15 +224,24 @@ module comp_unit(/*AUTOARG*/
                   4'b0011 : data1 <= {DMALLTXD[31:16],16'h0};
                   4'b0111 : data1 <= {DMALLTXD[31:24],24'h0};
                 endcase
-	     end else if (DMALLTXSRCRDYN && LLDMATXDSTRDYN) begin
+	     end else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
 		data1 <= DMALLTXD;
              end
           end
           TX_COPY: begin
-              data0 <= DMALLTXD;
-              rem <= DMALLTXREM;
+	      if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
+                copy_stop <= 0;
+                data0 <= DMALLTXD;
+                rem <= DMALLTXREM;
+              end else begin
+                copy_stop <= 1;
+              end  
+              copy_start <= DMALLTXSOPN;
+              copy_end <= DMALLTXEOPN;
           end 
           TX_END    : begin 
+              copy_start <= 1;
+              copy_end <= DMALLTXEOPN;
 	  end 
         endcase
      end   
@@ -214,12 +249,12 @@ module comp_unit(/*AUTOARG*/
    always @(posedge clk)
      if (!rst_n)
        rx_state <= RX_IDLE;
-     else 
+     else if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
        rx_state <= rx_state_n;
+     end
    
    always @(*)
      begin
-        tx_state_n <= 'bX;
         case (rx_state)
           RX_IDLE:    begin
              if (op_copy)
@@ -236,19 +271,19 @@ module comp_unit(/*AUTOARG*/
              rx_state_n = RX_HEAD2;
 	  end 
           RX_HEAD2  : begin 
-             rx_state_n = RX_HEAD2;
+             rx_state_n = RX_HEAD3;
 	  end 
           RX_HEAD3  : begin 
-             rx_state_n = RX_HEAD2;
+             rx_state_n = RX_HEAD4;
 	  end 
           RX_HEAD4  : begin 
-             rx_state_n = RX_HEAD2;
+             rx_state_n = RX_HEAD5;
 	  end 
           RX_HEAD5  : begin 
-             rx_state_n = RX_HEAD2;
+             rx_state_n = RX_HEAD6;
 	  end 
           RX_HEAD6  : begin 
-             rx_state_n = RX_HEAD2;
+             rx_state_n = RX_HEAD7;
 	  end 
           RX_HEAD7  : begin 
              rx_state_n = RX_IDLE;
@@ -272,11 +307,17 @@ module comp_unit(/*AUTOARG*/
      if (!rst_n) begin
           LLDMARXD <= 0;
           LLDMARXREM <= 0;
+          LLDMARXSRCRDYN <= 0;
+          LLDMARXSOPN <= 1;
+          LLDMARXEOPN <= 1;
+          LLDMARXEOFN <= 1;
      end else begin
         case (rx_state)
           RX_IDLE:    begin
+             LLDMARXEOFN <= 1;
           end 
           RX_HEAD0  : begin 
+          LLDMARXSRCRDYN <= 0;
 	  end 
           RX_HEAD1  : begin 
 	  end 
@@ -293,19 +334,26 @@ module comp_unit(/*AUTOARG*/
           RX_HEAD6  : begin 
 	  end 
           RX_HEAD7  : begin 
+             LLDMARXEOFN <= 0;
 	  end 
           RX_PAYLOAD: begin
 	  end  
           RX_PAYLOAD1: begin
 	  end  
           RX_COPY: begin
+             LLDMARXSRCRDYN <= copy_stop;
+             LLDMARXSOPN <= copy_start;
+             LLDMARXEOPN <= copy_end;
              LLDMARXD <= data0;
              LLDMARXREM <= rem;
 	  end  
 	endcase
       end
-   //----------mod & ch instance -------------
+      assign     LLDMARXSOFN = copy_start;
+
 /*
+   //----------mod & ch instance -------------
+
    mod u_mod(
              // Outputs
              .m_src_getn                (m_src_getn),
@@ -321,7 +369,7 @@ module comp_unit(/*AUTOARG*/
              .dc                        (dc[23:0]),
              .m_src                     (m_src[63:0]),
              .m_src_last                (m_src_last),
-             .m_src_almost_empty        (m_src_almost_empty),
+             
              .m_src_empty               (m_src_empty),
              .m_dst_almost_full         (m_dst_almost_full),
              .m_dst_full                (m_dst_full));
