@@ -82,11 +82,15 @@ module comp_unit(/*AUTOARG*/
    reg          LLDMARXSOPN;
    reg          LLDMARXEOPN;
    reg          LLDMARXEOFN;
+   
+   wire src_start=1;
+   reg  src_xfer;
+   reg  src_last;
 
    assign clk = CPMDMALLCLK;
    assign rst_n = ~DMALLRSTENGINEACK;
    assign op_copy = flag[29];
-   assign LLDMATXDSTRDYN = 0;
+   assign LLDMATXDSTRDYN = (~src_start) || DMALLRXDSTRDYN;
    assign LLDMARSTENGINEREQ = 0;
 /*
    always @(posedge clk)
@@ -103,8 +107,9 @@ module comp_unit(/*AUTOARG*/
    always @(posedge clk)
      if (!rst_n)
        tx_state <= TX_IDLE;
-     else 
+     else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
        tx_state <= tx_state_n;
+     end
    
    always @(*)
      begin
@@ -205,28 +210,40 @@ module comp_unit(/*AUTOARG*/
           TX_HEAD7  : begin 
 	  end 
           TX_PAYLOAD: begin
-             if (!DMALLTXEOPN) begin
-                case (DMALLTXREM)
-                  4'b0000 : data0 <= DMALLTXD;
-                  4'b0001 : data0 <= {DMALLTXD[31:8],8'h0};
-                  4'b0011 : data0 <= {DMALLTXD[31:16],16'h0};
-                  4'b0111 : data0 <= {DMALLTXD[31:24],24'h0};
-                endcase
-	     end else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
-		data0 <= DMALLTXD;
+	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
+                if (!DMALLTXEOPN) begin
+                  src_xfer <= 1;
+		  data1 <= 0;
+                  case (DMALLTXREM)
+                    4'b0000 : data0 <= DMALLTXD;
+                    4'b0001 : data0 <= {DMALLTXD[31:8],8'h0};
+                    4'b0011 : data0 <= {DMALLTXD[31:16],16'h0};
+                    4'b0111 : data0 <= {DMALLTXD[31:24],24'h0};
+                  endcase
+	        end else begin
+                  src_xfer <= 0;
+		  data0 <= DMALLTXD;
+                end
+             end else begin
+                src_xfer <= 0;
              end
           end 
           TX_PAYLOAD1: begin
-             if (!DMALLTXEOPN) begin
-                case (DMALLTXREM)
-                  4'b0000 : data1 <= DMALLTXD;
-                  4'b0001 : data1 <= {DMALLTXD[31:8],8'h0};
-                  4'b0011 : data1 <= {DMALLTXD[31:16],16'h0};
-                  4'b0111 : data1 <= {DMALLTXD[31:24],24'h0};
-                endcase
-	     end else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
-		data1 <= DMALLTXD;
-             end
+	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
+                src_xfer <= 1;
+                if (!DMALLTXEOPN) begin
+                  case (DMALLTXREM)
+                    4'b0000 : data1 <= DMALLTXD;
+                    4'b0001 : data1 <= {DMALLTXD[31:8],8'h0};
+                    4'b0011 : data1 <= {DMALLTXD[31:16],16'h0};
+                    4'b0111 : data1 <= {DMALLTXD[31:24],24'h0};
+                  endcase
+	        end else begin
+		  data1 <= DMALLTXD;
+                end
+              end else begin
+                src_xfer <= 0;
+              end
           end
           TX_COPY: begin
 	      if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
@@ -240,6 +257,8 @@ module comp_unit(/*AUTOARG*/
               copy_end <= DMALLTXEOPN;
           end 
           TX_END    : begin 
+              src_last <= 1;
+              src_xfer <= 0;
               copy_start <= 1;
               copy_end <= DMALLTXEOPN;
 	  end 
@@ -349,11 +368,10 @@ module comp_unit(/*AUTOARG*/
 	  end  
 	endcase
       end
-      assign     LLDMARXSOFN = copy_start;
+    assign LLDMARXSOFN = copy_start;
 
-/*
    //----------mod & ch instance -------------
-
+/*
    mod u_mod(
              // Outputs
              .m_src_getn                (m_src_getn),
@@ -394,15 +412,15 @@ module comp_unit(/*AUTOARG*/
            .m_dst_full                  (m_dst_full),
            .ocnt                        (ocnt[15:0]),
            // Inputs
-           .wb_clk_i                    (ACLK),
-           .wb_rst_i                    (reset),
+           .wb_clk_i                    (clk),
+           .wb_rst_i                    (~rst_n),
            .src_xfer                    (src_xfer),
            .dst_xfer                    (dst_xfer),
            .src_last                    (src_last),
            .dst_last                    (dst_last),
-           .src_dat_o                   (src_dat_o),
+           .src_dat_o                   (data1),
            .dst_dat_o                   (),
-           .src_dat64_o                 (src_dat64_o),
+           .src_dat64_o                 (data0),
            .dst_dat64_o                 (),
            .dc                          (dc[23:0]),
            .m_reset                     (m_reset),
@@ -411,12 +429,8 @@ module comp_unit(/*AUTOARG*/
            .m_dst                       (m_dst[63:0]),
            .m_dst_last                  (m_dst_last),
            .m_endn                      (m_endn));
- */
+*/ 
 endmodule // comp_unit
-
-
-
-
 
 
 
