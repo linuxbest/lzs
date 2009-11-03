@@ -312,7 +312,7 @@ module comp_unit(/*AUTOARG*/
              rx_state_n = RX_HEAD1;
 	  end 
           RX_HEAD1  : begin 
-             rx_state_n = RX_HEAD2;
+             rx_state_n = RX_HEAD3;
 	  end 
           RX_HEAD2  : begin 
              rx_state_n = RX_HEAD3;
@@ -424,7 +424,7 @@ module comp_unit(/*AUTOARG*/
 	  end 
           RX_HEAD7  : begin 
              LLDMARXEOFN <= 0;
-	     LLDMARXREM <= rem;
+//	     LLDMARXREM <= rem;
 	  end 
           RX_PAYLOAD: begin
              dst_xfer <= 0;
