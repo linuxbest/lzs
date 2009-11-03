@@ -89,20 +89,22 @@ module comp_unit(/*AUTOARG*/
    
    wire [31:0] dst_dat_i;
    wire [31:0] dst_dat64_i;
-   wire src_start=1;
+   wire src_start;
    wire dst_start;
    wire dst_end;
    reg  dst_xfer;
    reg  src_xfer;
    reg  src_last;
    wire [15:0] ocnt;
+   reg  reset_n;
+   reg  tx_busy;
 
    assign clk = CPMDMALLCLK;
-   assign rst_n = ~DMALLRSTENGINEACK;
+   assign rst_n = ~DMALLRSTENGINEACK && reset_n;
    assign op_copy = flag[29];
    assign op_decomp = flag[30];
    assign op_comp = flag[31];
-   assign LLDMATXDSTRDYN = (~src_start) || (DMALLRXDSTRDYN && op_copy);
+   assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp)) || (DMALLRXDSTRDYN && op_copy) || tx_busy;
    assign LLDMARSTENGINEREQ = 0;
 /*
    always @(posedge clk)
@@ -186,7 +188,7 @@ module comp_unit(/*AUTOARG*/
                tx_state_n = TX_COPY;
           end
           TX_END: begin 
-             if (!DMALLTXEOFN)
+             if (!reset_n)
                tx_state_n = TX_IDLE;
              else
                tx_state_n = TX_END;
@@ -205,10 +207,12 @@ module comp_unit(/*AUTOARG*/
         copy_stop <= 0;
         src_last <= 0;
         src_xfer <= 0;
+        tx_busy <= 0;
      end else begin
         case (tx_state)
           TX_IDLE   : begin 
              src_xfer <= 0;
+             tx_busy <= 0;
 	  end 
 	  //   TX_HEAD0  : begin 
 	  //	  end 
@@ -280,6 +284,8 @@ module comp_unit(/*AUTOARG*/
              copy_start <= 1;
              copy_end <= DMALLTXEOPN;
              src_xfer <= 1 && !DMALLTXSRCRDYN;
+             if (!DMALLTXEOFN)
+             tx_busy <= 1;
 	  end 
         endcase
      end   
@@ -358,7 +364,7 @@ module comp_unit(/*AUTOARG*/
              end
 	  end  
           RX_END: begin
-             if(!rst_n)
+             if(!reset_n)
                rx_state_n = RX_IDLE;
              else
                rx_state_n = RX_END;
@@ -379,9 +385,11 @@ module comp_unit(/*AUTOARG*/
         LLDMARXSOPN <= 1;
         LLDMARXEOPN <= 1;
         LLDMARXEOFN <= 1;
+        reset_n <= 1'b1;
      end else begin
         case (rx_state)
           RX_IDLE:    begin
+             reset_n <= 1'b1;
              if (dst_start && (op_comp || op_decomp)) begin
 		if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
 		   rx_sof_n <= 0;
@@ -416,6 +424,7 @@ module comp_unit(/*AUTOARG*/
 	  end 
           RX_HEAD7  : begin 
              LLDMARXEOFN <= 0;
+	     LLDMARXREM <= rem;
 	  end 
           RX_PAYLOAD: begin
              dst_xfer <= 0;
@@ -467,9 +476,17 @@ module comp_unit(/*AUTOARG*/
              if (!copy_end) begin
                 cpl_status <= 1;
              end
+             if (!LLDMARXEOPN) begin
+                LLDMARXREM <= 0;
+             end
 	  end  
           RX_END: begin
              LLDMARXEOFN <= 1;
+	     LLDMARXREM <= 0;
+             if(LLDMARXEOFN)
+               reset_n <= 1'b0;
+             else
+               reset_n <= 1'b1;
 	  end  
 	endcase
      end
@@ -498,6 +515,7 @@ module comp_unit(/*AUTOARG*/
    assign    dc[6:5] = {op_decomp,op_comp};
    assign    dc[4:0] = 'b0;
    assign    dc[23:7] = 'b0;
+/*
    mod u_mod(
              // Outputs
              .m_src_getn                (m_src_getn),
@@ -556,7 +574,7 @@ module comp_unit(/*AUTOARG*/
            .m_dst                       (m_dst[63:0]),
            .m_dst_last                  (m_dst_last),
            .m_endn                      (m_endn));
- 
+ */
 endmodule // comp_unit
 
 
