@@ -101,6 +101,7 @@ module comp_unit(/*AUTOARG*/
 
    assign clk = CPMDMALLCLK;
    assign rst_n = ~DMALLRSTENGINEACK && reset_n;
+  // assign op_null = flag[28];
    assign op_copy = flag[29];
    assign op_decomp = flag[30];
    assign op_comp = flag[31];
