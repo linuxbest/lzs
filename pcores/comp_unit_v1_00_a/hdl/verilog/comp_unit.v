@@ -77,11 +77,13 @@ module comp_unit(/*AUTOARG*/
    reg [3:0]       rem;
    reg             copy_start;
    reg             copy_stop;
+   reg             copy_wr;
+   wire             dst_rd;
    reg             copy_end;
    wire             DMALLRSTENGINEACK;
 //   reg [2:0]       rst_cnt;
    wire          LLDMATXDSTRDYN;
-   reg          LLDMARXSRCRDYN;
+   wire          LLDMARXSRCRDYN;
    reg          LLDMARXSOPN;
    reg          LLDMARXEOPN;
    reg          LLDMARXEOFN;
@@ -98,6 +100,10 @@ module comp_unit(/*AUTOARG*/
    wire [15:0] ocnt;
    reg  reset_n;
    reg  tx_busy;
+   
+   wire [35:0] dst_data;
+   wire src_fifo_full;
+   wire dst_fifo_empty;
 
    assign clk = CPMDMALLCLK;
    assign rst_n = ~DMALLRSTENGINEACK && reset_n;
@@ -105,7 +111,7 @@ module comp_unit(/*AUTOARG*/
    assign op_copy = flag[29];
    assign op_decomp = flag[30];
    assign op_comp = flag[31];
-   assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp)) || (DMALLRXDSTRDYN && op_copy) || tx_busy;
+   assign LLDMATXDSTRDYN = (src_fifo_full && op_copy) || tx_busy;
    assign LLDMARSTENGINEREQ = 0;
 /*
    always @(posedge clk)
@@ -205,7 +211,7 @@ module comp_unit(/*AUTOARG*/
         rem <= 0;
         copy_start <= 1;
         copy_end <= 1;
-        copy_stop <= 0;
+        copy_wr <= 0;
         src_last <= 0;
         src_xfer <= 0;
         tx_busy <= 0;
@@ -234,56 +240,27 @@ module comp_unit(/*AUTOARG*/
           TX_HEAD7  : begin 
 	  end 
           TX_PAYLOAD: begin
-	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
-                if (!DMALLTXEOPN) begin
-                   src_xfer <= 1;
-		   data1 <= 0;
-                   case (DMALLTXREM)
-                     4'b0000 : data0 <= DMALLTXD;
-                     4'b0001 : data0 <= {DMALLTXD[31:8],8'h0};
-                     4'b0011 : data0 <= {DMALLTXD[31:16],16'h0};
-                     4'b0111 : data0 <= {DMALLTXD[31:24],24'h0};
-                   endcase
-	        end else begin
-                   src_xfer <= 0;
-		   data0 <= DMALLTXD;
-                end
-             end else begin
-                src_xfer <= 0;
-             end
           end 
           TX_PAYLOAD1: begin
-	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
-                src_xfer <= 1;
-                if (!DMALLTXEOPN) begin
-                   case (DMALLTXREM)
-                     4'b0000 : data1 <= DMALLTXD;
-                     4'b0001 : data1 <= {DMALLTXD[31:8],8'h0};
-                     4'b0011 : data1 <= {DMALLTXD[31:16],16'h0};
-                     4'b0111 : data1 <= {DMALLTXD[31:24],24'h0};
-                   endcase
-	        end else begin
-		   data1 <= DMALLTXD;
-                end
-             end else begin
-                src_xfer <= 0;
-             end
           end
           TX_COPY: begin
 	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
-                copy_stop <= 0;
+                case (DMALLTXREM)
+                   4'b0000 : rem[1:0] <= 2'b00;
+                   4'b0001 : rem[1:0] <= 2'b01;
+                   4'b0011 : rem[1:0] <= 2'b10;
+                   4'b0111 : rem[1:0] <= 2'b11;
+                endcase
+                copy_wr <= 1;
                 data0 <= DMALLTXD;
-                rem <= DMALLTXREM;
+                rem[3:2] <= {DMALLTXSOPN,DMALLTXEOPN};
              end else begin
-                copy_stop <= 1;
+                copy_wr <= 0;
              end  
-             copy_start <= DMALLTXSOPN;
-             copy_end <= DMALLTXEOPN;
           end 
           TX_END    : begin 
              src_last <= 1;
              copy_start <= 1;
-             copy_end <= DMALLTXEOPN;
              src_xfer <= 1 && !DMALLTXSRCRDYN;
              if (!DMALLTXEOFN)
              tx_busy <= 1;
@@ -302,10 +279,8 @@ module comp_unit(/*AUTOARG*/
      begin
         case (rx_state)
           RX_IDLE:    begin
-             if (op_copy)
+             if (op_copy && !dst_fifo_empty)
                rx_state_n = RX_COPY;
-             else if (dst_start && (op_comp || op_decomp))
-               rx_state_n = RX_PAYLOAD;
              else 
                rx_state_n = RX_IDLE;
           end 
@@ -377,12 +352,12 @@ module comp_unit(/*AUTOARG*/
    reg           cpl_status;
    always @(posedge clk)
      if (!rst_n) begin
+   //      dst_rd <= 0;
         rx_sof_n <= 1;
         dst_xfer <= 0;
         cpl_status <= 0;
         LLDMARXD <= 0;
         LLDMARXREM <= 0;
-        LLDMARXSRCRDYN <= 0;
         LLDMARXSOPN <= 1;
         LLDMARXEOPN <= 1;
         LLDMARXEOFN <= 1;
@@ -390,20 +365,22 @@ module comp_unit(/*AUTOARG*/
      end else begin
         case (rx_state)
           RX_IDLE:    begin
+               // dst_rd <= 0;
              reset_n <= 1'b1;
-             if (dst_start && (op_comp || op_decomp)) begin
-		if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
+             if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
+                if (op_copy && !dst_fifo_empty) begin
 		   rx_sof_n <= 0;
 		end else begin
 		   rx_sof_n <= 1;
 		end
+             end else begin
+		   rx_sof_n <= 1;
              end
           end 
           RX_HEAD0  : begin 
              LLDMARXREM <= 4'h0;
              LLDMARXSOPN <= 1;
              dst_xfer <= 0;
-             LLDMARXSRCRDYN <= 0;
              LLDMARXEOPN <= 1;
 	  end 
           RX_HEAD1  : begin 
@@ -428,58 +405,36 @@ module comp_unit(/*AUTOARG*/
 //	     LLDMARXREM <= rem;
 	  end 
           RX_PAYLOAD: begin
-             dst_xfer <= 0;
-             rx_sof_n <= 1;
-             if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
-                LLDMARXSOPN <= rx_sof_n;
-                LLDMARXD <= dst_dat64_i;
-		//  if (ocnt >= src_len[18:3]) begin
-		//     LLDMARXREM <= 4'hf;
-		//     cpl_status <= 0;
-		//     dst_xfer <= 0;
-		//     LLDMARXEOPN <= 0;
-		if (dst_end) begin
-                   LLDMARXREM <= 4'h7;
-                   cpl_status <= 1;
-                   LLDMARXEOPN <= 0;
-		end else begin
-                   LLDMARXEOPN <= 1;
-		end
-             end
 	  end  
           RX_PAYLOAD1: begin
-             LLDMARXSOPN <= 1;
-             LLDMARXSRCRDYN <= ~dst_start;
-             if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
-                LLDMARXD <= dst_dat_i;
-		if (ocnt >= src_len[18:3]) begin
-                   LLDMARXREM <= 4'h7;
-                   cpl_status <= 0;
-                   dst_xfer <= 0;
-                   LLDMARXEOPN <= 0;
-		end else if (dst_end) begin
-                   LLDMARXREM <= 4'h7;
-                   cpl_status <= 1;
-                   dst_xfer <= 0;
-                   LLDMARXEOPN <= 0;
-		end else begin
-                   dst_xfer <= 1;
-                   LLDMARXEOPN <= 1;
-		end
-	     end
 	  end
           RX_COPY: begin
-	     LLDMARXSRCRDYN <= copy_stop;
-	     LLDMARXSOPN <= copy_start;
-	     LLDMARXEOPN <= copy_end;
-	     LLDMARXD <= data0;
-	     LLDMARXREM <= rem;
-             if (!copy_end) begin
+      	     //rx_sof_n <= 1;
+             if (!dst_data[34]) begin
                 cpl_status <= 1;
              end
+             if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
+      	     rx_sof_n <= 1;
+	     LLDMARXSOPN <= dst_data[35];
+	     LLDMARXD <= dst_data[31:0];
+              //  dst_rd <= 1;
              if (!LLDMARXEOPN) begin
-                LLDMARXREM <= 0;
+	     LLDMARXEOPN <= 1;
+             LLDMARXREM <= 4'b0000;
+             end else begin
+	     LLDMARXEOPN <= dst_data[34];
+                case (dst_data[33:32])
+                   2'b00 : LLDMARXREM <= 4'b0000;
+                   2'b01 : LLDMARXREM <= 4'b0001;
+                   2'b10 : LLDMARXREM <= 4'b0011;
+                   2'b11 : LLDMARXREM <= 4'b0111;
+                endcase
              end
+             end else begin
+	     //LLDMARXSOPN <= 1;
+	     LLDMARXEOPN <= 1;
+            //    dst_rd <= 0;
+             end   
 	  end  
           RX_END: begin
              LLDMARXEOFN <= 1;
@@ -491,7 +446,19 @@ module comp_unit(/*AUTOARG*/
 	  end  
 	endcase
      end
-   assign LLDMARXSOFN = copy_start && rx_sof_n;
+   reg        full_cntl;
+   wire       half_full;
+   always @(posedge clk)
+     if (!rst_n)
+        full_cntl <= 1;
+     else if (half_full || tx_busy) 
+        full_cntl <= 0;
+     else if(dst_fifo_empty)
+        full_cntl <= 1;
+        
+   assign LLDMARXSOFN = rx_sof_n;
+   assign LLDMARXSRCRDYN = dst_fifo_empty || full_cntl;
+   assign dst_rd = (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN)&&(rx_state == RX_COPY)?1:0;
    
    //----------mod & ch instance -------------
    
@@ -516,65 +483,25 @@ module comp_unit(/*AUTOARG*/
    assign    dc[6:5] = {op_decomp,op_comp};
    assign    dc[4:0] = 'b0;
    assign    dc[23:7] = 'b0;
+
+     ch_fifo src_fifo(
+	.din                ({rem,data0}),
+	.prog_full_thresh   (9'h100),
+	.rd_clk             (clk),
+	.rd_en              (dst_rd),
+	.rst                (~rst_n),
+	.wr_clk             (clk),
+	.wr_en              (copy_wr),
+	.almost_empty       (),
+	.almost_full        (src_fifo_full),
+	.dout               (dst_data),
+	.empty              (dst_fifo_empty),
+	.full               (half_full),
+	.prog_full          ()
+      );
+
+
 /*
-   mod u_mod(
-             // Outputs
-             .m_src_getn                (m_src_getn),
-             .m_dst_putn                (m_dst_putn),
-             .m_dst                     (m_dst[63:0]),
-             .m_dst_last                (m_dst_last),
-             .m_endn                    (m_endn),
-             .m_cap                     (m_cap[7:0]),
-             // Inputs
-             .wb_clk_i                  (clk),
-             .m_reset                   (m_reset),
-             .m_enable                  (m_enable),
-             .dc                        (dc[23:0]),
-             .m_src                     (m_src[63:0]),
-             .m_src_last                (m_src_last),
-             
-             .m_src_empty               (m_src_empty),
-             .m_src_almost_empty          (m_src_almost_empty),
-             .m_dst_almost_full         (m_dst_almost_full),
-             .m_dst_full                (m_dst_full));
-   
-   ch u_ch(
-           // Outputs
-           .src_stop                    (src_stop),
-           .dst_stop                    (dst_stop),
-           .src_start                   (src_start),
-           .dst_start                   (dst_start),
-           .src_end                     (src_end),
-           .dst_end                     (dst_end),
-           .src_dat_i                   (),
-           .dst_dat_i                   (dst_dat_i),
-           .src_dat64_i                 (),
-           .dst_dat64_i                 (dst_dat64_i),
-           .m_src                       (m_src[63:0]),
-           .m_src_last                  (m_src_last),
-           .m_src_almost_empty          (m_src_almost_empty),
-           .m_src_empty                 (m_src_empty),
-           .m_dst_almost_full           (m_dst_almost_full),
-           .m_dst_full                  (m_dst_full),
-           .ocnt                        (ocnt[15:0]),
-           // Inputs
-           .wb_clk_i                    (clk),
-           .wb_rst_i                    (~rst_n),
-           .src_xfer                    (src_xfer),
-           .dst_xfer                    (dst_xfer),
-           .src_last                    (src_last),
-           .dst_last                    (dst_last),
-           .src_dat_o                   (data1),
-           .dst_dat_o                   (),
-           .src_dat64_o                 (data0),
-           .dst_dat64_o                 (),
-           .dc                          (dc[23:0]),
-           .m_reset                     (m_reset),
-           .m_src_getn                  (m_src_getn),
-           .m_dst_putn                  (m_dst_putn),
-           .m_dst                       (m_dst[63:0]),
-           .m_dst_last                  (m_dst_last),
-           .m_endn                      (m_endn));
  */
 endmodule // comp_unit
 
