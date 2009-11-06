@@ -128,7 +128,7 @@ module comp_unit(/*AUTOARG*/
    always @(posedge clk)
      if (!rst_n)
        tx_state <= TX_IDLE;
-     else if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
+     else if ((!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) || tx_busy )begin
 	tx_state <= tx_state_n;
      end
    
