@@ -106,12 +106,12 @@ module comp_unit(/*AUTOARG*/
    wire dst_fifo_empty;
 
    assign clk = CPMDMALLCLK;
-   assign rst_n = ~DMALLRSTENGINEACK && reset_n;
+   assign rst_n = ~DMALLRSTENGINEACK;// && reset_n
   // assign op_null = flag[28];
    assign op_copy = flag[29];
    assign op_decomp = flag[30];
    assign op_comp = flag[31];
-   assign LLDMATXDSTRDYN = (src_fifo_full && op_copy) || tx_busy;
+   assign LLDMATXDSTRDYN = src_fifo_full;// || tx_busy
    assign LLDMARSTENGINEREQ = 0;
 /*
    always @(posedge clk)
@@ -195,7 +195,7 @@ module comp_unit(/*AUTOARG*/
                tx_state_n = TX_COPY;
           end
           TX_END: begin 
-             if (!reset_n)
+             if (tx_busy)
                tx_state_n = TX_IDLE;
              else
                tx_state_n = TX_END;
@@ -259,6 +259,7 @@ module comp_unit(/*AUTOARG*/
              end  
           end 
           TX_END    : begin 
+             copy_wr <= 0;
              src_last <= 1;
              copy_start <= 1;
              src_xfer <= 1 && !DMALLTXSRCRDYN;
@@ -457,7 +458,7 @@ module comp_unit(/*AUTOARG*/
         full_cntl <= 1;
         
    assign LLDMARXSOFN = rx_sof_n;
-   assign LLDMARXSRCRDYN = dst_fifo_empty || full_cntl;
+   assign LLDMARXSRCRDYN = dst_fifo_empty && (rx_state == RX_COPY) && LLDMARXEOPN;// || full_cntl
    assign dst_rd = (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN)&&(rx_state == RX_COPY)?1:0;
    
    //----------mod & ch instance -------------
