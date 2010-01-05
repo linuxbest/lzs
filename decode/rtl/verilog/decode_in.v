@@ -1,7 +1,7 @@
 /******************************************************************************
  *
  *           File Name : decode_in.v
- *             Version : 0.1
+ *             Version : 0.2
  *                Date : Feb 20, 2008
  *         Description :
  *        Dependencies :
@@ -112,6 +112,6 @@ module decode_in (/*AUTOARG*/
      stream_done <= #1 m_last && (&cnt);
    
    assign stream_data = sreg[31:19];
-   assign stream_valid= |{left[5:4]} && ~src_empty && ~stream_done;
+   assign stream_valid= |{left[5:4]} && ~src_empty && ~stream_done && ~fo_full;
    
 endmodule // decode_in
