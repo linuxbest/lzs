@@ -134,14 +134,13 @@ module comp_unit(/*AUTOARG*/
    
    assign LLDMARSTENGINEREQ = 0;
    //--------------rx interface mux-----------------------------
-   assign LLDMARXD = (op_copy)?rx_data:LLDMARXD_r;
-   assign LLDMARXREM = (op_copy)?rx_rem:LLDMARXREM_r;
-   assign LLDMARXSOFN = (op_copy)?rx_sof_n:rx_sof_r_n;
-   assign LLDMARXEOFN = (op_copy)?rx_eof_n:LLDMARXEOFN_r;
-   assign LLDMARXSOPN = (op_copy)?rx_sop_n:LLDMARXSOPN_r;
-   assign LLDMARXEOPN = (op_copy)?rx_eop_n:LLDMARXEOPN_r;
-   assign LLDMARXSRCRDYN = (op_copy)?rx_src_rdy_n:LLDMARXSRCRDYN_r;
-   assign rx_dst_rdy_n = (op_copy)?DMALLRXDSTRDYN:1;
+   assign LLDMARXD = LLDMARXD_r;
+   assign LLDMARXREM = LLDMARXREM_r;
+   assign LLDMARXSOFN = rx_sof_r_n;
+   assign LLDMARXEOFN = LLDMARXEOFN_r;
+   assign LLDMARXSOPN = LLDMARXSOPN_r;
+   assign LLDMARXEOPN = LLDMARXEOPN_r;
+   assign LLDMARXSRCRDYN = LLDMARXSRCRDYN_r;
 
   //--------------rx interface mux-----------------------------
    assign tx_data      = DMALLTXD;     
@@ -665,7 +664,7 @@ module comp_unit(/*AUTOARG*/
            .m_dst_last                  (m_dst_last),
            .m_endn                      (m_endn));
 
- 
+/* 
   lldma_exerciser u_lldma_copy(
 			       // Outputs
 			       .dcr_ack		(),
@@ -698,7 +697,7 @@ module comp_unit(/*AUTOARG*/
 			       .tx_src_rdy_n	(tx_src_rdy_n),
 			       .tx_intr_in	(0),
 			       .rx_intr_in	(0),
-			       .rx_dst_rdy_n	(rx_dst_rdy_n)); 
+			       .rx_dst_rdy_n	(rx_dst_rdy_n)); */
 endmodule // comp_unit
 
 // Local Variables:
