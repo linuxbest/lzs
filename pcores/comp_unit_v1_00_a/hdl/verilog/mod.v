@@ -54,6 +54,7 @@ module mod(/*AUTOARG*/
    wire [15:0] 	 en_out_data,  de_out_data;
    wire 	 en_out_valid, de_out_valid;
    wire 	 en_out_done,  de_out_done;
+/*
       copy copy(
 	     // Outputs
 	     .m_src_getn		(m_src_getn),
@@ -72,7 +73,7 @@ module mod(/*AUTOARG*/
 	     .m_src_empty		(m_src_empty),
 	     .m_dst_almost_full		(m_dst_almost_full),
 	     .m_dst_full		(m_dst_full));
-
+*/
    encode encode(.ce(dc[5] && m_enable),
 		 .fi(m_src),
 		 .clk(wb_clk_i),
