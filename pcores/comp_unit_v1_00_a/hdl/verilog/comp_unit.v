@@ -664,40 +664,6 @@ module comp_unit(/*AUTOARG*/
            .m_dst_last                  (m_dst_last),
            .m_endn                      (m_endn));
 
-/* 
-  lldma_exerciser u_lldma_copy(
-			       // Outputs
-			       .dcr_ack		(),
-			       .dcr_rd_dbus	(),
-			       .tx_dst_rdy_n	(tx_dst_rdy_n),
-			       .rx_data		(rx_data[31:0]),
-			       .rx_rem		(rx_rem[3:0]),
-			       .rx_sof_n	(rx_sof_n),
-			       .rx_eof_n	(rx_eof_n),
-			       .rx_sop_n	(rx_sop_n),
-			       .rx_eop_n	(rx_eop_n),
-			       .rx_src_rdy_n	(rx_src_rdy_n),
-			       .tx_intr_out	(),
-			       .rx_intr_out	(),
-			       .debug_out_127_0	(),
-			       // Inputs
-			       .SYS_Clk		(SYS_Clk),
-			       .Rst		(Rst),
-			       .global_test_en_l(1'b0),
-			       .dcr_read	(0),
-			       .dcr_write	(0),
-			       .dcr_wr_dbus	(0),
-			       .dcr_abus	(0),
-			       .tx_data		(tx_data[31:0]),
-			       .tx_rem		(tx_rem[3:0]),
-			       .tx_sof_n	(tx_sof_n),
-			       .tx_eof_n	(tx_eof_n),
-			       .tx_sop_n	(tx_sop_n),
-			       .tx_eop_n	(tx_eop_n),
-			       .tx_src_rdy_n	(tx_src_rdy_n),
-			       .tx_intr_in	(0),
-			       .rx_intr_in	(0),
-			       .rx_dst_rdy_n	(rx_dst_rdy_n)); */
 endmodule // comp_unit
 
 // Local Variables:
