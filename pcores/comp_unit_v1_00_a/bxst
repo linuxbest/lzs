@@ -1,0 +1,64 @@
+#!/bin/bash
+
+D=xc5vfx70t-ff1136-1
+
+set -e 
+set -x 
+
+if [ -z "$1" ]; then
+        echo useage: $0 module
+fi
+test -d script || mkdir script
+
+M=$1
+
+head=`git rev-parse --verify HEAD 2>/dev/null`
+version=`echo "$head" | cut -c1-8`
+
+ls $PWD/hdl/verilog/*.v > script/$M.lst
+ls $PWD/../../encode/rtl/verilog/en*.v >> script/$M.lst
+ls $PWD/../../decode/rtl/verilog/de*.v >> script/$M.lst
+
+cat script/$M.lst | awk '{print "verilog work "$1}' > script/$M.xst
+
+cat > script/$M.cmd << EOF
+run
+-ifn ../script/$M.xst
+-ofn $M.ngc
+-ifmt MIXED
+-ofmt NGC
+-top $M 
+-opt_mode area
+-opt_level 2
+-p $D
+-netlist_hierarchy as_optimized
+-hierarchy_separator /
+-iobuf NO
+-keep_hierarchy no
+-resource_sharing yes
+EOF
+
+cat > script/$M <<EOF
+#!/bin/bash
+set -e 
+set -x 
+export M=$M
+#. /p/imgs/ise10.1.env
+#. /opt/ise11.3/settings64.sh
+mkdir -p xst
+cd xst && xst -ifn ../script/$M.cmd -ofn $M.log
+EOF
+chmod +x script/$M
+./script/$M
+
+cp xst/*.ngc ../../../v5fx70t-edk11.2/implementation/
+git checkout hdl/verilog/sru.v
+
+
+if [ -d /home/hugang/public_html/tachyon-hw/build ]; then
+	DATE=`date +%Y%m%d_%H%M%S`
+	DIR=/home/hugang/public_html/tachyon-hw/build/$DATE-$version
+	mkdir -p $DIR
+	git diff > $DIR/dirty.diff
+	cp -ar xst $DIR/
+fi
