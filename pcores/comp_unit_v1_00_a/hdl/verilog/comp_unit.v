@@ -152,7 +152,7 @@ module comp_unit(/*AUTOARG*/
    assign tx_src_rdy_n= DMALLTXSRCRDYN;
    assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp || op_copy1))
                                    && (tx_end_rdy || tx_busy)
-                                   || (tx_dst_rdy_n && op_copy) || tx_busy;
+                                   /*|| (tx_dst_rdy_n && op_copy)*/ || tx_busy;
    assign clk = CPMDMALLCLK;
    assign rst_n = ~DMALLRSTENGINEACK && reset_n;
    assign op_copy = flag[29];
