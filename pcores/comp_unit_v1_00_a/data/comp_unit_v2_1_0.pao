@@ -1,0 +1,23 @@
+##############################################################################
+## Filename:          /lv/gateway/pcores/comp_unit_v1_00_a/data/comp_unit_v2_1_0.pao
+## Description:       Peripheral Analysis Order
+## Date:              Wed Oct 21 19:49:46 2009 (by Create and Import Peripheral Wizard)
+##############################################################################
+
+lib comp_unit_v1_00_a comp_unit.v verilog
+lib comp_unit_v1_00_a ch.v verilog
+lib comp_unit_v1_00_a mod.v verilog
+lib comp_unit_v1_00_a codeout.v verilog
+lib comp_unit_v1_00_a decode_in.v verilog
+lib comp_unit_v1_00_a decode.v verilog
+lib comp_unit_v1_00_a decode_ctl.v verilog
+lib comp_unit_v1_00_a decode_out.v verilog
+lib comp_unit_v1_00_a encode_dp.v verilog
+lib comp_unit_v1_00_a encode.v verilog
+lib comp_unit_v1_00_a encode_ctl.v verilog
+lib comp_unit_v1_00_a encode_out.v verilog
+lib comp_unit_v1_00_a ch_fifo.v verilog
+lib comp_unit_v1_00_a generic_tpram.v verilog
+#lib comp_unit_v1_00_a tpram.v verilog
+#lib comp_unit_v1_00_a fifo_control.v verilog
+#lib comp_unit_v1_00_a synchronizer_flop.v verilog

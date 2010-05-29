@@ -34,8 +34,6 @@ run
 -netlist_hierarchy as_optimized
 -hierarchy_separator /
 -iobuf NO
--keep_hierarchy no
--resource_sharing yes
 EOF
 
 cat > script/$M <<EOF
