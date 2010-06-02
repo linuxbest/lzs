@@ -561,6 +561,11 @@ module comp_unit(/*AUTOARG*/
                reset_n <= 1'b0;
              else
                reset_n <= 1'b1;
+             if(!LLDMARXSRCRDYN && !DMALLRXDSTRDYN)
+	      begin
+		LLDMARXEOFN_r <= 1;
+		LLDMARXSRCRDYN_r <= 1;
+	      end
 	  end  
 	endcase
      end
