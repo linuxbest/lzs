@@ -1,0 +1,6 @@
+# PROC COMMON v3.00.a
+lib proc_common_v3_00_a         all
+lib plbv46_slave_burst_v1_01_a   all
+lib plbv46_master_single_v1_01_a all
+
+lib plbv46_wrapper_v1_00_a plbv46_wrapper.vhd        vhdl

@@ -1,0 +1,149 @@
+BEGIN plbv46_wrapper
+
+## Peripheral Options
+OPTION STYLE = HDL
+OPTION IPTYPE = BRIDGE
+OPTION IMP_NETLIST = TRUE
+OPTION HDL = VHDL
+OPTION LAST_UPDATED = 10.1.2
+OPTION DESC = PLBV46 to DCR Bridge
+OPTION LONG_DESC = PLBV46 to DCR bridge.
+OPTION IP_GROUP = Bus and Bridge:MICROBLAZE:PPC
+OPTION ARCH_SUPPORT_MAP = (virtex2p=PREFERRED, virtex4lx=PREFERRED, virtex4sx=PREFERRED, virtex4fx=PREFERRED, virtex5lx=PREFERRED, virtex5sx=PREFERRED, virtex5tx=PREFERRED, virtex5fx=PREFERRED)
+
+
+## Bus Interfaces
+BUS_INTERFACE BUS = SPLB, BUS_STD = PLBV46, BUS_TYPE = SLAVE
+BUS_INTERFACE BUS = MPLB, BUS_TYPE = MASTER, BUS_STD = PLBV46
+
+## Generics for VHDL or Parameters for Verilog
+PARAMETER C_FAMILY = virtex5, DT = STRING
+PARAMETER C_BASEADDR = 0xffffffff, DT = std_logic_vector, BUS = SPLB, ADDRESS = BASE, PAIR = C_HIGHADDR, MIN_SIZE = 0x1000, ASSIGNMENT = REQUIRE
+PARAMETER C_HIGHADDR = 0x00000000, DT = std_logic_vector, BUS = SPLB, ADDRESS = HIGH, PAIR = C_BASEADDR, ASSIGNMENT = REQUIRE
+PARAMETER C_SPLB_AWIDTH = 32, DT = INTEGER, BUS = SPLB, ASSIGNMENT = CONSTANT
+PARAMETER C_SPLB_DWIDTH = 32, DT = INTEGER, BUS = SPLB
+PARAMETER C_SPLB_P2P = 0, DT = INTEGER, BUS = SPLB, ASSIGNMENT = CONSTANT
+PARAMETER C_SPLB_MID_WIDTH = 1, DT = INTEGER, BUS = SPLB
+PARAMETER C_SPLB_NUM_MASTERS = 1, DT = INTEGER, BUS = SPLB
+PARAMETER C_SPLB_NATIVE_DWIDTH = 32, DT = INTEGER, BUS = SPLB, ASSIGNMENT = CONSTANT
+PARAMETER C_SPLB_SUPPORT_BURSTS = 0, DT = INTEGER, BUS = SPLB, ASSIGNMENT = CONSTANT
+
+PARAMETER C_MPLB_AWIDTH = 32,  DT = INTEGER, BUS = MPLB, ASSIGNMENT = CONSTANT
+PARAMETER C_MPLB_DWIDTH = 32, DT = INTEGER, BUS = MPLB
+
+## Ports
+PORT SPLB_Clk = "", DIR = I, BUS = SPLB, SIGIS = Clk
+PORT SPLB_Rst = SPLB_Rst, DIR = I, SIGIS = Rst, BUS = SPLB
+PORT PLB_ABus = PLB_ABus, DIR = I, VEC = [0:(C_SPLB_AWIDTH-1)], BUS = SPLB
+PORT PLB_PAValid = PLB_PAValid, DIR = I, BUS = SPLB
+PORT PLB_masterID = PLB_masterID, DIR = I, VEC = [0:(C_SPLB_MID_WIDTH-1)], BUS = SPLB
+PORT PLB_RNW = PLB_RNW, DIR = I, BUS = SPLB
+PORT PLB_BE = PLB_BE, DIR = I, VEC = [0:((C_SPLB_DWIDTH/8)-1)], BUS = SPLB
+PORT PLB_size = PLB_size, DIR = I, VEC = [0:3], BUS = SPLB
+PORT PLB_type = PLB_type, DIR = I, VEC = [0:2], BUS = SPLB
+PORT PLB_wrDBus = PLB_wrDBus, DIR = I, VEC = [0:(C_SPLB_DWIDTH-1)], BUS = SPLB
+PORT Sl_addrAck = Sl_addrAck, DIR = O, BUS = SPLB
+PORT Sl_SSize = Sl_SSize, DIR = O, VEC = [0:1], BUS = SPLB
+PORT Sl_wait = Sl_wait, DIR = O, BUS = SPLB
+PORT Sl_rearbitrate = Sl_rearbitrate, DIR = O, BUS = SPLB
+PORT Sl_wrDAck = Sl_wrDAck, DIR = O, BUS = SPLB
+PORT Sl_wrComp = Sl_wrComp, DIR = O, BUS = SPLB
+PORT Sl_rdDBus = Sl_rdDBus, DIR = O, VEC = [0:(C_SPLB_DWIDTH-1)], BUS = SPLB
+PORT Sl_rdDAck = Sl_rdDAck, DIR = O, BUS = SPLB
+PORT Sl_rdComp = Sl_rdComp, DIR = O, BUS = SPLB
+PORT Sl_MBusy = Sl_MBusy, DIR = O, VEC = [0:(C_SPLB_NUM_MASTERS-1)], BUS = SPLB
+PORT Sl_MWrErr = Sl_MWrErr, DIR = O, VEC = [0:(C_SPLB_NUM_MASTERS-1)], BUS = SPLB
+PORT Sl_MRdErr = Sl_MRdErr, DIR = O, VEC = [0:(C_SPLB_NUM_MASTERS-1)], BUS = SPLB
+PORT PLB_UABus = PLB_UABus, DIR = I, VEC = [0:31], BUS = SPLB
+PORT PLB_SAValid = PLB_SAValid, DIR = I, BUS = SPLB
+PORT PLB_rdPrim = PLB_rdPrim, DIR = I, BUS = SPLB
+PORT PLB_wrPrim = PLB_wrPrim, DIR = I, BUS = SPLB
+PORT PLB_abort = PLB_abort, DIR = I, BUS = SPLB
+PORT PLB_busLock = PLB_busLock, DIR = I, BUS = SPLB
+PORT PLB_MSize = PLB_MSize, DIR = I, VEC = [0:1], BUS = SPLB
+PORT PLB_lockErr = PLB_lockErr, DIR = I, BUS = SPLB
+PORT PLB_wrBurst = PLB_wrBurst, DIR = I, BUS = SPLB
+PORT PLB_rdBurst = PLB_rdBurst, DIR = I, BUS = SPLB
+PORT PLB_wrPendReq = PLB_wrPendReq, DIR = I, BUS = SPLB
+PORT PLB_rdPendReq = PLB_rdPendReq, DIR = I, BUS = SPLB
+PORT PLB_wrPendPri = PLB_wrPendPri, DIR = I, VEC = [0:1], BUS = SPLB
+PORT PLB_rdPendPri = PLB_rdPendPri, DIR = I, VEC = [0:1], BUS = SPLB
+PORT PLB_reqPri = PLB_reqPri, DIR = I, VEC = [0:1], BUS = SPLB
+PORT PLB_TAttribute = PLB_TAttribute, DIR = I, VEC = [0:15], BUS = SPLB
+PORT Sl_wrBTerm = Sl_wrBTerm, DIR = O, BUS = SPLB
+PORT Sl_rdWdAddr = Sl_rdWdAddr, DIR = O, VEC = [0:3], BUS = SPLB
+PORT Sl_rdBTerm = Sl_rdBTerm, DIR = O, BUS = SPLB
+PORT Sl_MIRQ = Sl_MIRQ, DIR = O, VEC = [0:(C_SPLB_NUM_MASTERS-1)], BUS = SPLB
+
+PORT Bus2IP_Clk= "", DIR = O
+PORT Bus2IP_Reset= "", DIR = O
+PORT IP2Bus_Data= "", DIR = I, VEC = [0:31]
+PORT IP2Bus_WrAck= "", DIR = I
+PORT IP2Bus_RdAck= "", DIR = I
+PORT IP2Bus_AddrAck= "", DIR = I
+PORT IP2Bus_Error= "", DIR = I
+PORT Bus2IP_Addr= "", DIR = O, VEC = [0:31]
+PORT Bus2IP_Data= "", DIR = O, VEC = [0:31]
+PORT Bus2IP_RNW= "", DIR = O
+PORT Bus2IP_BE= "", DIR = O, VEC = [0:3]
+PORT Bus2IP_Burst= "", DIR = O
+PORT Bus2IP_BurstLength= "", DIR = O, VEC = [0:7]
+PORT Bus2IP_CS= "", DIR = O
+PORT Bus2IP_WrReq= "", DIR = O
+PORT Bus2IP_RdReq= "", DIR = O
+PORT Bus2IP_RdCE= "", DIR = O
+PORT Bus2IP_WrCE= "", DIR = O
+
+PORT MPLB_Clk = "", DIR = I, BUS = MPLB, SIGIS = CLK
+PORT MPLB_Rst = MPLB_Rst, DIR = I, BUS = MPLB
+PORT PLB_MTimeout = PLB_MTimeout, DIR = I, BUS = MPLB
+PORT PLB_MIRQ = PLB_MIRQ, DIR = I, BUS = MPLB
+PORT PLB_MAddrAck = PLB_MAddrAck, DIR = I, BUS = MPLB
+PORT PLB_MSSize = PLB_MSSize, DIR = I, VEC = [0:1], BUS = MPLB
+PORT PLB_MRearbitrate = PLB_MRearbitrate, DIR = I, BUS = MPLB
+PORT PLB_MBusy = PLB_MBusy, DIR = I, BUS = MPLB
+PORT PLB_MRdErr = PLB_MRdErr, DIR = I, BUS = MPLB
+PORT PLB_MWrErr = PLB_MWrErr, DIR = I, BUS = MPLB
+PORT PLB_MWrDAck = PLB_MWrDAck, DIR = I, BUS = MPLB
+PORT PLB_MRdDBus = PLB_MRdDBus, DIR = I, VEC = [0:(C_MPLB_DWIDTH-1)], BUS = MPLB
+PORT PLB_MRdWdAddr = PLB_MRdWdAddr, DIR = I, VEC = [0:3], BUS = MPLB
+PORT PLB_MRdDAck = PLB_MRdDAck, DIR = I, BUS = MPLB
+PORT PLB_MRdBTerm = PLB_MRdBTerm, DIR = I, BUS = MPLB
+PORT PLB_MWrBTerm = PLB_MWrBTerm, DIR = I, BUS = MPLB
+PORT M_request = M_request, DIR = O, BUS = MPLB
+PORT M_priority = M_priority, DIR = O, VEC = [0:1], BUS = MPLB
+PORT M_buslock = M_busLock, DIR = O, BUS = MPLB
+PORT M_RNW = M_RNW, DIR = O, BUS = MPLB
+PORT M_BE = M_BE, DIR = O, VEC = [0:((C_MPLB_DWIDTH/8)-1)], BUS = MPLB
+PORT M_MSize = M_MSize, DIR = O, VEC = [0:1], BUS = MPLB
+PORT M_size = M_size, DIR = O, VEC = [0:3], BUS = MPLB
+PORT M_type = M_type, DIR = O, VEC = [0:2], BUS = MPLB
+PORT M_lockErr = M_lockErr, DIR = O, BUS = MPLB
+PORT M_abort = M_abort, DIR = O, BUS = MPLB
+PORT M_TAttribute = M_TAttribute, DIR = O, VEC = [0:15], BUS = MPLB
+PORT M_UABus = M_UABus, DIR = O, VEC = [0:31], BUS = MPLB
+PORT M_ABus = M_ABus, DIR = O, VEC = [0:(C_MPLB_AWIDTH-1)], BUS = MPLB
+PORT M_wrDBus = M_wrDBus, DIR = O, VEC = [0:(C_MPLB_DWIDTH-1)], BUS = MPLB
+PORT M_wrBurst = M_wrBurst, DIR = O, BUS = MPLB
+PORT M_rdBurst = M_rdBurst, DIR = O, BUS = MPLB
+
+PORT IP2Bus_MstRd_Req = "", DIR = I
+PORT IP2Bus_MstWr_Req = "", DIR = I
+PORT IP2Bus_Mst_Addr  = "", DIR = I, VEC = [0:31]
+PORT IP2Bus_Mst_BE    = "", DIR = I, VEC = [0:3]
+PORT IP2Bus_Mst_Lock  = "", DIR = I
+PORT IP2Bus_Mst_Reset = "", DIR = I
+
+PORT Bus2IP_Mst_CmdAck = "", DIR = O
+PORT Bus2IP_Mst_Cmplt  = "", DIR = O
+PORT Bus2IP_Mst_Error  = "", DIR = O
+PORT Bus2IP_Mst_Rearbitrate = "", DIR = O
+PORT Bus2IP_Mst_Cmd_Timeout = "", DIR = O
+
+PORT Bus2IP_MstRd_d = "", DIR = O, VEC = [0:31]
+PORT Bus2IP_MstRd_src_rdy_n = "", DIR = O
+
+PORT IP2Bus_MstWr_d = "", DIR = I, VEC = [0:31]
+PORT Bus2IP_MstWr_dst_rdy_n = "", DIR = O
+
+END
