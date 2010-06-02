@@ -100,7 +100,7 @@ module comp_unit(/*AUTOARG*/
    wire src_start;
    wire dst_start;
    wire dst_end;
-   reg  dst_xfer;
+   wire dst_xfer;
    reg  src_xfer;
    reg  src_last;
    wire [15:0] ocnt;
@@ -472,7 +472,6 @@ module comp_unit(/*AUTOARG*/
 	LLDMARXREM_r <= 4'h0;
 	LLDMARXSRCRDYN_r <= 1'h0;
 	cpl_status <= 1'h0;
-	dst_xfer <= 1'h0;
 	rx_data_comp <= 32'h0;
         rx_end <= 0;
 	// End of automatics
@@ -492,11 +491,9 @@ module comp_unit(/*AUTOARG*/
           end 
           RX_HEAD0  : begin 
              LLDMARXSRCRDYN_r <= 0;
-             dst_xfer <= 0;
              if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
 		LLDMARXREM_r <= 4'h0;
 		LLDMARXSOPN_r <= 1;
-		dst_xfer <= 0;
 		LLDMARXEOPN_r <= 1;
              end
 	  end 
@@ -505,7 +502,6 @@ module comp_unit(/*AUTOARG*/
           RX_HEAD2  : begin 
 	  end 
           RX_HEAD3  : begin 
-             dst_xfer <= 1;
              rx_end <= 1;
              LLDMARXSRCRDYN_r <= !tx_busy;
 	  end 
@@ -535,13 +531,10 @@ module comp_unit(/*AUTOARG*/
                 LLDMARXSOPN_r <= rx_sof_r_n;
                 LLDMARXD_r <= dst_dat64_i;
                 rx_data_comp <= dst_dat_i;
-                dst_xfer <= 1;
 	     end else begin
-                dst_xfer <= 0;
 	     end
 	  end  
           RX_PAYLOAD1: begin
-             dst_xfer <= 0;
              LLDMARXSOPN_r <= 1;
              LLDMARXSRCRDYN_r <= ~dst_start;
              if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
@@ -562,10 +555,7 @@ module comp_unit(/*AUTOARG*/
           RX_COPY: begin
 	  end  
           RX_END: begin
-             LLDMARXEOFN_r <= 1;
 	     LLDMARXREM_r <= 0;
-             LLDMARXSRCRDYN_r <= 1;
-             dst_xfer <= 1;
              rx_end <= 1;
              if(LLDMARXEOFN && tx_busy)
                reset_n <= 1'b0;
@@ -576,11 +566,11 @@ module comp_unit(/*AUTOARG*/
      end
    always @(posedge clk)
      if (!rst_n)
-       len_cnt <= 1;
+       len_cnt <= 0;
      else if (dst_xfer)
        len_cnt <= len_cnt + 1;
    
-   
+   assign dst_xfer = (rx_state == RX_PAYLOAD) && (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN);
    //----------mod & ch instance -------------
    
    wire        m_src_getn;
