@@ -1,0 +1,246 @@
+
+# ##############################################################################
+# Created by Base System Builder Wizard for Xilinx EDK 11.2 Build EDK_LS2.6
+# Fri Aug 28 14:50:21 2009
+# Target Board:  Soul gateway2 board Rev A
+# Family:    virtex5
+# Device:    xc5vfx70t
+# Package:   ff1136
+# Speed Grade:  -1
+# Processor number: 1
+# Processor 1: ppc440_0
+# Processor clock frequency: 400.0
+# Bus clock frequency: 100.0
+# Debug Interface: FPGA JTAG
+# ##############################################################################
+ PARAMETER VERSION = 2.1.0
+
+
+ PORT sys_clk = dcm_clk_s, DIR = I, SIGIS = CLK, CLK_FREQ = 100000000
+ PORT sys_rst = sys_rst_s, DIR = I, SIGIS = RST, RST_POLARITY = 0
+ PORT Bus2IP_Clk = Bus2IP_Clk, DIR = O
+ PORT Bus2IP_Reset = Bus2IP_Reset, DIR = O
+ PORT IP2Bus_Data = IP2Bus_Data, DIR = I, VEC = [0:31]
+ PORT IP2Bus_WrAck = IP2Bus_WrAck, DIR = I
+ PORT IP2Bus_RdAck = IP2Bus_RdAck, DIR = I
+ PORT IP2Bus_AddrAck = IP2Bus_AddrAck, DIR = I
+ PORT IP2Bus_Error = IP2Bus_Error, DIR = I
+ PORT Bus2IP_Addr = Bus2IP_Addr, DIR = O, VEC = [0:31]
+ PORT Bus2IP_Data = Bus2IP_Data, DIR = O, VEC = [0:31]
+ PORT Bus2IP_RNW = Bus2IP_RNW, DIR = O
+ PORT Bus2IP_BE = Bus2IP_BE, DIR = O, VEC = [0:3]
+ PORT Bus2IP_Burst = Bus2IP_Burst, DIR = O
+ PORT Bus2IP_BurstLength = Bus2IP_BurstLength, DIR = O, VEC = [0:7]
+ PORT Bus2IP_CS = Bus2IP_CS, DIR = O
+ PORT Bus2IP_WrReq = Bus2IP_WrReq, DIR = O
+ PORT Bus2IP_RdReq = Bus2IP_RdReq, DIR = O
+ PORT Bus2IP_RdCE = Bus2IP_RdCE, DIR = O
+ PORT Bus2IP_WrCE = Bus2IP_WrCE, DIR = O
+ PORT IP2Bus_MstRd_Req = IP2Bus_MstRd_Req, DIR = I
+ PORT IP2Bus_MstWr_Req = IP2Bus_MstWr_Req, DIR = I
+ PORT IP2Bus_Mst_Addr = IP2Bus_Mst_Addr, DIR = I, VEC = [0:31]
+ PORT IP2Bus_Mst_BE = IP2Bus_Mst_BE, DIR = I, VEC = [0:3]
+ PORT IP2Bus_Mst_Lock = IP2Bus_Mst_Lock, DIR = I
+ PORT IP2Bus_Mst_Reset = IP2Bus_Mst_Reset, DIR = I
+ PORT Bus2IP_Mst_CmdAck = Bus2IP_Mst_CmdAck, DIR = O
+ PORT Bus2IP_Mst_Cmplt = Bus2IP_Mst_Cmplt, DIR = O
+ PORT Bus2IP_Mst_Error = Bus2IP_Mst_Error, DIR = O
+ PORT Bus2IP_Mst_Rearbitrate = Bus2IP_Mst_Rearbitrate, DIR = O
+ PORT Bus2IP_Mst_Cmd_Timeout = Bus2IP_Mst_Cmd_Timeout, DIR = O
+ PORT Bus2IP_MstRd_d = Bus2IP_MstRd_d, DIR = O, VEC = [0:31]
+ PORT Bus2IP_MstRd_src_rdy_n = Bus2IP_MstRd_src_rdy_n, DIR = O
+ PORT IP2Bus_MstWr_d = IP2Bus_MstWr_d, DIR = I, VEC = [0:31]
+ PORT Bus2IP_MstWr_dst_rdy_n = Bus2IP_MstWr_dst_rdy_n, DIR = O
+ PORT tx_interrupt = ppc440_0_DMA0TXIRQ, DIR = O
+ PORT rx_interrupt = ppc440_0_DMA0RXIRQ, DIR = O
+ PORT DCR_Read = DCR_Read, DIR = I
+ PORT DCR_Write = DCR_Write, DIR = I
+ PORT DCR_ABus = DCR_ABus, DIR = I, VEC = [0:9]
+ PORT DCR_Sl_DBus = DCR_Sl_DBus, DIR = I, VEC = [0:31]
+ PORT Sl_dcrAck = Sl_dcrAck, DIR = O
+ PORT Sl_dcrDBus = Sl_dcrDBus, DIR = O, VEC = [0:31]
+ PORT Sl_dcrTimeoutWait = Sl_dcrTimeoutWait, DIR = O
+
+BEGIN plbv46_wrapper
+ PARAMETER INSTANCE = plbv46_slave_0
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_BASEADDR = 0x00000000
+ PARAMETER C_HIGHADDR = 0x7fffffff
+ BUS_INTERFACE SPLB = plb_v46_0
+ BUS_INTERFACE MPLB = plb_v46_1
+ PORT Bus2IP_Clk = Bus2IP_Clk
+ PORT Bus2IP_Reset = Bus2IP_Reset
+ PORT IP2Bus_Data = IP2Bus_Data
+ PORT IP2Bus_WrAck = IP2Bus_WrAck
+ PORT IP2Bus_RdAck = IP2Bus_RdAck
+ PORT IP2Bus_AddrAck = IP2Bus_AddrAck
+ PORT IP2Bus_Error = IP2Bus_Error
+ PORT Bus2IP_Addr = Bus2IP_Addr
+ PORT Bus2IP_Data = Bus2IP_Data
+ PORT Bus2IP_RNW = Bus2IP_RNW
+ PORT Bus2IP_BE = Bus2IP_BE
+ PORT Bus2IP_Burst = Bus2IP_Burst
+ PORT Bus2IP_BurstLength = Bus2IP_BurstLength
+ PORT Bus2IP_CS = Bus2IP_CS
+ PORT Bus2IP_WrReq = Bus2IP_WrReq
+ PORT Bus2IP_RdReq = Bus2IP_RdReq
+ PORT Bus2IP_RdCE = Bus2IP_RdCE
+ PORT Bus2IP_WrCE = Bus2IP_WrCE
+ PORT IP2Bus_MstRd_Req = IP2Bus_MstRd_Req
+ PORT IP2Bus_MstWr_Req = IP2Bus_MstWr_Req
+ PORT IP2Bus_Mst_Addr = IP2Bus_Mst_Addr
+ PORT IP2Bus_Mst_BE = IP2Bus_Mst_BE
+ PORT IP2Bus_Mst_Lock = IP2Bus_Mst_Lock
+ PORT IP2Bus_Mst_Reset = IP2Bus_Mst_Reset
+ PORT Bus2IP_Mst_CmdAck = Bus2IP_Mst_CmdAck
+ PORT Bus2IP_Mst_Cmplt = Bus2IP_Mst_Cmplt
+ PORT Bus2IP_Mst_Error = Bus2IP_Mst_Error
+ PORT Bus2IP_Mst_Rearbitrate = Bus2IP_Mst_Rearbitrate
+ PORT Bus2IP_Mst_Cmd_Timeout = Bus2IP_Mst_Cmd_Timeout
+ PORT Bus2IP_MstRd_d = Bus2IP_MstRd_d
+ PORT Bus2IP_MstRd_src_rdy_n = Bus2IP_MstRd_src_rdy_n
+ PORT IP2Bus_MstWr_d = IP2Bus_MstWr_d
+ PORT Bus2IP_MstWr_dst_rdy_n = Bus2IP_MstWr_dst_rdy_n
+END
+
+BEGIN ppc440_virtex5
+ PARAMETER INSTANCE = ppc440_0
+ PARAMETER HW_VER = 1.01.a
+# DCR 0x000 -> 0x0ff
+ PARAMETER C_IDCR_BASEADDR = 0b0000000000
+ PARAMETER C_IDCR_HIGHADDR = 0b0011111111
+#disable MC
+ PARAMETER C_PPC440MC_CONTROL = 0x00000000
+ PARAMETER C_MPLB_COUNTER = 0x00000100
+ PARAMETER C_SPLB0_USE_MPLB_ADDR = 1
+ PARAMETER C_SPLB0_NUM_MPLB_ADDR_RNG = 1
+ PARAMETER C_SPLB1_NUM_MPLB_ADDR_RNG = 0
+ PARAMETER C_NUM_DMA = 1
+ PARAMETER C_SPLB0_RNG0_MPLB_BASEADDR = 0x00000000
+ PARAMETER C_SPLB0_RNG0_MPLB_HIGHADDR = 0x7fffffff
+ BUS_INTERFACE SPLB0 = plb_v46_1
+ BUS_INTERFACE MPLB = plb_v46_0
+ BUS_INTERFACE RESETPPC = ppc_reset_bus
+ BUS_INTERFACE JTAGPPC = ppc440_0_jtagppc_bus
+ BUS_INTERFACE LLDMA0 = comp_unit_0_LLINK1
+ PORT CPMC440CLK = clk_400_0000MHzPLL0
+ PORT CPMINTERCONNECTCLK = clk_200_0000MHzPLL0
+ PORT CPMINTERCONNECTCLKNTO1 = net_vcc
+ PORT CPMMCCLK = clk_200_0000MHzPLL0_ADJUST
+ PORT CPMPPCMPLBCLK = clk_100_0000MHzPLL0_ADJUST
+ PORT CPMPPCS0PLBCLK = clk_200_0000MHzPLL0_ADJUST
+ PORT PPCEICINTERCONNECTIRQ = ppc440_0_PPCEICINTERCONNECTIRQ
+ PORT CPMDMA0LLCLK = clk_200_0000MHzPLL0_ADJUST
+ PORT DMA0TXIRQ = ppc440_0_DMA0TXIRQ
+ PORT DMA0RXIRQ = ppc440_0_DMA0RXIRQ
+ PORT DCRPPCDSREAD = DCR_Read
+ PORT DCRPPCDSWRITE = DCR_Write
+ PORT DCRPPCDSABUS = DCR_ABus
+ PORT DCRPPCDSDBUSOUT = DCR_Sl_DBus
+ PORT PPCDSDCRACK = Sl_dcrAck
+ PORT PPCDSDCRDBUSIN = Sl_dcrDBus
+ PORT PPCDSDCRTIMEOUTWAIT = Sl_dcrTimeoutWait
+ PORT CPMDCRCLK = clk_200_0000MHzPLL0
+END
+
+BEGIN plb_v46
+ PARAMETER INSTANCE = plb_v46_0
+ PARAMETER C_DCR_INTFCE = 0
+ PARAMETER C_FAMILY = virtex5
+ PARAMETER HW_VER = 1.04.a
+ PORT PLB_Clk = clk_200_0000MHzPLL0_ADJUST
+ PORT SYS_Rst = sys_bus_reset
+ PORT Bus_Error_Det = plb_v46_0_Bus_Error_Det
+END
+
+BEGIN clock_generator
+ PARAMETER INSTANCE = clock_generator_0
+ PARAMETER C_CLKIN_FREQ = 100000000
+ PARAMETER C_CLKOUT0_FREQ = 100000000
+ PARAMETER C_CLKOUT0_PHASE = 0
+ PARAMETER C_CLKOUT0_GROUP = PLL0_ADJUST
+ PARAMETER C_CLKOUT0_BUF = TRUE
+ PARAMETER C_CLKOUT1_FREQ = 200000000
+ PARAMETER C_CLKOUT1_PHASE = 90
+ PARAMETER C_CLKOUT1_GROUP = PLL0_ADJUST
+ PARAMETER C_CLKOUT1_BUF = TRUE
+ PARAMETER C_CLKOUT2_FREQ = 200000000
+ PARAMETER C_CLKOUT2_PHASE = 0
+ PARAMETER C_CLKOUT2_GROUP = PLL0
+ PARAMETER C_CLKOUT2_BUF = TRUE
+ PARAMETER C_CLKOUT3_FREQ = 200000000
+ PARAMETER C_CLKOUT3_PHASE = 0
+ PARAMETER C_CLKOUT3_GROUP = PLL0_ADJUST
+ PARAMETER C_CLKOUT3_BUF = TRUE
+ PARAMETER C_CLKOUT4_FREQ = 400000000
+ PARAMETER C_CLKOUT4_PHASE = 0
+ PARAMETER C_CLKOUT4_GROUP = PLL0
+ PARAMETER C_CLKOUT4_BUF = TRUE
+ PARAMETER HW_VER = 3.01.a
+ PARAMETER C_CLKOUT5_FREQ = 20000000
+ PARAMETER C_CLKOUT5_PHASE = 0
+ PARAMETER C_CLKOUT5_GROUP = NONE
+ PARAMETER C_CLKOUT5_BUF = TRUE
+ PORT CLKIN = dcm_clk_s
+ PORT CLKOUT0 = clk_100_0000MHzPLL0_ADJUST
+ PORT CLKOUT1 = clk_200_0000MHz90PLL0_ADJUST
+ PORT CLKOUT2 = clk_200_0000MHzPLL0
+ PORT CLKOUT3 = clk_200_0000MHzPLL0_ADJUST
+ PORT CLKOUT4 = clk_400_0000MHzPLL0
+ PORT RST = net_gnd
+ PORT LOCKED = Dcm_all_locked
+ PORT CLKOUT5 = clk_20_0000MHz
+END
+
+BEGIN proc_sys_reset
+ PARAMETER INSTANCE = proc_sys_reset_0
+ PARAMETER C_EXT_RESET_HIGH = 0
+ PARAMETER HW_VER = 2.00.a
+ BUS_INTERFACE RESETPPC0 = ppc_reset_bus
+ PORT Slowest_sync_clk = clk_100_0000MHzPLL0_ADJUST
+ PORT Ext_Reset_In = sys_rst_s
+ PORT Dcm_locked = Dcm_all_locked
+ PORT Bus_Struct_Reset = sys_bus_reset
+ PORT Peripheral_Reset = sys_periph_reset
+END
+
+BEGIN comp_unit
+ PARAMETER INSTANCE = comp_unit_0
+ PARAMETER HW_VER = 1.00.a
+ BUS_INTERFACE LLINK1 = comp_unit_0_LLINK1
+ BUS_INTERFACE SDCR = DCR_bus_s2p
+ PORT CPMDMALLCLK = clk_200_0000MHzPLL0_ADJUST
+ PORT plb_dcrclk = DCR_Clk_s2p
+ PORT plb_dcrrst = DCR_Reset_s2p
+END
+
+BEGIN plb_v46
+ PARAMETER INSTANCE = plb_v46_1
+ PARAMETER HW_VER = 1.04.a
+ PORT PLB_Clk = clk_100_0000MHzPLL0_ADJUST
+ PORT SYS_Rst = sys_bus_reset
+END
+
+
+BEGIN jtagppc_cntlr
+ PARAMETER INSTANCE = jtagppc_cntlr_inst
+ PARAMETER HW_VER = 2.01.c
+ BUS_INTERFACE JTAGPPC0 = ppc440_0_jtagppc_bus
+END
+
+BEGIN dcr_v29
+ PARAMETER INSTANCE = DCR_bus_s2p
+ PARAMETER HW_VER = 1.00.a
+END
+
+BEGIN plbv46_dcr_bridge
+ PARAMETER INSTANCE = plbv46_dcr_bridge_s2p
+ PARAMETER HW_VER = 1.00.a
+ PARAMETER C_BASEADDR = 0xc8500000
+ PARAMETER C_HIGHADDR = 0xc850ffff
+ BUS_INTERFACE SPLB = plb_v46_1
+ BUS_INTERFACE MDCR = DCR_bus_s2p
+ PORT PLB_dcrClk = DCR_Clk_s2p
+ PORT PLB_dcrRst = DCR_Reset_s2p
+END
+
