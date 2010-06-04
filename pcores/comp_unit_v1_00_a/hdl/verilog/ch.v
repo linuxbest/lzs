@@ -128,7 +128,7 @@ module ch(/*AUTOARG*/
   
      ch_fifo dst_fifo(
 	.din                (dst_di),
-	.prog_full_thresh   (9'h010),
+	.prog_full_thresh   (9'h080),
 	.rd_clk             (wb_clk_i),
 	.rd_en              (dst_xfer && ~dst_end),
 	.rst                (m_reset),

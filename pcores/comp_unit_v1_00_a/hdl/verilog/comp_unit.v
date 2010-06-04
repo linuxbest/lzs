@@ -147,6 +147,7 @@ module comp_unit(/*AUTOARG*/
    reg       tx_end_rdy;
    reg [9:0] task_index;
    wire soft_reset;
+   wire src_stop; 
    
    reg LLDMARSTENGINEREQ;
    //--------------rx interface mux-----------------------------
@@ -354,11 +355,11 @@ module comp_unit(/*AUTOARG*/
           end
           TX_COPY: begin
           end 
-          TX_END    : begin 
+          TX_END : begin 
              src_last <= 1;
              copy_start <= 1;
              copy_end <= 0;
-             src_xfer <= !DMALLTXEOFN;
+             src_xfer <= ~src_stop && src_start;
              tx_end_rdy <= 0;
 	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
 		if (!DMALLTXEOFN)
@@ -367,7 +368,6 @@ module comp_unit(/*AUTOARG*/
 	  end 
         endcase
      end   
-   
    always @(posedge clk)
      if (!rst_n)
        rx_state <= RX_IDLE;
@@ -708,6 +708,7 @@ module comp_unit(/*AUTOARG*/
 	     comp2dcr_data[5]     = LLDMATXDSTRDYN;
 	     comp2dcr_data[6]     = DMALLTXSOFN;
 	     comp2dcr_data[7]     = DMALLTXEOFN;
+	     comp2dcr_data[30]    = m_src_last;
 	     comp2dcr_data[31]    = src_last;
 	  end
 	  3'h1: begin
@@ -717,6 +718,7 @@ module comp_unit(/*AUTOARG*/
 	     comp2dcr_data[6]     = LLDMARXSOPN;
 	     comp2dcr_data[7]     = LLDMARXEOPN;
 	     comp2dcr_data[27]    = dst_start;
+	     comp2dcr_data[30]    = m_endn;
 	     comp2dcr_data[31]    = dst_end;
 	  end
 	  3'h2: begin

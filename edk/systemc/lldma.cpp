@@ -139,7 +139,7 @@ public:
     }
 };
 
-#define DEF_LEN 0x400
+#define DEF_LEN 0x040
 static int dma_base = 0x80;
 
 static unsigned char base0[512*1024*1024];
