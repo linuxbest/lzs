@@ -734,9 +734,11 @@ module comp_unit(/*AUTOARG*/
 	     comp2dcr_data[0:15]  = ocnt;
 	     comp2dcr_data[16:31] = len_cnt;
 	  end
-	  
+	  3'h5: begin
+	     comp2dcr_data        = src_len;
+	  end
 	  3'h6: begin
-	     comp2dcr_data[0:31]  = 32'h1006_0401;
+	     comp2dcr_data[0:31]  = 32'h1006_0402;
 	  end
 	  3'h7: begin
 	     comp2dcr_data[0:31]  = 32'haa55_55aa;
