@@ -104,7 +104,12 @@ module comp_unit(/*AUTOARG*/
    reg             LLDMARXEOPN_r;
    reg             LLDMARXEOFN_r;
    reg             rx_sof_r_n;
-   
+  
+   /*AUTOREG*/
+   // Beginning of automatic regs (for this module's undeclared outputs)
+   reg [0:31]		dcr_plbdbusin;
+   // End of automatics
+ 
    wire [31:0] dst_dat_i;
    wire [31:0] dst_dat64_i;
    wire src_start;
@@ -143,7 +148,7 @@ module comp_unit(/*AUTOARG*/
    reg [9:0] task_index;
    wire soft_reset;
    
-   assign LLDMARSTENGINEREQ = 0;
+   reg LLDMARSTENGINEREQ;
    //--------------rx interface mux-----------------------------
    assign LLDMARXD = LLDMARXD_r;
    assign LLDMARXREM = LLDMARXREM_r;
@@ -161,21 +166,20 @@ module comp_unit(/*AUTOARG*/
    assign tx_sop_n    = DMALLTXSOPN;
    assign tx_eop_n    = DMALLTXEOPN;
    assign tx_src_rdy_n= DMALLTXSRCRDYN;
-   assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp || op_copy1))
-                                   && (tx_end_rdy || tx_busy)
-                                   /*|| (tx_dst_rdy_n && op_copy)*/ || tx_busy;
-   assign clk = CPMDMALLCLK;
-   assign rst_n = ~DMALLRSTENGINEACK && reset_n && ~soft_reset;
-   assign op_copy = flag[29];
-   assign op_copy1 = 0;
-   assign op_decomp = flag[30];
-   assign op_comp = flag[31];
+   assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp || op_copy1)) &&
+			   (tx_end_rdy || tx_busy) || tx_busy;
+   assign clk 	     = CPMDMALLCLK;
+   assign rst_n      = ~(DMALLRSTENGINEACK || LLDMARSTENGINEREQ || (~reset_n));
+   assign op_copy1   = flag[29];
+   assign op_copy0   = 0;
+   assign op_decomp  = flag[30];
+   assign op_comp    = flag[31];
    
    always @(posedge clk)
      if (!rst_n)
-       tx_state <= TX_IDLE;
+       tx_state     <= TX_IDLE;
      else
-       tx_state <= tx_state_n;
+       tx_state     <= tx_state_n;
    
    always @(*)
      begin
@@ -374,13 +378,13 @@ module comp_unit(/*AUTOARG*/
      begin
         case (rx_state)
           RX_IDLE:    begin
-             if (!DMALLRXDSTRDYN) begin
+	     if (!DMALLRXDSTRDYN) begin
 		if (op_copy)
-               rx_state_n = RX_COPY;
-		else if (dst_start && (op_comp || op_decomp || op_copy1))
-		  rx_state_n = RX_PAYLOAD;
-		else 
-		  rx_state_n = RX_IDLE;
+		  rx_state_n = RX_COPY;
+        	else if (dst_start && (op_comp || op_decomp || op_copy1))
+       		  rx_state_n = RX_PAYLOAD;
+        	else 
+        	  rx_state_n = RX_IDLE;
              end else 
                rx_state_n = RX_IDLE;
           end 
@@ -679,39 +683,75 @@ module comp_unit(/*AUTOARG*/
      begin
         if (plb_dcrrst)
           begin
-             dcr_plback <= #1 1'b0;
+             dcr_plback        <= #1 1'b0;
           end
         else if (plb_dcrread || plb_dcrwrite)
           begin
-             dcr_plback <= #1 1'b1;
+             dcr_plback        <= #1 1'b1;
           end
         else
           begin
-             dcr_plback <= #1 1'b0;
+             dcr_plback        <= #1 1'b0;
           end
      end
-   assign dcr_plbdbusin = comp2dcr_data;  
-
-   //soft reset 
-   assign soft_reset = plb_dcrwrite && dcr_plback;
-
+   always @(posedge plb_dcrclk)
+     begin
+	dcr_plbdbusin      <= comp2dcr_data;
+     end
    always @(*)
      begin
-        comp2dcr_data = 32'h0;
+        comp2dcr_data 		= 32'h0;
         case (plb_dcrabus)
 	  10'h00 : 
 		begin
 		   comp2dcr_data[0:3] = tx_state;
-	           comp2dcr_data[31] = src_last;
+		   comp2dcr_data[4]   = DMALLTXSRCRDYN;
+		   comp2dcr_data[5]   = LLDMATXDSTRDYN;
+		   comp2dcr_data[6]   = DMALLTXSOFN;
+		   comp2dcr_data[7]   = DMALLTXEOFN;
+	           comp2dcr_data[31]  = src_last;
 		end
 	  10'h01 :
 		begin
 	           comp2dcr_data[0:3] = rx_state;
-	           comp2dcr_data[27] = dst_start;
-	           comp2dcr_data[31] = dst_end;
+		   comp2dcr_data[4]   = LLDMARXSRCRDYN;
+		   comp2dcr_data[5]   = DMALLRXDSTRDYN;
+		   comp2dcr_data[6]   = LLDMARXSOPN;
+		   comp2dcr_data[7]   = LLDMARXEOPN;
+	           comp2dcr_data[27]  = dst_start;
+	           comp2dcr_data[31]  = dst_end;
+		end
+	  10'h03 :
+  		begin
+		  comp2dcr_data[0:3]   = flag;
+		  comp2dcr_data[22:31] = task_index;
+		end
+	  10'h04 :
+  		begin
+		  comp2dcr_data[0:3]   = tx_busy;
+		  comp2dcr_data[4:7]   = tx_end_rdy;
+		  comp2dcr_data[28:31] = rx_end;
+		end
+	  10'h05 :
+  		begin
+		  comp2dcr_data[0:15]  = ocnt;
+		  comp2dcr_data[16:31] = len_cnt;
 		end
         endcase
      end // always @ (...
+
+   
+   always @(posedge plb_dcrclk)
+     begin
+	if (plb_dcrwrite && plb_dcrabus == 10'h00)
+	  begin
+	     LLDMARSTENGINEREQ <= plb_dcrdbusout[31];
+	  end
+	else if (LLDMARSTENGINEREQ)
+	  begin
+	     LLDMARSTENGINEREQ <= 1'b0;
+	  end
+     end
 endmodule // comp_unit
 
 // Local Variables:

@@ -139,7 +139,7 @@ public:
     }
 };
 
-#define DEF_LEN 0x040
+#define DEF_LEN 0x400
 static int dma_base = 0x80;
 
 static unsigned char base0[512*1024*1024];
@@ -200,7 +200,7 @@ void lldma_tb::tb_thread(void)
 	tx_desc->dma_address = htonl(0x10000);
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 = htonl(DMA_STS_CTRL_SOF);
-	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
+	tx_desc->app1 = htonl(1 << DMA_CMD_M_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN * 3);
 
 	rx_desc->next_dsr = htonl((char *)rx_desc + 32 -(char *)base0);
@@ -248,7 +248,7 @@ void lldma_tb::tb_thread(void)
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 =
 		htonl(DMA_STS_CTRL_EOF | DMA_STS_CTRL_INT |DMA_STS_CTRL_SOF);
-	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
+	tx_desc->app1 = htonl(1 << DMA_CMD_M_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN);
 
 	rx_desc->next_dsr = htonl((char *)rx_desc + 32 - (char *)base0);
@@ -265,7 +265,7 @@ void lldma_tb::tb_thread(void)
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 =
 		htonl(DMA_STS_CTRL_EOF | DMA_STS_CTRL_INT| DMA_STS_CTRL_SOF);
-	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
+	tx_desc->app1 = htonl(1 << DMA_CMD_M_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN);
 
 	rx_desc->next_dsr = 0;
