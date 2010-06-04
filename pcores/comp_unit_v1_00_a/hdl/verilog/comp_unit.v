@@ -683,60 +683,62 @@ module comp_unit(/*AUTOARG*/
      begin
         if (plb_dcrrst)
           begin
-             dcr_plback        <= #1 1'b0;
+             dcr_plback <= #1 1'b0;
           end
         else if (plb_dcrread || plb_dcrwrite)
           begin
-             dcr_plback        <= #1 1'b1;
+             dcr_plback <= #1 1'b1;
           end
         else
           begin
-             dcr_plback        <= #1 1'b0;
+             dcr_plback <= #1 1'b0;
           end
      end
    always @(posedge plb_dcrclk)
      begin
-	dcr_plbdbusin      <= comp2dcr_data;
+	dcr_plbdbusin <= #1 comp2dcr_data;
      end
    always @(*)
      begin
-        comp2dcr_data 		= 32'h0;
-        case (plb_dcrabus)
-	  10'h00 : 
-		begin
-		   comp2dcr_data[0:3] = tx_state;
-		   comp2dcr_data[4]   = DMALLTXSRCRDYN;
-		   comp2dcr_data[5]   = LLDMATXDSTRDYN;
-		   comp2dcr_data[6]   = DMALLTXSOFN;
-		   comp2dcr_data[7]   = DMALLTXEOFN;
-	           comp2dcr_data[31]  = src_last;
-		end
-	  10'h01 :
-		begin
-	           comp2dcr_data[0:3] = rx_state;
-		   comp2dcr_data[4]   = LLDMARXSRCRDYN;
-		   comp2dcr_data[5]   = DMALLRXDSTRDYN;
-		   comp2dcr_data[6]   = LLDMARXSOPN;
-		   comp2dcr_data[7]   = LLDMARXEOPN;
-	           comp2dcr_data[27]  = dst_start;
-	           comp2dcr_data[31]  = dst_end;
-		end
-	  10'h03 :
-  		begin
-		  comp2dcr_data[0:3]   = flag;
-		  comp2dcr_data[22:31] = task_index;
-		end
-	  10'h04 :
-  		begin
-		  comp2dcr_data[0:3]   = tx_busy;
-		  comp2dcr_data[4:7]   = tx_end_rdy;
-		  comp2dcr_data[28:31] = rx_end;
-		end
-	  10'h05 :
-  		begin
-		  comp2dcr_data[0:15]  = ocnt;
-		  comp2dcr_data[16:31] = len_cnt;
-		end
+        comp2dcr_data = 32'h0;
+        case (plb_dcrabus[7:9])
+	  3'h0: begin
+	     comp2dcr_data[0:3]   = tx_state;
+	     comp2dcr_data[4]     = DMALLTXSRCRDYN;
+	     comp2dcr_data[5]     = LLDMATXDSTRDYN;
+	     comp2dcr_data[6]     = DMALLTXSOFN;
+	     comp2dcr_data[7]     = DMALLTXEOFN;
+	     comp2dcr_data[31]    = src_last;
+	  end
+	  3'h1: begin
+	     comp2dcr_data[0:3]   = rx_state;
+	     comp2dcr_data[4]     = LLDMARXSRCRDYN;
+	     comp2dcr_data[5]     = DMALLRXDSTRDYN;
+	     comp2dcr_data[6]     = LLDMARXSOPN;
+	     comp2dcr_data[7]     = LLDMARXEOPN;
+	     comp2dcr_data[27]    = dst_start;
+	     comp2dcr_data[31]    = dst_end;
+	  end
+	  3'h2: begin
+	     comp2dcr_data[0:3]   = flag;
+	     comp2dcr_data[22:31] = task_index;
+	  end
+	  3'h3: begin
+	     comp2dcr_data[0:3]   = tx_busy;
+	     comp2dcr_data[4:7]   = tx_end_rdy;
+	     comp2dcr_data[28:31] = rx_end;
+	  end
+	  3'h4: begin
+	     comp2dcr_data[0:15]  = ocnt;
+	     comp2dcr_data[16:31] = len_cnt;
+	  end
+	  
+	  3'h6: begin
+	     comp2dcr_data[0:31]  = 32'h1006_0401;
+	  end
+	  3'h7: begin
+	     comp2dcr_data[0:31]  = 32'haa55_55aa;
+	  end
         endcase
      end // always @ (...
 
