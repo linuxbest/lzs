@@ -189,61 +189,61 @@ void lldma_tb::tb_thread(void)
 			RX_IRQ_COUNT_COAL | RX_IRQ_TIMEOUT_COAL);
 
 	dcr_out32(dma_base + LL_RX_OFFSET + LL_CDESC_OFFSET,
-			(uint32_t)rx_desc-(uint32_t)base0);
+			(char *)rx_desc-(char *)base0);
 	dcr_out32(dma_base + LL_TX_OFFSET + LL_CDESC_OFFSET,
-		       	(uint32_t)tx_desc-(uint32_t)base0);
+		       	(char *)tx_desc-(char *)base0);
 
 	/* II prepare the tx and rx desc */
 		/* II.I header */
 /*==============================================================*/
-	tx_desc->next_dsr = htonl((u32)tx_desc + 32 - (u32)base0);
+	tx_desc->next_dsr = htonl((char *)tx_desc + 32 - (char *)base0);
 	tx_desc->dma_address = htonl(0x10000);
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 = htonl(DMA_STS_CTRL_SOF);
 	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN * 3);
 
-	rx_desc->next_dsr = htonl((u32)rx_desc + 32 -(u32)base0);
+	rx_desc->next_dsr = htonl((char *)rx_desc + 32 -(char *)base0);
 	rx_desc->dma_address = htonl(0x80000);
 	rx_desc->dma_length  = htonl(DEF_LEN);
 	rx_desc->sts_ctrl_app0 =  0;
 
 		/* II.II middle */
         for (j = 0; j < SIG_PACKET -2; j ++) {
-		tx_desc = (p_desc_hw)((u32)tx_desc + 32*(j+1));
-		rx_desc = (p_desc_hw)((u32)rx_desc + 32*(j+1));
+		tx_desc = (p_desc_hw)((char *)tx_desc + 32*(j+1));
+		rx_desc = (p_desc_hw)((char *)rx_desc + 32*(j+1));
 
-		tx_desc->next_dsr = htonl((u32)tx_desc + 32 - (u32)base0);
+		tx_desc->next_dsr = htonl((char *)tx_desc + 32 - (char *)base0);
 		tx_desc->dma_address = htonl(0x10000 + (j+1) * DEF_LEN);
 		tx_desc->dma_length  = htonl(DEF_LEN);
 		tx_desc->sts_ctrl_app0 = 0;
 
-		rx_desc->next_dsr = htonl((u32)rx_desc + 32 - (u32)base0);
+		rx_desc->next_dsr = htonl((char *)rx_desc + 32 - (char *)base0);
 		rx_desc->dma_address = htonl(0x80000 + (j+1) * DEF_LEN);
 		rx_desc->dma_length  = htonl(DEF_LEN);
 		rx_desc->sts_ctrl_app0 = 0;
 	}
 		/* II.III footer */
-	tx_desc = (p_desc_hw)((u32)tx_desc + 32);
-	rx_desc = (p_desc_hw)((u32)rx_desc + 32);
+	tx_desc = (p_desc_hw)((char *)tx_desc + 32);
+	rx_desc = (p_desc_hw)((char *)rx_desc + 32);
 
-	tx_desc->next_dsr = htonl((u32)tx_desc + 32 - (u32)base0);
+	tx_desc->next_dsr = htonl((char *)tx_desc + 32 - (char *)base0);
 	tx_desc->dma_address = htonl(0x10000 + (SIG_PACKET-1) * DEF_LEN);
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 =
 		htonl(DMA_STS_CTRL_EOF | DMA_STS_CTRL_INT);
 
-	rx_desc->next_dsr = htonl((u32)rx_desc + 32 - (u32)base0);
+	rx_desc->next_dsr = htonl((char *)rx_desc + 32 - (char *)base0);
 	rx_desc->dma_address = htonl(0x80000 + (SIG_PACKET-1) * DEF_LEN);
 	rx_desc->dma_length  = htonl(DEF_LEN);
 	rx_desc->sts_ctrl_app0 = htonl(DMA_STS_CTRL_INT);
 
 		/* II.IV add 2 single packets */
 /*-------------------------------------------------------------*/
-	tx_desc = (p_desc_hw)((u32)tx_desc + 32);
-	rx_desc = (p_desc_hw)((u32)rx_desc + 32);
+	tx_desc = (p_desc_hw)((char *)tx_desc + 32);
+	rx_desc = (p_desc_hw)((char *)rx_desc + 32);
 
-	tx_desc->next_dsr = htonl((u32)tx_desc + 32 - (u32)base0);
+	tx_desc->next_dsr = htonl((char *)tx_desc + 32 - (char *)base0);
 	tx_desc->dma_address = htonl(0x10000 + SIG_PACKET * DEF_LEN);
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 =
@@ -251,14 +251,14 @@ void lldma_tb::tb_thread(void)
 	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN);
 
-	rx_desc->next_dsr = htonl((u32)rx_desc + 32 - (u32)base0);
+	rx_desc->next_dsr = htonl((char *)rx_desc + 32 - (char *)base0);
 	rx_desc->dma_address = htonl(0x80000 + SIG_PACKET * DEF_LEN);
 	rx_desc->dma_length  = htonl(DEF_LEN);
 	rx_desc->sts_ctrl_app0 = htonl(DMA_STS_CTRL_INT);
 
 /*-------------------------------------------------------------*/
-	tx_desc = (p_desc_hw)((u32)tx_desc + 32);
-	rx_desc = (p_desc_hw)((u32)rx_desc + 32);
+	tx_desc = (p_desc_hw)((char *)tx_desc + 32);
+	rx_desc = (p_desc_hw)((char *)rx_desc + 32);
 
 	tx_desc->next_dsr = 0;
 	tx_desc->dma_address = htonl(0x10000 + (SIG_PACKET+1) * DEF_LEN);
@@ -283,9 +283,9 @@ void lldma_tb::tb_thread(void)
 	/* IV launch */
 
 	dcr_out32(dma_base + LL_RX_OFFSET + LL_TDESC_OFFSET,
-			(uint32_t)rx_desc-(uint32_t)base0);
+			(char *)rx_desc-(char *)base0);
 	dcr_out32(dma_base + LL_TX_OFFSET + LL_TDESC_OFFSET,
-			(uint32_t)tx_desc-(uint32_t)base0);
+			(char *)tx_desc-(char *)base0);
 
 	printf("issue the task completed.\n");
 	/* V wait for interrupt */
