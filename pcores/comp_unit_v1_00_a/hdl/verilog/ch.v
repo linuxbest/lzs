@@ -78,6 +78,7 @@ module ch(/*AUTOARG*/
    wire 		 src_almost_empty, 
 			 src_empty,
 			 src_half_full,
+			 src_full,
 			 src_almost_full,
 			 dst_half_full,
 			 dst_empty,
@@ -100,7 +101,7 @@ module ch(/*AUTOARG*/
 	.almost_full        (src_almost_full),
 	.dout               (src_do),
 	.empty              (m_src_empty),
-	.full               (),
+	.full               (src_full),
 	.prog_full          (src_half_full),
 	.rd_data_count      (),
 	.wr_data_count      () 
@@ -253,6 +254,6 @@ module ch(/*AUTOARG*/
    assign                src_end      = 1'b0;
    assign 		 dst_end      = dst_do[64];
 
-   assign 		 src_start    = !src_almost_full;
+   assign 		 src_start    = !(src_almost_full || src_full);
    assign 		 dst_start    = dst_half_full || ((!m_endn) && (!dst_empty));
 endmodule // ch

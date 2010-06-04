@@ -2,11 +2,12 @@ module comp_unit(/*AUTOARG*/
    // Outputs
    LLDMARSTENGINEREQ, LLDMARXD, LLDMARXREM, LLDMARXSOFN, LLDMARXEOFN,
    LLDMARXSOPN, LLDMARXEOPN, LLDMARXSRCRDYN, LLDMATXDSTRDYN, src_last,
-   dst_end, dst_start,
+   dst_end, dst_start, dcr_plback, dcr_plbdbusin,
    // Inputs
    CPMDMALLCLK, DMALLRSTENGINEACK, DMALLRXDSTRDYN, DMALLTXD,
    DMALLTXREM, DMALLTXSOFN, DMALLTXEOFN, DMALLTXSOPN, DMALLTXEOPN,
-   DMALLTXSRCRDYN, DMATXIRQ, DMARXIRQ
+   DMALLTXSRCRDYN, DMATXIRQ, DMARXIRQ, plb_dcrabus, plb_dcrclk,
+   plb_dcrdbusout, plb_dcrread, plb_dcrrst, plb_dcrwrite
    );
    // local link system singal
    input           CPMDMALLCLK;
@@ -37,6 +38,15 @@ module comp_unit(/*AUTOARG*/
    output          src_last;
    output          dst_end;
    output          dst_start;
+   // dcr interface
+   input [0:9]          plb_dcrabus;
+   input                plb_dcrclk;
+   input [0:31]         plb_dcrdbusout;
+   input                plb_dcrread;
+   input                plb_dcrrst;
+   input                plb_dcrwrite;
+   output               dcr_plback;
+   output [0:31]        dcr_plbdbusin;
    
    parameter TX_IDLE     = 4'h0;
    parameter TX_HEAD1    = 4'h1;
@@ -131,6 +141,7 @@ module comp_unit(/*AUTOARG*/
    
    reg       tx_end_rdy;
    reg [9:0] task_index;
+   wire soft_reset;
    
    assign LLDMARSTENGINEREQ = 0;
    //--------------rx interface mux-----------------------------
@@ -154,7 +165,7 @@ module comp_unit(/*AUTOARG*/
                                    && (tx_end_rdy || tx_busy)
                                    /*|| (tx_dst_rdy_n && op_copy)*/ || tx_busy;
    assign clk = CPMDMALLCLK;
-   assign rst_n = ~DMALLRSTENGINEACK && reset_n;
+   assign rst_n = ~DMALLRSTENGINEACK && reset_n && ~soft_reset;
    assign op_copy = flag[29];
    assign op_copy1 = 0;
    assign op_decomp = flag[30];
@@ -275,8 +286,8 @@ module comp_unit(/*AUTOARG*/
 	src_last <= 1'h0;
 	src_len <= 32'h0;
 	src_xfer <= 1'h0;
+	task_index <= 10'h0;
 	tx_busy <= 1'h0;
-        task_index <= 0;
 	// End of automatics
      end else begin
         case (tx_state)
@@ -473,7 +484,7 @@ module comp_unit(/*AUTOARG*/
 	LLDMARXSRCRDYN_r <= 1'h0;
 	cpl_status <= 1'h0;
 	rx_data_comp <= 32'h0;
-        rx_end <= 0;
+	rx_end <= 1'h0;
 	// End of automatics
      end else begin
         case (rx_state)
@@ -659,6 +670,48 @@ module comp_unit(/*AUTOARG*/
            .m_dst_last                  (m_dst_last),
            .m_endn                      (m_endn));
 
+   /**********************************************************************/
+   reg                  dcr_plback;
+   reg [0:31]          comp2dcr_data;
+
+   // DCR ACK 
+   always @(posedge plb_dcrclk)
+     begin
+        if (plb_dcrrst)
+          begin
+             dcr_plback <= #1 1'b0;
+          end
+        else if (plb_dcrread || plb_dcrwrite)
+          begin
+             dcr_plback <= #1 1'b1;
+          end
+        else
+          begin
+             dcr_plback <= #1 1'b0;
+          end
+     end
+   assign dcr_plbdbusin = comp2dcr_data;  
+
+   //soft reset 
+   assign soft_reset = plb_dcrwrite && dcr_plback;
+
+   always @(*)
+     begin
+        comp2dcr_data = 32'h0;
+        case (plb_dcrabus)
+	  10'h00 : 
+		begin
+		   comp2dcr_data[0:3] = tx_state;
+	           comp2dcr_data[31] = src_last;
+		end
+	  10'h01 :
+		begin
+	           comp2dcr_data[0:3] = rx_state;
+	           comp2dcr_data[27] = dst_start;
+	           comp2dcr_data[31] = dst_end;
+		end
+        endcase
+     end // always @ (...
 endmodule // comp_unit
 
 // Local Variables:

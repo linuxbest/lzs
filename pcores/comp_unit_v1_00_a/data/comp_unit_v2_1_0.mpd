@@ -44,4 +44,17 @@ PORT src_last = "", DIR = O
 PORT dst_end = "", DIR = O
 PORT dst_start = "", DIR = O
 
+## Bus Interfaces
+BUS_INTERFACE BUS = SDCR, BUS_STD = DCR, BUS_TYPE = SLAVE
+
+## Generics for VHDL or Parameters for Verilog
+PORT plb_dcrclk = "", DIR = I, SIGIS = CLK
+PORT plb_dcrrst = "", DIR = I
+PORT plb_dcrread = DCR_Read, DIR = I, BUS = SDCR
+PORT plb_dcrwrite = DCR_Write, DIR = I, BUS = SDCR
+PORT plb_dcrabus = DCR_ABus, DIR = I, VEC = [0:9], BUS = SDCR
+PORT plb_dcrdbusout = DCR_Sl_DBus, DIR = I, VEC = [0:31], BUS = SDCR
+PORT dcr_plbdbusin = Sl_dcrDBus, DIR = O, VEC = [0:31], BUS = SDCR
+PORT dcr_plback = Sl_dcrAck, DIR = O, BUS = SDCR
+
 END

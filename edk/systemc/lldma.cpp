@@ -166,7 +166,14 @@ void lldma_tb::tb_thread(void)
 	while (status & DMACR_SW_RESET_MASK) {
 		status = dcr_in32(dma_base + LL_DMACR_OFFSET);
 	}
+	
+	printf("I am run!\n");
+	iomem_out32(0xc8500000, 0xc8500000);
 
+	for (i = 0; i < 100; i ++)
+                wait(Bus2IP_Clk->posedge_event());
+
+	printf("read DCR add 0xc8500000 is %x\n", iomem_in32(0xc8500000));
 	/* using the tailer mode only */
 	dcr_out32(dma_base + LL_DMACR_OFFSET, DMACR_TAIL_PTR_EN_MASK);
 
@@ -193,7 +200,7 @@ void lldma_tb::tb_thread(void)
 	tx_desc->dma_address = htonl(0x10000);
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 = htonl(DMA_STS_CTRL_SOF);
-	tx_desc->app1 = htonl(1 << DMA_CMD_M_SHIFT);
+	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN * 3);
 
 	rx_desc->next_dsr = htonl((u32)rx_desc + 32 -(u32)base0);
@@ -241,7 +248,7 @@ void lldma_tb::tb_thread(void)
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 =
 		htonl(DMA_STS_CTRL_EOF | DMA_STS_CTRL_INT |DMA_STS_CTRL_SOF);
-	tx_desc->app1 = htonl(1 << DMA_CMD_M_SHIFT);
+	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN);
 
 	rx_desc->next_dsr = htonl((u32)rx_desc + 32 - (u32)base0);
@@ -258,7 +265,7 @@ void lldma_tb::tb_thread(void)
 	tx_desc->dma_length  = htonl(DEF_LEN);
 	tx_desc->sts_ctrl_app0 =
 		htonl(DMA_STS_CTRL_EOF | DMA_STS_CTRL_INT| DMA_STS_CTRL_SOF);
-	tx_desc->app1 = htonl(1 << DMA_CMD_M_SHIFT);
+	tx_desc->app1 = htonl(1 << DMA_CMD_C_SHIFT);
 	tx_desc->app2 = htonl(DEF_LEN);
 
 	rx_desc->next_dsr = 0;
