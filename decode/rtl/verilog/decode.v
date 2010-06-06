@@ -13,7 +13,8 @@
 
 module decode(/*AUTOARG*/
    // Outputs
-   valid_o, m_src_getn, done_o, data_o,
+   valid_o, m_src_getn, done_o, decode_ctl_state, data_o,
+   decode_stream_done, decode_out_done,
    // Inputs
    src_empty, rst, m_last, fo_full, fi, clk, ce
    );
@@ -21,6 +22,7 @@ module decode(/*AUTOARG*/
    /*AUTOOUTPUT*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output [15:0]	data_o;			// From decode_out of decode_out.v
+   output [2:0]		decode_ctl_state;	// From decode_ctl of decode_ctl.v
    output		done_o;			// From decode_out of decode_out.v
    output		m_src_getn;		// From decode_in of decode_in.v
    output		valid_o;		// From decode_out of decode_out.v
@@ -35,6 +37,10 @@ module decode(/*AUTOARG*/
    input		rst;			// To decode_in of decode_in.v, ...
    input		src_empty;		// To decode_in of decode_in.v
    // End of automatics
+
+   //debug signal
+   output 		decode_stream_done;
+   output 		decode_out_done;
    /*AUTOREG*/
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
@@ -50,6 +56,8 @@ module decode(/*AUTOARG*/
    
    /* Local variable */
    // End definition
+   assign               decode_stream_done = stream_done;
+   assign               decode_out_done = out_done;
    
    decode_in  decode_in (/*AUTOINST*/
 			 // Outputs
@@ -74,6 +82,7 @@ module decode(/*AUTOARG*/
 			  .out_data		(out_data[7:0]),
 			  .out_valid		(out_valid),
 			  .out_done		(out_done),
+			  .decode_ctl_state	(decode_ctl_state[2:0]),
 			  // Inputs
 			  .clk			(clk),
 			  .rst			(rst),

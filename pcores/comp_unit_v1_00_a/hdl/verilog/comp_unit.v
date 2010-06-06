@@ -109,6 +109,24 @@ module comp_unit(/*AUTOARG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
    reg [0:31]		dcr_plbdbusin;
    // End of automatics
+   /*AUTOWIRE*/
+   // Beginning of automatic wires (for undeclared instantiated-module outputs)
+   wire			cnt_finish;		// From u_mod of mod.v
+   wire			data_empty;		// From u_mod of mod.v
+   wire			data_valid;		// From u_mod of mod.v
+   wire			de_out_data;		// From u_mod of mod.v
+   wire			de_out_done;		// From u_mod of mod.v
+   wire			de_out_valid;		// From u_mod of mod.v
+   wire [2:0]		decode_ctl_state;	// From u_mod of mod.v
+   wire			decode_out_done;	// From u_mod of mod.v
+   wire			decode_stream_done;	// From u_mod of mod.v
+   wire			en_out_data;		// From u_mod of mod.v
+   wire			en_out_done;		// From u_mod of mod.v
+   wire			en_out_valid;		// From u_mod of mod.v
+   wire [2:0]		encode_ctl_state;	// From u_mod of mod.v
+   wire [2:0]		encode_dp_state;	// From u_mod of mod.v
+   wire [2:0]		encode_out_state;	// From u_mod of mod.v
+   // End of automatics
  
    wire [31:0] dst_dat_i;
    wire [31:0] dst_dat64_i;
@@ -634,7 +652,24 @@ module comp_unit(/*AUTOARG*/
              .m_src_empty               (m_src_empty),
              .m_src_almost_empty        (m_src_almost_empty),
              .m_dst_almost_full         (m_dst_almost_full),
-             .m_dst_full                (m_dst_full));
+             .m_dst_full                (m_dst_full),
+	     /*AUTOINST*/
+	     // Outputs
+	     .en_out_data		(en_out_data),
+	     .en_out_done		(en_out_done),
+	     .en_out_valid		(en_out_valid),
+	     .cnt_finish		(cnt_finish),
+	     .data_empty		(data_empty),
+	     .data_valid		(data_valid),
+	     .encode_ctl_state		(encode_ctl_state[2:0]),
+	     .encode_dp_state		(encode_dp_state[2:0]),
+	     .encode_out_state		(encode_out_state[2:0]),
+	     .de_out_data		(de_out_data),
+	     .de_out_done		(de_out_done),
+	     .de_out_valid		(de_out_valid),
+	     .decode_ctl_state		(decode_ctl_state[2:0]),
+	     .decode_stream_done	(decode_stream_done),
+	     .decode_out_done		(decode_out_done));
    
    ch u_ch(
            // Outputs
@@ -701,8 +736,8 @@ module comp_unit(/*AUTOARG*/
    always @(*)
      begin
         comp2dcr_data = 32'h0;
-        case (plb_dcrabus[7:9])
-	  3'h0: begin
+        case (plb_dcrabus[6:9])
+	  4'h0: begin
 	     comp2dcr_data[0:3]   = tx_state;
 	     comp2dcr_data[4]     = DMALLTXSRCRDYN;
 	     comp2dcr_data[5]     = LLDMATXDSTRDYN;
@@ -711,7 +746,7 @@ module comp_unit(/*AUTOARG*/
 	     comp2dcr_data[30]    = m_src_last;
 	     comp2dcr_data[31]    = src_last;
 	  end
-	  3'h1: begin
+	  4'h1: begin
 	     comp2dcr_data[0:3]   = rx_state;
 	     comp2dcr_data[4]     = LLDMARXSRCRDYN;
 	     comp2dcr_data[5]     = DMALLRXDSTRDYN;
@@ -721,26 +756,55 @@ module comp_unit(/*AUTOARG*/
 	     comp2dcr_data[30]    = m_endn;
 	     comp2dcr_data[31]    = dst_end;
 	  end
-	  3'h2: begin
+	  4'h2: begin
 	     comp2dcr_data[0:3]   = flag;
 	     comp2dcr_data[22:31] = task_index;
 	  end
-	  3'h3: begin
+	  4'h3: begin
 	     comp2dcr_data[0:3]   = tx_busy;
 	     comp2dcr_data[4:7]   = tx_end_rdy;
 	     comp2dcr_data[28:31] = rx_end;
 	  end
-	  3'h4: begin
+	  4'h4: begin
 	     comp2dcr_data[0:15]  = ocnt;
 	     comp2dcr_data[16:31] = len_cnt;
 	  end
-	  3'h5: begin
+	  4'h5: begin
 	     comp2dcr_data        = src_len;
 	  end
-	  3'h6: begin
+	  4'h6: begin
+	     comp2dcr_data[0]     = m_dst_putn;
+	     comp2dcr_data[1]     = m_dst_last;
+	     comp2dcr_data[2]     = m_dst_almost_full;
+	     comp2dcr_data[3]     = m_dst_full;
+	     comp2dcr_data[4]     = m_src_last;
+	     comp2dcr_data[5]     = m_src_empty;
+	     comp2dcr_data[6]     = m_src_almost_empty;
+	     comp2dcr_data[7]     = m_enable;
+	  end
+	  4'h7: begin
+	     comp2dcr_data[1]        = en_out_data;
+	     comp2dcr_data[2]        = en_out_done;
+	     comp2dcr_data[3]        = en_out_valid;
+	     comp2dcr_data[5]        = cnt_finish;
+	     comp2dcr_data[6]        = data_empty;
+	     comp2dcr_data[7]        = data_valid;
+	     comp2dcr_data[21:23]    = encode_ctl_state;
+	     comp2dcr_data[25:27]    = encode_dp_state;
+	     comp2dcr_data[29:31]    = encode_out_state;
+	  end
+	  4'h8: begin
+	     comp2dcr_data[0]        = de_out_data;
+	     comp2dcr_data[1]        = de_out_done;
+	     comp2dcr_data[2]        = de_out_valid;
+	     comp2dcr_data[3]        = decode_stream_done;
+	     comp2dcr_data[4]        = decode_out_done;
+	     comp2dcr_data[29:31]    = decode_ctl_state;
+	  end
+	  4'he: begin
 	     comp2dcr_data[0:31]  = 32'h1006_0402;
 	  end
-	  3'h7: begin
+	  4'hf: begin
 	     comp2dcr_data[0:31]  = 32'haa55_55aa;
 	  end
         endcase

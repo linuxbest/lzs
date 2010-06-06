@@ -13,12 +13,11 @@
  *****************************************************************************/
 module encode_ctl(/*AUTOARG*/
    // Outputs
-   hraddr, cnt_output_enable, cnt_len, cnt_output,
-   cnt_finish,
+   hraddr, cnt_output_enable, cnt_len, cnt_output, cnt_finish,
+   encode_ctl_state,
    // Inputs
-   clk, rst, data_valid, data_empty, hash_data, hash_data1,
-   data_d1, data_d2, hash_ref, iidx, hdata, data, hash_d1,
-   hash_data_d1
+   clk, rst, data_valid, data_empty, hash_data, hash_data1, data_d1,
+   data_d2, hash_ref, iidx, hdata, data, hash_d1, hash_data_d1
    );
    parameter LZF_WIDTH = 20;
 
@@ -187,10 +186,9 @@ module encode_ctl(/*AUTOARG*/
    reg [12:0] 	 cnt_output, cnt_output_next;
    reg [3:0] 	 cnt_len, cnt_len_next;
    
-   always @(/*AS*/cnt or cnt_big7 or data_d1 or data_d2
-	    or data_empty or data_valid or dummy_cnt
-	    or hash_data or hash_data_d1 or hdata
-	    or off_valid or state)
+   always @(/*AS*/cnt or cnt_big7 or data_d1 or data_d2 or data_empty
+	    or data_valid or dummy_cnt or hash_data or hash_data_d1
+	    or hdata or off_valid or state)
      begin
 	state_next = S_IDLE;         // state
 	cnt_output_enable_next = 0;  // will output the length data
@@ -310,8 +308,7 @@ module encode_ctl(/*AUTOARG*/
    reg [12:0] encode_data;
    
    always @(/*AS*/cnt_output_enable_next or encode_data_m
-	    or encode_data_s or encode_len_m or encode_len_s
-	    or state)
+	    or encode_data_s or encode_len_m or encode_len_s or state)
      begin
 	cnt_output_next = 0;
 	cnt_len_next= 0;
@@ -334,8 +331,8 @@ module encode_ctl(/*AUTOARG*/
 	end
      end // always @ (...
    
-   always @(/*AS*/cnt or cnt_big7 or cnt_count
-	    or encode_data or encode_len)
+   always @(/*AS*/cnt or cnt_big7 or cnt_count or encode_data
+	    or encode_len)
      begin
 	if (cnt_big7 == 0) begin
 	   if (cnt_count) begin
@@ -402,6 +399,9 @@ module encode_ctl(/*AUTOARG*/
     *                 then big7==1 && cnt=4'hf output 4'hf
     * 
     */
+   //debug signal
+   output [2:0] encode_ctl_state;
+   assign encode_ctl_state = state;
 endmodule // encode_ctl
 // Local Variables:
 // verilog-library-directories:("." "../../../../common/" "../../encode/src" "../../encode_ctl/src/" "../../encode_out/src/" "../../encode_dp/src/")

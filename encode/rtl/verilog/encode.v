@@ -13,7 +13,9 @@
  *****************************************************************************/
 module encode(/*AUTOARG*/
    // Outputs
-   valid_o, m_src_getn, done_o, data_o,
+   valid_o, m_src_getn, encode_out_state, encode_dp_state,
+   encode_ctl_state, done_o, data_o, cnt_finish, data_empty,
+   data_valid,
    // Inputs
    src_empty, rst, m_last, fo_full, fi, clk, ce
    );
@@ -33,20 +35,26 @@ module encode(/*AUTOARG*/
    // Beginning of automatic outputs (from unused autoinst outputs)
    output [15:0]	data_o;			// From out of encode_out.v
    output		done_o;			// From out of encode_out.v
+   output [2:0]		encode_ctl_state;	// From ctl of encode_ctl.v
+   output [2:0]		encode_dp_state;	// From dp of encode_dp.v
+   output [2:0]		encode_out_state;	// From out of encode_out.v
    output		m_src_getn;		// From dp of encode_dp.v
    output		valid_o;		// From out of encode_out.v
    // End of automatics
+
+   // debug signal
+   output 		cnt_finish;
+   output 		data_empty;
+   output 		data_valid;
+
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
-   wire			cnt_finish;		// From ctl of encode_ctl.v
    wire [3:0]		cnt_len;		// From ctl of encode_ctl.v
    wire [12:0]		cnt_output;		// From ctl of encode_ctl.v
    wire			cnt_output_enable;	// From ctl of encode_ctl.v
    wire [7:0]		data;			// From dp of encode_dp.v
    wire [7:0]		data_d1;		// From dp of encode_dp.v
    wire [7:0]		data_d2;		// From dp of encode_dp.v
-   wire			data_empty;		// From dp of encode_dp.v
-   wire			data_valid;		// From dp of encode_dp.v
    wire [7:0]		hash_d1;		// From dp of encode_dp.v
    wire [7:0]		hash_data;		// From dp of encode_dp.v
    wire [7:0]		hash_data1;		// From dp of encode_dp.v
@@ -56,6 +64,9 @@ module encode(/*AUTOARG*/
    wire [10:0]		hraddr;			// From ctl of encode_ctl.v
    wire [LZF_WIDTH-1:0]	iidx;			// From dp of encode_dp.v
    // End of automatics
+   assign 		encode_cnt_finish = cnt_finish;
+   assign 		encode_data_empty = data_empty;
+   assign 		encode_data_valid = data_valid;
    encode_dp dp(/*AUTOINST*/
 		// Outputs
 		.m_src_getn		(m_src_getn),
@@ -71,6 +82,7 @@ module encode(/*AUTOARG*/
 		.hash_d1		(hash_d1[7:0]),
 		.hash_data_d1		(hash_data_d1),
 		.hdata			(hdata[7:0]),
+		.encode_dp_state	(encode_dp_state[2:0]),
 		// Inputs
 		.clk			(clk),
 		.rst			(rst),
@@ -87,6 +99,7 @@ module encode(/*AUTOARG*/
 		  .cnt_len		(cnt_len[3:0]),
 		  .cnt_output		(cnt_output[12:0]),
 		  .cnt_finish		(cnt_finish),
+		  .encode_ctl_state	(encode_ctl_state[2:0]),
 		  // Inputs
 		  .clk			(clk),
 		  .rst			(rst),
@@ -107,6 +120,7 @@ module encode(/*AUTOARG*/
 		  .data_o		(data_o[15:0]),
 		  .valid_o		(valid_o),
 		  .done_o		(done_o),
+		  .encode_out_state	(encode_out_state[2:0]),
 		  // Inputs
 		  .clk			(clk),
 		  .rst			(rst),
