@@ -86,13 +86,7 @@ module mod(/*AUTOARG*/
 		 .m_last(m_src_last),
 		 /*AUTOINST*/
 		 // Outputs
-		 .encode_ctl_state	(encode_ctl_state[2:0]),
-		 .encode_dp_state	(encode_dp_state[2:0]),
-		 .encode_out_state	(encode_out_state[2:0]),
 		 .m_src_getn		(m_src_getn),
-		 .cnt_finish		(cnt_finish),
-		 .data_empty		(data_empty),
-		 .data_valid		(data_valid),
 		 // Inputs
 		 .fo_full		(fo_full),
 		 .src_empty		(src_empty));
@@ -107,10 +101,7 @@ module mod(/*AUTOARG*/
 		 .m_last(m_src_last),
 		 /*AUTOINST*/
 		 // Outputs
-		 .decode_ctl_state	(decode_ctl_state),
 		 .m_src_getn		(m_src_getn),
-		 .decode_stream_done	(decode_stream_done),
-		 .decode_out_done	(decode_out_done),
 		 // Inputs
 		 .fo_full		(fo_full),
 		 .src_empty		(src_empty));
