@@ -72,8 +72,7 @@ module codeout (/*AUTOARG*/
 	    2'b11: m_dst_r[63:48] <= #1 data_i;
 	  endcase
      end
-   reg  m_dst_putn_r, m_endn_r;
-   wire m_dst_last_r;
+   reg m_dst_last_r, m_dst_putn_r, m_endn_r;
 
    reg [1:0] done;
    always @(posedge wb_clk_i or posedge wb_rst_i)
@@ -85,15 +84,14 @@ module codeout (/*AUTOARG*/
 	else if (done == 2'b01 && m_dst_putn_r == 1'b0)
 	  done <= #1 2'b11;
      end
-/*
+
    always @(posedge wb_clk_i or posedge wb_rst_i)
      begin
 	if (wb_rst_i)
 	  m_dst_last_r <= #1 1'b0;
 	else if (done[0])
 	  m_dst_last_r <= #1 1'b1;
-     end*/
-   assign	  m_dst_last_r = done[0];
+     end
 
    always @(posedge wb_clk_i)
      begin

@@ -29,3 +29,26 @@ if { ![info exists tbpath] } { set tbpath "/system_tb${ps}dut" }
   eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0${ps}dst_end
   eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0${ps}dst_start
 
+  eval add wave -noupdate -divider {"codeout"}
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}wb_clk_i
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_reset
+
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_src
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_src_getn
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_src_last
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_src_almost_empty
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_src_empty
+
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_dst_putn
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_dst_last
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_endn
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_dst
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_dst_almost_full
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}m_dst_full
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}en_out_data
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}de_out_data
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}en_out_valid
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}de_out_valid
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}en_out_done
+  eval add wave -noupdate $binopt $tbpath${ps}comp_unit_0/comp_unit_0/u_mod${ps}de_out_done
+
