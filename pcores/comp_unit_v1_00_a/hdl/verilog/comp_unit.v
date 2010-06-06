@@ -635,8 +635,7 @@ module comp_unit(/*AUTOARG*/
              .m_src_empty               (m_src_empty),
              .m_src_almost_empty        (m_src_almost_empty),
              .m_dst_almost_full         (m_dst_almost_full),
-             .m_dst_full                (m_dst_full),
-	     /*AUTOINST*/);
+             .m_dst_full                (m_dst_full));
    
    ch u_ch(
            // Outputs
