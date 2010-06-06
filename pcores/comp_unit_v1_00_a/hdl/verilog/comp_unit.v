@@ -749,23 +749,8 @@ module comp_unit(/*AUTOARG*/
 	     comp2dcr_data[7]     = m_enable;
 	  end
 	  4'h7: begin
-	     comp2dcr_data[1]        = en_out_data;
-	     comp2dcr_data[2]        = en_out_done;
-	     comp2dcr_data[3]        = en_out_valid;
-	     comp2dcr_data[5]        = cnt_finish;
-	     comp2dcr_data[6]        = data_empty;
-	     comp2dcr_data[7]        = data_valid;
-	     comp2dcr_data[21:23]    = encode_ctl_state;
-	     comp2dcr_data[25:27]    = encode_dp_state;
-	     comp2dcr_data[29:31]    = encode_out_state;
 	  end
 	  4'h8: begin
-	     comp2dcr_data[0]        = de_out_data;
-	     comp2dcr_data[1]        = de_out_done;
-	     comp2dcr_data[2]        = de_out_valid;
-	     comp2dcr_data[3]        = decode_stream_done;
-	     comp2dcr_data[4]        = decode_out_done;
-	     comp2dcr_data[29:31]    = decode_ctl_state;
 	  end
 	  4'he: begin
 	     comp2dcr_data[0:31]  = 32'h1006_0402;
