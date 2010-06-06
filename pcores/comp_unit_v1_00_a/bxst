@@ -16,8 +16,8 @@ head=`git rev-parse --verify HEAD 2>/dev/null`
 version=`echo "$head" | cut -c1-8`
 
 ls $PWD/hdl/verilog/*.v > script/$M.lst
-ls $PWD/../../encode/rtl/verilog/en*.v >> script/$M.lst
-ls $PWD/../../decode/rtl/verilog/de*.v >> script/$M.lst
+#ls $PWD/../../encode/rtl/verilog/en*.v >> script/$M.lst
+#ls $PWD/../../decode/rtl/verilog/de*.v >> script/$M.lst
 
 cat script/$M.lst | awk '{print "verilog work "$1}' > script/$M.xst
 

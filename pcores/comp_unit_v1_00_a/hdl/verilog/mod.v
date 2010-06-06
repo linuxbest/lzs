@@ -14,10 +14,6 @@
 module mod(/*AUTOARG*/
    // Outputs
    m_src_getn, m_dst_putn, m_dst, m_dst_last, m_endn, m_cap,
-   en_out_data, en_out_done, en_out_valid, cnt_finish, data_empty,
-   data_valid, encode_ctl_state, encode_dp_state, encode_out_state,
-   de_out_data, de_out_done, de_out_valid, decode_ctl_state,
-   decode_stream_done, decode_out_done,
    // Inputs
    wb_clk_i, m_reset, m_enable, dc, m_src, m_src_last,
    m_src_almost_empty, m_src_empty, m_dst_almost_full, m_dst_full
@@ -45,24 +41,6 @@ module mod(/*AUTOARG*/
 
    output [7:0]  m_cap;
    
-   //debug signal
-   output 	en_out_data;
-   output 	en_out_done;
-   output 	en_out_valid;
-   output 	cnt_finish;
-   output 	data_empty;
-   output 	data_valid;
-   output [2:0]	encode_ctl_state;
-   output [2:0]	encode_dp_state;
-   output [2:0]	encode_out_state;
-
-   output	de_out_data; 
-   output 	de_out_done;
-   output 	de_out_valid;
-   output [2:0]	decode_ctl_state;
-   output 	decode_stream_done;
-   output 	decode_out_done;
-
    // synopsys translate_off
    pullup(m_dst_putn);
    pullup(m_src_getn);
