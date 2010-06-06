@@ -110,23 +110,6 @@ module comp_unit(/*AUTOARG*/
    reg [0:31]		dcr_plbdbusin;
    // End of automatics
    /*AUTOWIRE*/
-   // Beginning of automatic wires (for undeclared instantiated-module outputs)
-   wire			cnt_finish;		// From u_mod of mod.v
-   wire			data_empty;		// From u_mod of mod.v
-   wire			data_valid;		// From u_mod of mod.v
-   wire			de_out_data;		// From u_mod of mod.v
-   wire			de_out_done;		// From u_mod of mod.v
-   wire			de_out_valid;		// From u_mod of mod.v
-   wire [2:0]		decode_ctl_state;	// From u_mod of mod.v
-   wire			decode_out_done;	// From u_mod of mod.v
-   wire			decode_stream_done;	// From u_mod of mod.v
-   wire			en_out_data;		// From u_mod of mod.v
-   wire			en_out_done;		// From u_mod of mod.v
-   wire			en_out_valid;		// From u_mod of mod.v
-   wire [2:0]		encode_ctl_state;	// From u_mod of mod.v
-   wire [2:0]		encode_dp_state;	// From u_mod of mod.v
-   wire [2:0]		encode_out_state;	// From u_mod of mod.v
-   // End of automatics
  
    wire [31:0] dst_dat_i;
    wire [31:0] dst_dat64_i;
@@ -653,23 +636,7 @@ module comp_unit(/*AUTOARG*/
              .m_src_almost_empty        (m_src_almost_empty),
              .m_dst_almost_full         (m_dst_almost_full),
              .m_dst_full                (m_dst_full),
-	     /*AUTOINST*/
-	     // Outputs
-	     .en_out_data		(en_out_data),
-	     .en_out_done		(en_out_done),
-	     .en_out_valid		(en_out_valid),
-	     .cnt_finish		(cnt_finish),
-	     .data_empty		(data_empty),
-	     .data_valid		(data_valid),
-	     .encode_ctl_state		(encode_ctl_state[2:0]),
-	     .encode_dp_state		(encode_dp_state[2:0]),
-	     .encode_out_state		(encode_out_state[2:0]),
-	     .de_out_data		(de_out_data),
-	     .de_out_done		(de_out_done),
-	     .de_out_valid		(de_out_valid),
-	     .decode_ctl_state		(decode_ctl_state[2:0]),
-	     .decode_stream_done	(decode_stream_done),
-	     .decode_out_done		(decode_out_done));
+	     /*AUTOINST*/);
    
    ch u_ch(
            // Outputs
