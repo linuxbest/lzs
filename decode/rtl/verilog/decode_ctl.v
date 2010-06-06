@@ -13,9 +13,9 @@
 module decode_ctl (/*AUTOARG*/
    // Outputs
    stream_width, stream_ack, out_data, out_valid, out_done,
-   decode_ctl_state,
    // Inputs
-   clk, rst, ce, fo_full, stream_data, stream_valid, stream_done
+   clk, rst, ce, fo_full, stream_data, stream_valid,
+   stream_done
    );
    input clk,
 	 rst,
@@ -65,8 +65,8 @@ module decode_ctl (/*AUTOARG*/
    reg 	      out_valid_n;
    reg [7:0]  out_data_n;
    
-   always @(/*AS*/ce or cnt or fo_full or state or stream_data
-	    or stream_done or stream_valid)
+   always @(/*AS*/ce or cnt or fo_full or state
+	    or stream_data or stream_done or stream_valid)
      begin
 	stream_width = 4'h0;
 	stream_ack   = 1'b0;
@@ -278,7 +278,4 @@ module decode_ctl (/*AUTOARG*/
 		      waddr == raddr ? out_data_d : hdata;
    assign out_valid = out_valid_r | hwe;
    
-   //debug signal
-   output [2:0] decode_ctl_state;
-   assign decode_ctl_state = state;
 endmodule // decode_ctl

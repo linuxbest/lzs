@@ -13,9 +13,9 @@
  *****************************************************************************/
 module encode_dp(/*AUTOARG*/
    // Outputs
-   m_src_getn, data_empty, data, data_valid, hash_data, hash_data1,
-   hash_ref, data_d1, data_d2, iidx, hash_d1, hash_data_d1, hdata,
-   encode_dp_state,
+   m_src_getn, data_empty, data, data_valid, hash_data,
+   hash_data1, hash_ref, data_d1, data_d2, iidx, hash_d1,
+   hash_data_d1, hdata,
    // Inputs
    clk, rst, ce, fo_full, fi, src_empty, m_last, hraddr
    );
@@ -270,9 +270,6 @@ module encode_dp(/*AUTOARG*/
 	  history[hwaddr] <= #1 data;
 	hdata <= #1 history[hraddr];
      end
-   //debug signal
-   output [2:0] encode_dp_state;
-   assign encode_dp_state = state;
 endmodule // encode
 
 // Local Variables:

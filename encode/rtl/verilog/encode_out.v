@@ -13,9 +13,10 @@
  *****************************************************************************/
 module encode_out(/*AUTOARG*/
    // Outputs
-   data_o, valid_o, done_o, encode_out_state,
+   data_o, valid_o, done_o,
    // Inputs
-   clk, rst, ce, cnt_output_enable, cnt_finish, cnt_output, cnt_len
+   clk, rst, ce, cnt_output_enable, cnt_finish, cnt_output,
+   cnt_len
    );
    input clk, rst, ce;
    
@@ -107,9 +108,6 @@ module encode_out(/*AUTOARG*/
 	ocnt <= #1 ocnt + 2'b10;
    end
    // synopsys translate_on
-   //debug signal
-   output [2:0] encode_out_state;
-   assign encode_out_state = state;
 endmodule // encode_out
 
 // Local Variables:
