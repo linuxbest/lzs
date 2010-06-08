@@ -753,7 +753,7 @@ module comp_unit(/*AUTOARG*/
 	  4'h8: begin
 	  end
 	  4'he: begin
-	     comp2dcr_data[0:31]  = 32'h1006_0402;
+	     comp2dcr_data[0:31]  = 32'h1006_0800;
 	  end
 	  4'hf: begin
 	     comp2dcr_data[0:31]  = 32'haa55_55aa;
