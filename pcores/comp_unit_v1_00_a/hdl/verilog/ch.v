@@ -81,6 +81,7 @@ module ch(/*AUTOARG*/
 			 src_full,
 			 src_almost_full,
 			 dst_half_full,
+			 dst_half_full_n,
 			 dst_empty,
 			 dst_almost_empty;
 
@@ -91,7 +92,6 @@ module ch(/*AUTOARG*/
    
      ch_fifo src_fifo(
 	.din                (src_di),
-	.prog_full_thresh   (9'h100),
 	.rd_clk             (wb_clk_i),
 	.rd_en              (!m_src_getn),
 	.rst                (m_reset),
@@ -103,8 +103,7 @@ module ch(/*AUTOARG*/
 	.empty              (m_src_empty),
 	.full               (src_full),
 	.prog_full          (src_half_full),
-	.rd_data_count      (),
-	.wr_data_count      () 
+	.prog_empty          ()
       );
 
 //   fifo_control
@@ -125,23 +124,21 @@ module ch(/*AUTOARG*/
 //		  .half_full_out(src_half_full));
 
 
-  
+     assign dst_half_full = ~dst_half_full_n; 
      ch_fifo dst_fifo(
 	.din                (dst_di),
-	.prog_full_thresh   (9'h080),
 	.rd_clk             (wb_clk_i),
 	.rd_en              (dst_xfer && ~dst_end),
 	.rst                (m_reset),
 	.wr_clk             (wb_clk_i),
 	.wr_en              (!m_dst_putn),
 	.almost_empty       (dst_almost_empty),
-	.almost_full        (m_dst_almost_full),
+	.almost_full        (),
 	.dout               (dst_do),
 	.empty              (dst_empty),
 	.full               (m_dst_full),
-	.prog_full          (dst_half_full),
-	.rd_data_count      (),
-	.wr_data_count      () 
+	.prog_full          (m_dst_almost_full),
+	.prog_empty         (dst_half_full_n)
       );
 
 
