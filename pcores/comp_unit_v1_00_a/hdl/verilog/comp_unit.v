@@ -185,6 +185,7 @@ module comp_unit(/*AUTOARG*/
    
    always @(*)
      begin
+	tx_state_n = tx_state;
         case (tx_state)
           TX_IDLE   : begin 
              if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
@@ -377,6 +378,7 @@ module comp_unit(/*AUTOARG*/
    
    always @(*)
      begin
+	rx_state_n = rx_state;
         case (rx_state)
           RX_IDLE:    begin
 	     if (!DMALLRXDSTRDYN) begin
@@ -753,7 +755,7 @@ module comp_unit(/*AUTOARG*/
 	  4'h8: begin
 	  end
 	  4'he: begin
-	     comp2dcr_data[0:31]  = 32'h1006_1800;
+	     comp2dcr_data[0:31]  = 32'h1006_2500;
 	  end
 	  4'hf: begin
 	     comp2dcr_data[0:31]  = 32'haa55_55aa;
