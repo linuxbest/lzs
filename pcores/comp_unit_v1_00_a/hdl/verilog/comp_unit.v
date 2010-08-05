@@ -10,6 +10,7 @@ module comp_unit(/*AUTOARG*/
    plb_dcrdbusout, plb_dcrread, plb_dcrrst, plb_dcrwrite
    );
    // local link system singal
+   (* PERIOD = "5000ps" *)
    input           CPMDMALLCLK;
    output          LLDMARSTENGINEREQ;
    input           DMALLRSTENGINEACK;

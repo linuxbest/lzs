@@ -18,11 +18,12 @@ module encode(/*AUTOARG*/
    src_empty, rst, m_last, fo_full, fi, clk, ce
    );
    parameter LZF_WIDTH = 20;
+   (* PERIOD = "5000ps" *)
+   input		clk;			// To dp of encode_dp.v, ...
 
    /*AUTOINPUT*/
    // Beginning of automatic inputs (from unused autoinst inputs)
    input		ce;			// To dp of encode_dp.v, ...
-   input		clk;			// To dp of encode_dp.v, ...
    input [63:0]		fi;			// To dp of encode_dp.v
    input		fo_full;		// To dp of encode_dp.v
    input		m_last;			// To dp of encode_dp.v
