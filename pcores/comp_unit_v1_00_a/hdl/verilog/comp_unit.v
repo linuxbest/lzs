@@ -632,6 +632,7 @@ module comp_unit(/*AUTOARG*/
              .m_reset                   (m_reset),
              .m_enable                  (m_enable),
              .dc                        (dc[23:0]),
+             .dst_stop                  (dst_stop),
              .m_src                     (m_src[63:0]),
              .m_src_last                (m_src_last),
              
