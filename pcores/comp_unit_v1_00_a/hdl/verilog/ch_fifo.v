@@ -38,38 +38,42 @@
 `timescale 1ns/1ps
 
 module ch_fifo(
+	din,
+	prog_full_thresh,
+	rd_clk,
+	rd_en,
 	rst,
 	wr_clk,
-	rd_clk,
-	din,
 	wr_en,
-	rd_en,
-	dout,
-	full,
-	almost_full,
-	empty,
 	almost_empty,
+	almost_full,
+	dout,
+	empty,
+	full,
 	prog_full,
-	prog_empty);
+	rd_data_count,
+	wr_data_count);
 
 
+input [64 : 0] din;
+input [8 : 0] prog_full_thresh;
+input rd_clk;
+input rd_en;
 input rst;
 input wr_clk;
-input rd_clk;
-input [64 : 0] din;
 input wr_en;
-input rd_en;
-output [64 : 0] dout;
-output full;
-output almost_full;
-output empty;
 output almost_empty;
+output almost_full;
+output [64 : 0] dout;
+output empty;
+output full;
 output prog_full;
-output prog_empty;
+output [8 : 0] rd_data_count;
+output [8 : 0] wr_data_count;
 
 // synthesis translate_off
 
-      FIFO_GENERATOR_V5_3 #(
+      FIFO_GENERATOR_V5_2 #(
 		.C_COMMON_CLOCK(0),
 		.C_COUNT_TYPE(0),
 		.C_DATA_COUNT_WIDTH(9),
@@ -89,14 +93,14 @@ output prog_empty;
 		.C_HAS_INT_CLK(0),
 		.C_HAS_MEMINIT_FILE(0),
 		.C_HAS_OVERFLOW(0),
-		.C_HAS_RD_DATA_COUNT(0),
+		.C_HAS_RD_DATA_COUNT(1),
 		.C_HAS_RD_RST(0),
 		.C_HAS_RST(1),
 		.C_HAS_SRST(0),
 		.C_HAS_UNDERFLOW(0),
 		.C_HAS_VALID(0),
 		.C_HAS_WR_ACK(0),
-		.C_HAS_WR_DATA_COUNT(0),
+		.C_HAS_WR_DATA_COUNT(1),
 		.C_HAS_WR_RST(0),
 		.C_IMPLEMENTATION_TYPE(2),
 		.C_INIT_WR_PNTR_VAL(0),
@@ -108,12 +112,12 @@ output prog_empty;
 		.C_PRELOAD_LATENCY(0),
 		.C_PRELOAD_REGS(1),
 		.C_PRIM_FIFO_TYPE("512x72"),
-		.C_PROG_EMPTY_THRESH_ASSERT_VAL(250),
-		.C_PROG_EMPTY_THRESH_NEGATE_VAL(251),
-		.C_PROG_EMPTY_TYPE(1),
-		.C_PROG_FULL_THRESH_ASSERT_VAL(480),
-		.C_PROG_FULL_THRESH_NEGATE_VAL(479),
-		.C_PROG_FULL_TYPE(1),
+		.C_PROG_EMPTY_THRESH_ASSERT_VAL(4),
+		.C_PROG_EMPTY_THRESH_NEGATE_VAL(5),
+		.C_PROG_EMPTY_TYPE(0),
+		.C_PROG_FULL_THRESH_ASSERT_VAL(511),
+		.C_PROG_FULL_THRESH_NEGATE_VAL(510),
+		.C_PROG_FULL_TYPE(3),
 		.C_RD_DATA_COUNT_WIDTH(9),
 		.C_RD_DEPTH(512),
 		.C_RD_FREQ(1),
@@ -132,41 +136,41 @@ output prog_empty;
 		.C_WR_PNTR_WIDTH(9),
 		.C_WR_RESPONSE_LATENCY(1))
 	inst (
+		.DIN(din),
+		.PROG_FULL_THRESH(prog_full_thresh),
+		.RD_CLK(rd_clk),
+		.RD_EN(rd_en),
 		.RST(rst),
 		.WR_CLK(wr_clk),
-		.RD_CLK(rd_clk),
-		.DIN(din),
 		.WR_EN(wr_en),
-		.RD_EN(rd_en),
-		.DOUT(dout),
-		.FULL(full),
-		.ALMOST_FULL(almost_full),
-		.EMPTY(empty),
 		.ALMOST_EMPTY(almost_empty),
+		.ALMOST_FULL(almost_full),
+		.DOUT(dout),
+		.EMPTY(empty),
+		.FULL(full),
 		.PROG_FULL(prog_full),
-		.PROG_EMPTY(prog_empty),
+		.RD_DATA_COUNT(rd_data_count),
+		.WR_DATA_COUNT(wr_data_count),
+		.CLK(),
+		.INT_CLK(),
 		.BACKUP(),
 		.BACKUP_MARKER(),
-		.CLK(),
-		.SRST(),
-		.WR_RST(),
-		.RD_RST(),
 		.PROG_EMPTY_THRESH(),
 		.PROG_EMPTY_THRESH_ASSERT(),
 		.PROG_EMPTY_THRESH_NEGATE(),
-		.PROG_FULL_THRESH(),
 		.PROG_FULL_THRESH_ASSERT(),
 		.PROG_FULL_THRESH_NEGATE(),
-		.INT_CLK(),
+		.RD_RST(),
+		.SRST(),
+		.WR_RST(),
 		.INJECTDBITERR(),
 		.INJECTSBITERR(),
-		.WR_ACK(),
+		.DATA_COUNT(),
 		.OVERFLOW(),
+		.PROG_EMPTY(),
 		.VALID(),
 		.UNDERFLOW(),
-		.DATA_COUNT(),
-		.RD_DATA_COUNT(),
-		.WR_DATA_COUNT(),
+		.WR_ACK(),
 		.SBITERR(),
 		.DBITERR());
 
