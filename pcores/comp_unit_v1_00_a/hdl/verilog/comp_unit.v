@@ -170,8 +170,8 @@ module comp_unit(/*AUTOARG*/
    assign tx_sop_n    = DMALLTXSOPN;
    assign tx_eop_n    = DMALLTXEOPN;
    assign tx_src_rdy_n= DMALLTXSRCRDYN;
-   assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp || op_copy1)) &&
-			   (tx_end_rdy || tx_busy) || tx_busy;
+   assign LLDMATXDSTRDYN = ((~src_start && (op_comp || op_decomp)) &&
+			   (tx_end_rdy || tx_busy)) || tx_busy || (~reset_n_d);
    assign clk 	     = CPMDMALLCLK;
    assign rst_n      = ~(DMALLRSTENGINEACK || LLDMARSTENGINEREQ || (~reset_n_d) ||(~reset_n));
    assign op_copy1   = flag[29];
