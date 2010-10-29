@@ -9,6 +9,7 @@ module comp_unit(/*AUTOARG*/
    DMALLTXSRCRDYN, DMATXIRQ, DMARXIRQ, plb_dcrabus, plb_dcrclk,
    plb_dcrdbusout, plb_dcrread, plb_dcrrst, plb_dcrwrite
    );
+   parameter C_VERSION = 32'hdead_dead;
    // local link system singal
    (* PERIOD = "5000ps" *)
    input           CPMDMALLCLK;
@@ -766,7 +767,7 @@ module comp_unit(/*AUTOARG*/
 	  4'h8: begin
 	  end
 	  4'he: begin
-	     comp2dcr_data[0:31]  = 32'h1008_1100;
+	     comp2dcr_data[0:31]  = C_VERSION;
 	  end
 	  4'hf: begin
 	     comp2dcr_data[0:31]  = 32'haa55_55aa;
