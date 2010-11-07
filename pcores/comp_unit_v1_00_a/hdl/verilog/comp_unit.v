@@ -777,19 +777,16 @@ module comp_unit(/*AUTOARG*/
    
    always @(posedge plb_dcrclk)
      begin
-        if (plb_dcrrst)
-          begin
-	     LLDMARSTENGINEREQ <= 1'b0;
-	  end
-	else if (plb_dcrwrite && plb_dcrabus == 10'h00)
+	if (plb_dcrwrite && plb_dcrabus == 10'h00)
 	  begin
 	     LLDMARSTENGINEREQ <= plb_dcrdbusout[31];
 	  end
-	else if (LLDMARSTENGINEREQ)
+	else
 	  begin
 	     LLDMARSTENGINEREQ <= 1'b0;
 	  end
      end
+   // synthesis attribute ASYNC_REG of LLDMARSTENGINEREQ is "TRUE"
 endmodule // comp_unit
 
 // Local Variables:
