@@ -10,6 +10,7 @@ module comp_unit(/*AUTOARG*/
    plb_dcrdbusout, plb_dcrread, plb_dcrrst, plb_dcrwrite
    );
    parameter C_VERSION = 32'hdead_dead;
+   parameter C_ENABLE = 0;
    // local link system singal
    (* PERIOD = "5000ps" *)
    input           CPMDMALLCLK;
@@ -619,13 +620,16 @@ module comp_unit(/*AUTOARG*/
    wire        m_src_almost_empty;
    wire        m_dst_almost_full;
    wire        m_dst_full;
-   
+   wire        src_end;
+
    assign    m_reset = ~rst_n;
    assign    m_enable = 1;
    assign    dc[6:4] = {op_decomp,op_comp,op_copy1};
    assign    dc[3:0] = 'b0;
    assign    dc[23:7] = 'b0;
 
+generate if (C_ENABLE) 
+begin
    mod u_mod(
              // Outputs
              .m_src_getn                (m_src_getn),
@@ -685,6 +689,8 @@ module comp_unit(/*AUTOARG*/
            .m_dst                       (m_dst[63:0]),
            .m_dst_last                  (m_dst_last),
            .m_endn                      (m_endn));
+end
+endgenerate
 
    /**********************************************************************/
    reg                  dcr_plback;
