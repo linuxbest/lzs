@@ -539,18 +539,20 @@ module comp_unit(/*AUTOARG*/
 	  /* APP1
 	   *  [31:29]  flags
 	   *  [28]     cpl_status
-	   *  [9:0]    task_index
+	   *  [10]     crc_valid flag
+	   *  [9:0]    crc_tx[9:0] 
 	   * APP2
 	   *           size
 	   * APP3
-	   *           crc_tx
+	   *  [32:10]  crc_tx
+	   *  [9:0]    task_index
 	   * APP4
 	   *           crc_rx
 	   */
           RX_HEAD4  : begin 
              LLDMARXSRCRDYN_r <= !tx_busy;
-	     LLDMARXD_r[31:29]<= flag;
-	     LLDMARXD_r[28]   <= cpl_status;
+	     LLDMARXD_r[31:29]<= flag;       /* [31] compress, [30] decompress, [29] copy */
+	     LLDMARXD_r[28]   <= cpl_status; /* overflow status */
 	     LLDMARXD_r[27:11]<= 0;
 	     LLDMARXD_r[10]   <= 1'b1; // CRC support
 	     LLDMARXD_r[9:0]  <= crc_tx[9:0];
