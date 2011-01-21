@@ -551,8 +551,9 @@ module comp_unit(/*AUTOARG*/
              LLDMARXSRCRDYN_r <= !tx_busy;
 	     LLDMARXD_r[31:29]<= flag;
 	     LLDMARXD_r[28]   <= cpl_status;
-	     LLDMARXD_r[27:10]<= 0;
-	     LLDMARXD_r[9:0]  <= task_index;
+	     LLDMARXD_r[27:11]<= 0;
+	     LLDMARXD_r[10]   <= 1'b1; // CRC support
+	     LLDMARXD_r[9:0]  <= crc_tx[9:0];
 	  end 
           RX_HEAD5  : begin 
              if (op_copy)
@@ -561,7 +562,8 @@ module comp_unit(/*AUTOARG*/
                LLDMARXD_r <= {13'h0,ocnt,3'h0};
 	  end 
           RX_HEAD6  : begin 
-             LLDMARXD_r   <= crc_tx;
+             LLDMARXD_r[31:10]<= crc_tx[31:10];
+	     LLDMARXD_r[9:0]  <= task_index;
 	  end 
           RX_HEAD7  : begin 
              if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
