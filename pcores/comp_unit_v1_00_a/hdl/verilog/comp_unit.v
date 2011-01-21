@@ -113,6 +113,9 @@ module comp_unit(/*AUTOARG*/
    reg [0:31]		dcr_plbdbusin;
    // End of automatics
    /*AUTOWIRE*/
+   // Beginning of automatic wires (for undeclared instantiated-module outputs)
+   wire [31:0]		crc_out;		// From ll_crc of ll_crc.v
+   // End of automatics
  
    wire [31:0] dst_dat_i;
    wire [31:0] dst_dat64_i;
@@ -548,6 +551,7 @@ module comp_unit(/*AUTOARG*/
           RX_HEAD7  : begin 
              if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
 		LLDMARXEOFN_r <= 0;
+                LLDMARXD_r <= crc_out;
              end
 	  end 
           RX_PAYLOAD: begin
@@ -691,6 +695,31 @@ begin
            .m_endn                      (m_endn));
 end
 endgenerate
+
+   ll_crc
+     ll_crc(/*AUTOINST*/
+	    // Outputs
+	    .crc_out			(crc_out[31:0]),
+	    // Inputs
+	    .clk			(clk),
+	    .rst_n			(rst_n),
+	    .LLDMARXD			(LLDMARXD[31:0]),
+	    .LLDMARXREM			(LLDMARXREM[3:0]),
+	    .LLDMARXSOFN		(LLDMARXSOFN),
+	    .LLDMARXEOFN		(LLDMARXEOFN),
+	    .LLDMARXSOPN		(LLDMARXSOPN),
+	    .LLDMARXEOPN		(LLDMARXEOPN),
+	    .LLDMARXSRCRDYN		(LLDMARXSRCRDYN),
+	    .DMALLRXDSTRDYN		(DMALLRXDSTRDYN),
+	    .DMALLTXD			(DMALLTXD[31:0]),
+	    .DMALLTXREM			(DMALLTXREM[3:0]),
+	    .DMALLTXSOFN		(DMALLTXSOFN),
+	    .DMALLTXEOFN		(DMALLTXEOFN),
+	    .DMALLTXSOPN		(DMALLTXSOPN),
+	    .DMALLTXEOPN		(DMALLTXEOPN),
+	    .DMALLTXSRCRDYN		(DMALLTXSRCRDYN),
+	    .LLDMATXDSTRDYN		(LLDMATXDSTRDYN),
+	    .op_comp			(op_comp));
 
    /**********************************************************************/
    reg                  dcr_plback;

@@ -18,6 +18,8 @@ lib comp_unit_v1_00_a encode_ctl.v verilog
 lib comp_unit_v1_00_a encode_out.v verilog
 lib comp_unit_v1_00_a ch_fifo.v verilog
 lib comp_unit_v1_00_a generic_tpram.v verilog
+lib comp_unit_v1_00_a crc.v verilog
+lib comp_unit_v1_00_a ll_crc.v verilog
 #lib comp_unit_v1_00_a tpram.v verilog
 #lib comp_unit_v1_00_a fifo_control.v verilog
 #lib comp_unit_v1_00_a synchronizer_flop.v verilog
