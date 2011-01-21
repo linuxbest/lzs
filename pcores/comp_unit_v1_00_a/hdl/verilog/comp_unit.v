@@ -114,7 +114,8 @@ module comp_unit(/*AUTOARG*/
    // End of automatics
    /*AUTOWIRE*/
    // Beginning of automatic wires (for undeclared instantiated-module outputs)
-   wire [31:0]		crc_out;		// From ll_crc of ll_crc.v
+   wire [31:0]		crc_rx;			// From ll_crc of ll_crc.v
+   wire [31:0]		crc_tx;			// From ll_crc of ll_crc.v
    // End of automatics
  
    wire [31:0] dst_dat_i;
@@ -534,10 +535,24 @@ module comp_unit(/*AUTOARG*/
           RX_HEAD3  : begin 
              rx_end <= 1;
              LLDMARXSRCRDYN_r <= !tx_busy;
-	  end 
+	  end
+	  /* APP1
+	   *  [31:29]  flags
+	   *  [28]     cpl_status
+	   *  [9:0]    task_index
+	   * APP2
+	   *           size
+	   * APP3
+	   *           crc_tx
+	   * APP4
+	   *           crc_rx
+	   */
           RX_HEAD4  : begin 
              LLDMARXSRCRDYN_r <= !tx_busy;
-             LLDMARXD_r <= {flag,cpl_status,28'h0};
+	     LLDMARXD_r[31:29]<= flag;
+	     LLDMARXD_r[28]   <= cpl_status;
+	     LLDMARXD_r[27:10]<= 0;
+	     LLDMARXD_r[9:0]  <= task_index;
 	  end 
           RX_HEAD5  : begin 
              if (op_copy)
@@ -546,12 +561,12 @@ module comp_unit(/*AUTOARG*/
                LLDMARXD_r <= {13'h0,ocnt,3'h0};
 	  end 
           RX_HEAD6  : begin 
-             LLDMARXD_r <= {22'h0,task_index};
+             LLDMARXD_r   <= crc_tx;
 	  end 
           RX_HEAD7  : begin 
              if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
 		LLDMARXEOFN_r <= 0;
-                LLDMARXD_r <= crc_out;
+                LLDMARXD_r<= crc_rx;
              end
 	  end 
           RX_PAYLOAD: begin
@@ -699,7 +714,8 @@ endgenerate
    ll_crc
      ll_crc(/*AUTOINST*/
 	    // Outputs
-	    .crc_out			(crc_out[31:0]),
+	    .crc_tx			(crc_tx[31:0]),
+	    .crc_rx			(crc_rx[31:0]),
 	    // Inputs
 	    .clk			(clk),
 	    .rst_n			(rst_n),
@@ -718,8 +734,7 @@ endgenerate
 	    .DMALLTXSOPN		(DMALLTXSOPN),
 	    .DMALLTXEOPN		(DMALLTXEOPN),
 	    .DMALLTXSRCRDYN		(DMALLTXSRCRDYN),
-	    .LLDMATXDSTRDYN		(LLDMATXDSTRDYN),
-	    .op_comp			(op_comp));
+	    .LLDMATXDSTRDYN		(LLDMATXDSTRDYN));
 
    /**********************************************************************/
    reg                  dcr_plback;
@@ -829,9 +844,3 @@ endmodule // comp_unit
 // verilog-library-files:("lldma_exerciser.v")
 // verilog-library-extensions:(".v" ".h")
 // End:
-
-
-
-
-
- 
