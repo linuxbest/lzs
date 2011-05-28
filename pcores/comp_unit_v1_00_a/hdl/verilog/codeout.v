@@ -14,7 +14,7 @@ module codeout (/*AUTOARG*/
    // Outputs
    m_dst, m_dst_putn, m_dst_last, m_endn,
    // Inputs
-   wb_clk_i, wb_rst_i, dc, en_out_data, de_out_data, dst_stop,
+   wb_clk_i, wb_rst_i, dc, en_out_data, de_out_data,
    en_out_valid, de_out_valid, en_out_done, de_out_done,
    m_enable
    );
@@ -32,7 +32,6 @@ module codeout (/*AUTOARG*/
    output 	 m_dst_putn;
    output 	 m_dst_last;
    output 	 m_endn;
-   input         dst_stop;
 
    /*AUTOREG*/
 
@@ -80,7 +79,7 @@ module codeout (/*AUTOARG*/
      begin
 	if (wb_rst_i)
 	  done <= #1 2'b00;
-	else if (done_i && done == 2'b00 && ~dst_stop)
+	else if (done_i && done == 2'b00)
 	  done <= #1 2'b01;
 	else if (done == 2'b01 && m_dst_putn_r == 1'b0)
 	  done <= #1 2'b11;

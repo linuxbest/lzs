@@ -156,7 +156,6 @@ module comp_unit(/*AUTOARG*/
    reg [9:0] task_index;
    wire soft_reset;
    wire src_stop; 
-   reg       reset_n_d;
    
    reg LLDMARSTENGINEREQ;
    //--------------rx interface mux-----------------------------
@@ -176,19 +175,14 @@ module comp_unit(/*AUTOARG*/
    assign tx_sop_n    = DMALLTXSOPN;
    assign tx_eop_n    = DMALLTXEOPN;
    assign tx_src_rdy_n= DMALLTXSRCRDYN;
-   assign LLDMATXDSTRDYN = ((~src_start && (op_comp || op_decomp)) &&
-			   (tx_end_rdy || tx_busy)) || tx_busy || (~reset_n_d);
+   assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp || op_copy1)) &&
+			   (tx_end_rdy || tx_busy) || tx_busy;
    assign clk 	     = CPMDMALLCLK;
-   assign rst_n      = ~(DMALLRSTENGINEACK || LLDMARSTENGINEREQ || (~reset_n_d) ||(~reset_n));
+   assign rst_n      = ~(DMALLRSTENGINEACK || LLDMARSTENGINEREQ || (~reset_n));
    assign op_copy1   = flag[29];
    assign op_copy0   = 0;
    assign op_decomp  = flag[30];
    assign op_comp    = flag[31];
-
-   always @(posedge clk)
-     begin
-       reset_n_d <= reset_n;
-     end
    
    always @(posedge clk)
      if (!rst_n)
@@ -666,7 +660,6 @@ begin
              .m_reset                   (m_reset),
              .m_enable                  (m_enable),
              .dc                        (dc[23:0]),
-             .dst_stop                  (dst_stop),
              .m_src                     (m_src[63:0]),
              .m_src_last                (m_src_last),
              
@@ -774,9 +767,6 @@ endgenerate
 	     comp2dcr_data[5]     = LLDMATXDSTRDYN;
 	     comp2dcr_data[6]     = DMALLTXSOFN;
 	     comp2dcr_data[7]     = DMALLTXEOFN;
-	     comp2dcr_data[9]     = src_end;
-	     comp2dcr_data[10]    = src_stop;
-	     comp2dcr_data[11]    = src_start;
 	     comp2dcr_data[30]    = m_src_last;
 	     comp2dcr_data[31]    = src_last;
 	  end
