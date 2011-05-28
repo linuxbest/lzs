@@ -12,3 +12,35 @@ proc update_version_proc {param_handle} {
 
 	return [expr 0x$version];
 }
+
+proc generate_corelevel_ucf {mhsinst} {
+        ############################
+        set  filePath [xget_ncf_dir $mhsinst]
+        file mkdir    $filePath
+
+        # specify file name
+        set    instname   [xget_hw_parameter_value $mhsinst "INSTANCE"]
+        set    ipname     [xget_hw_option_value    $mhsinst "IPNAME"]
+        set    name_lower [string   tolower   $instname]
+        set    fileName   $name_lower
+        append fileName   "_wrapper.ucf"
+        append filePath   $fileName
+
+	set    outputFile [open $filePath "w"]
+	puts   $outputFile "################################################################################ "
+	puts $outputFile "#"
+	# Close the file
+	close $outputFile
+
+
+        # append -reduce_control_sets into *.scr
+        set    postFile   "synthesis/post_"
+        append postFile   $name_lower
+        append postFile   "_wrapper"
+        append postFile   ".sh"
+        set    outputFile [open $postFile "w"]
+        set    command    "MOD="
+        append command    $name_lower
+        puts   $outputFile $command
+        close  $outputFile
+}
