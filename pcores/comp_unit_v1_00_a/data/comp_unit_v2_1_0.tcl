@@ -43,4 +43,12 @@ proc generate_corelevel_ucf {mhsinst} {
         append command    $name_lower
         puts   $outputFile $command
         close  $outputFile
+
+	set    fileName   [xget_ncf_dir $mhsinst]
+	append fileName   $name_lower
+	append fileName   "_wrapper.sdc"
+	set    outputFile [open $fileName "w"]
+	puts   $outputFile "define_clock -name {n:CPMDMALLCLK}  -freq 200  -clockgroup c200_group -route 0"
+	puts   $outputFile "define_clock -name {n:plb_dcrclk}   -freq 100  -clockgroup c100_group -route 0"
+	close  $outputFile
 }
