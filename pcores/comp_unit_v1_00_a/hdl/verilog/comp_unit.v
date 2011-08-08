@@ -95,9 +95,6 @@ module comp_unit(/*AUTOARG*/
    reg [31:0]      data1;
    reg [31:0]      rx_data_comp;
    reg [3:0]       rem;
-   reg             copy_start;
-   reg             copy_stop;
-   reg             copy_end;
    wire            DMALLRSTENGINEACK;
    wire            LLDMATXDSTRDYN;
    reg [31:0]      LLDMARXD_r;
@@ -107,6 +104,7 @@ module comp_unit(/*AUTOARG*/
    reg             LLDMARXEOPN_r;
    reg             LLDMARXEOFN_r;
    reg             rx_sof_r_n;
+   reg             m_reset;
   
    /*AUTOREG*/
    // Beginning of automatic regs (for this module's undeclared outputs)
@@ -178,7 +176,7 @@ module comp_unit(/*AUTOARG*/
    assign LLDMATXDSTRDYN = (~src_start && (op_comp || op_decomp || op_copy1)) &&
 			   (tx_end_rdy || tx_busy) || tx_busy;
    assign clk 	     = CPMDMALLCLK;
-   assign rst_n      = ~(DMALLRSTENGINEACK || LLDMARSTENGINEREQ || (~reset_n));
+   assign rst_n      = ~(DMALLRSTENGINEACK || LLDMARSTENGINEREQ);
    assign op_copy1   = flag[29];
    assign op_copy0   = 0;
    assign op_decomp  = flag[30];
@@ -280,7 +278,7 @@ module comp_unit(/*AUTOARG*/
                tx_state_n = TX_COPY;
           end
           TX_END: begin 
-             if (!reset_n)
+             if (m_reset)
                tx_state_n = TX_IDLE;
              else
                tx_state_n = TX_END;
@@ -289,8 +287,6 @@ module comp_unit(/*AUTOARG*/
      end   
    always @(posedge clk)
      if (!rst_n) begin
-        copy_start <= 1;
-        copy_end <= 1;
         tx_end_rdy <= 1;
         /*AUTORESET*/
 	// Beginning of autoreset for uninitialized flops
@@ -306,8 +302,11 @@ module comp_unit(/*AUTOARG*/
      end else begin
         case (tx_state)
           TX_IDLE   : begin 
+             tx_end_rdy <= 1;
+	     src_last <= 1'h0;
              src_xfer <= 0;
              tx_busy <= 0;
+	     flag <= 3'h0;
 	  end 
           TX_HEAD1  : begin 
 	  end 
@@ -366,8 +365,6 @@ module comp_unit(/*AUTOARG*/
           end 
           TX_END : begin 
              src_last <= 1;
-             copy_start <= 1;
-             copy_end <= 0;
              src_xfer <= ~src_stop && src_start;
              tx_end_rdy <= 0;
 	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
@@ -388,7 +385,7 @@ module comp_unit(/*AUTOARG*/
 	rx_state_n = rx_state;
         case (rx_state)
           RX_IDLE:    begin
-	     if (!DMALLRXDSTRDYN) begin
+	     if (!DMALLRXDSTRDYN && !m_reset) begin
 		if (op_copy)
 		  rx_state_n = RX_COPY;
         	else if (dst_start && (op_comp || op_decomp || op_copy1))
@@ -476,7 +473,7 @@ module comp_unit(/*AUTOARG*/
              end
 	  end  
           RX_END: begin
-             if(!reset_n)
+             if(m_reset)
                rx_state_n = RX_IDLE;
              else
                rx_state_n = RX_END;
@@ -490,12 +487,11 @@ module comp_unit(/*AUTOARG*/
         LLDMARXSOPN_r <= 1;
         LLDMARXEOPN_r <= 1;
         LLDMARXEOFN_r <= 1;
-        reset_n       <= 1'b1;
 	/*AUTORESET*/
 	// Beginning of autoreset for uninitialized flops
 	LLDMARXD_r <= 32'h0;
 	LLDMARXREM_r <= 4'h0;
-	LLDMARXSRCRDYN_r <= 1'h0;
+	LLDMARXSRCRDYN_r <= 1'h1;
 	cpl_status <= 1'h0;
 	rx_data_comp <= 32'h0;
 	rx_end <= 1'h0;
@@ -503,9 +499,15 @@ module comp_unit(/*AUTOARG*/
      end else begin
         case (rx_state)
           RX_IDLE:    begin
+             rx_sof_r_n    <= 1;
+             LLDMARXSOPN_r <= 1;
+             LLDMARXEOPN_r <= 1;
+             LLDMARXEOFN_r <= 1;
+	     cpl_status <= 1'h0;
+	     rx_end <= 1'h0;
              reset_n <= 1'b1;
              if (dst_start && (op_comp || op_decomp || op_copy1))begin
-		if (!DMALLRXDSTRDYN) begin
+		if (!DMALLRXDSTRDYN && !m_reset) begin
                    LLDMARXSRCRDYN_r <= 0;
 		   rx_sof_r_n <= 0;
 		end else begin
@@ -614,7 +616,7 @@ module comp_unit(/*AUTOARG*/
 	endcase
      end
    always @(posedge clk)
-     if (!rst_n)
+     if (m_reset)
        len_cnt <= 0;
      else if (dst_xfer)
        len_cnt <= len_cnt + 1;
@@ -628,7 +630,7 @@ module comp_unit(/*AUTOARG*/
    wire        m_dst_last;
    wire        m_endn;
    wire [7:0]  m_cap;
-   wire        m_reset;
+   reg  [2:0]  rst_cnt;
    wire        m_enable;
    wire [23:0] dc;  
    wire [63:0] m_src;
@@ -639,8 +641,35 @@ module comp_unit(/*AUTOARG*/
    wire        m_dst_full;
    wire        src_end;
 
-   assign    m_reset = ~rst_n;
-   assign    m_enable = 1;
+   always @(posedge clk)
+     if (~rst_n)
+	begin
+          m_reset <= 1;
+	end
+     else if (~reset_n)
+	begin
+          m_reset <= 1;
+	end
+     else if (rst_cnt == 3'h6)
+	begin
+          m_reset <= 0;
+	end
+
+   always @(posedge clk)
+     if (~rst_n)
+	begin
+          rst_cnt <= 0;
+	end
+     else if (~reset_n)
+	begin
+	  rst_cnt <= 0;
+	end
+     else if (m_reset) 
+	begin
+          rst_cnt <= rst_cnt + 1'b1;
+	end
+ 
+   assign    m_enable = ~m_reset;
    assign    dc[6:4] = {op_decomp,op_comp,op_copy1};
    assign    dc[3:0] = 'b0;
    assign    dc[23:7] = 'b0;
@@ -689,7 +718,7 @@ begin
            .ocnt                        (ocnt[15:0]),
            // Inputs
            .wb_clk_i                    (clk),
-           .wb_rst_i                    (~rst_n),
+           .wb_rst_i                    (),
            .src_xfer                    (src_xfer),
            .dst_xfer                    (dst_xfer),
            .src_last                    (src_last),
@@ -715,7 +744,7 @@ endgenerate
 	    .crc_rx			(crc_rx[31:0]),
 	    // Inputs
 	    .clk			(clk),
-	    .rst_n			(rst_n),
+	    .rst_n			(~m_reset),
 	    .LLDMARXD			(LLDMARXD[31:0]),
 	    .LLDMARXREM			(LLDMARXREM[3:0]),
 	    .LLDMARXSOFN		(LLDMARXSOFN),
@@ -777,6 +806,7 @@ endgenerate
 	     comp2dcr_data[6]     = LLDMARXSOPN;
 	     comp2dcr_data[7]     = LLDMARXEOPN;
 	     comp2dcr_data[27]    = dst_start;
+	     comp2dcr_data[28]    = src_start;
 	     comp2dcr_data[30]    = m_endn;
 	     comp2dcr_data[31]    = dst_end;
 	  end
