@@ -303,7 +303,7 @@ module comp_unit(/*AUTOARG*/
         case (tx_state)
           TX_IDLE   : begin 
              tx_end_rdy <= 1;
-	     src_last <= 1'h0;
+	     src_last <= 0;
              src_xfer <= 0;
              tx_busy <= 0;
 	     flag <= 3'h0;
@@ -364,13 +364,16 @@ module comp_unit(/*AUTOARG*/
           TX_COPY: begin
           end 
           TX_END : begin 
-             src_last <= 1;
-             src_xfer <= ~src_stop && src_start;
              tx_end_rdy <= 0;
-	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN) begin
-		if (!DMALLTXEOFN)
+	     if (!DMALLTXSRCRDYN && !LLDMATXDSTRDYN 
+		 && !DMALLTXEOFN) begin
+                  src_last <= 1;
+                  src_xfer <= 1;
 		  tx_busy <= 1;
-             end
+             end else begin
+                  src_last <= 0;
+                  src_xfer <= 0;
+	     end
 	  end 
         endcase
      end   
@@ -631,7 +634,7 @@ module comp_unit(/*AUTOARG*/
    wire        m_endn;
    wire [7:0]  m_cap;
    reg  [2:0]  rst_cnt;
-   wire        m_enable;
+   reg         m_enable;
    wire [23:0] dc;  
    wire [63:0] m_src;
    wire        m_src_last; 
@@ -669,7 +672,14 @@ module comp_unit(/*AUTOARG*/
           rst_cnt <= rst_cnt + 1'b1;
 	end
  
-   assign    m_enable = ~m_reset;
+//   assign    m_enable = ~m_reset;
+   always @(posedge clk)
+     begin
+       if (tx_state == TX_IDLE)
+          m_enable = 0;
+       else if (tx_state == TX_PAYLOAD1)
+          m_enable = 1;
+     end
    assign    dc[6:4] = {op_decomp,op_comp,op_copy1};
    assign    dc[3:0] = 'b0;
    assign    dc[23:7] = 'b0;

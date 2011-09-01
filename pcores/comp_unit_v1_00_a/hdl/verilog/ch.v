@@ -251,6 +251,6 @@ module ch(/*AUTOARG*/
    assign                src_end      = 1'b0;
    assign 		 dst_end      = dst_do[64];
 
-   assign 		 src_start    = !(src_almost_full || src_full);
+   assign 		 src_start    = !(src_almost_full || src_full) && !m_reset;
    assign 		 dst_start    = dst_half_full || ((!m_endn) && (!dst_empty));
 endmodule // ch
