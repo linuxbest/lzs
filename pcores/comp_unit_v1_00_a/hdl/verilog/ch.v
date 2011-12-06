@@ -124,7 +124,7 @@ module ch(/*AUTOARG*/
 //		  .half_full_out(src_half_full));
 
 
-     assign dst_half_full = ~dst_half_full_n; 
+     assign dst_half_full = m_dst_almost_full; 
      ch_fifo dst_fifo(
 	.din                (dst_di),
 	.rd_clk             (wb_clk_i),
