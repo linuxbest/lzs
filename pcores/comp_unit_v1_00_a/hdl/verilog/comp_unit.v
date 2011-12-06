@@ -584,9 +584,9 @@ module comp_unit(/*AUTOARG*/
 	     end
 	  end  
           RX_PAYLOAD1: begin
-             LLDMARXSOPN_r <= 1;
              LLDMARXSRCRDYN_r <= ~dst_start;
              if (!LLDMARXSRCRDYN && !DMALLRXDSTRDYN) begin
+                LLDMARXSOPN_r <= 1;
                 LLDMARXD_r <= rx_data_comp;
 		if (ocnt > src_len[18:3]) begin
                    LLDMARXREM_r <= 4'h7;
